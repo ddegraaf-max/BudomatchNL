@@ -1,0 +1,16 @@
+{
+  "name": "budomatch-nl",
+  "version": "1.0.0",
+  "description": "Budomatch NL — marktplaats voor vakmensen in Nederland (NL/EN), met accounts, Stripe/iDEAL-betalingen, factuur en AI-assistent.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "stripe": "^17.7.0"
+  }
+}

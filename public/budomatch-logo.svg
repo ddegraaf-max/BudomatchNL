@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" width="360" height="96" role="img" aria-label="Budomatch">
+  <defs>
+    <linearGradient id="bmGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F2DC8C"/>
+      <stop offset=".55" stop-color="#D4AF37"/>
+      <stop offset="1" stop-color="#A87D1B"/>
+    </linearGradient>
+  </defs>
+  <!-- mark -->
+  <g transform="translate(8,8)">
+    <circle cx="40" cy="40" r="37" fill="none" stroke="url(#bmGold)" stroke-width="2.6" opacity=".55"/>
+    <path d="M40 14 L65 40 L55 40 L40 25 L25 40 L15 40 Z" fill="url(#bmGold)"/>
+    <path d="M40 32 l8.5 8 -8.5 8 -8.5 -8 Z" fill="url(#bmGold)"/>
+    <rect x="23" y="55" width="34" height="5.6" rx="2.8" fill="url(#bmGold)"/>
+  </g>
+  <!-- wordmark -->
+  <text x="104" y="60" font-family="'Marcellus','Trajan Pro','Cormorant Garamond',serif"
+        font-size="44" letter-spacing="2.5" fill="url(#bmGold)">Budomatch</text>
+</svg>
