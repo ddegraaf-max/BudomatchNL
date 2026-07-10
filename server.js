@@ -884,4 +884,23 @@ app.post('/api/pro', async (req, res) => {
 });
 
 app.get('/healthz', (_, res) => res.send('ok'));
+// Optionele demo-accounts (zet SEED_DEMO=1). Idempotent.
+async function seedDemo() {
+  if (!process.env.SEED_DEMO) return;
+  try {
+    let k = await store.findUserByEmail('klant@budomatch.nl');
+    if (!k) {
+      k = await store.addUser({ role: 'customer', name: 'Demo Klant', email: 'klant@budomatch.nl', passHash: A.hashPassword('demo1234'), customerType: 'particulier' });
+      await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'opdracht', timing: 'Binnen 1 maand', service: 'Badkamerspecialist', zip: '1011 AB', description: 'Complete badkamer renoveren, ca. 6 m2 — tegels, douche en meubel.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
+      await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'orientatie', timing: 'Meer dan 3 maanden', service: 'Zonnepanelen', zip: '1011 AB', description: 'Orienteren op ca. 10 zonnepanelen op schuin dak.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
+    }
+    const v = await store.findUserByEmail('vakman@budomatch.nl');
+    if (!v) {
+      await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'] });
+    }
+    console.log('[seed] demo-accounts gereed — klant@budomatch.nl / vakman@budomatch.nl (wachtwoord: demo1234)');
+  } catch (e) { console.error('[seed] mislukt:', e.message); }
+}
+seedDemo();
+
 app.listen(PORT, () => console.log(`Budomatch draait op poort ${PORT}`));

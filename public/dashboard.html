@@ -172,8 +172,13 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .kvk-status{font-size:.85rem;margin-top:8px;min-height:18px;color:var(--muted)}
 .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 @media(max-width:600px){.pf-grid{grid-template-columns:1fr}}
+.area-map{height:290px;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin:6px 0}
+.area-label{color:var(--gold-soft);font-size:.92rem;margin-bottom:10px}
+.leaflet-container{background:#1b180f}
 </style>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <header><div class="wrap nav">
@@ -226,7 +231,7 @@ const T = {
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
     dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
-    prCompany:'Company name', prSpec:'Main specialism', prCity:'City / region', prPhone:'Phone', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.',
+    prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -270,7 +275,7 @@ const T = {
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
     dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
-    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats / regio', prPhone:'Telefoon', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.',
+    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -696,7 +701,7 @@ function showProTab(k){
   else if(k==='berichten'){ el.innerHTML=messagesCardHtml(); loadThreads(); }
   else if(k==='collega'){ el.innerHTML=proJobsCardHtml(); loadProJobs(); }
   else if(k==='profiel'){ el.innerHTML=profileHtml(); renderPfThumbs(); }
-  else if(k==='werkgebied'){ el.innerHTML=areaHtml(); }
+  else if(k==='werkgebied'){ el.innerHTML=areaHtml(); areaMap=null; setTimeout(initAreaMap,60); }
   else if(k==='help'){ el.innerHTML=helpHtml(); }
   else if(k==='ai'){ el.innerHTML=`<div class="card assistant"><h2>${t('tabAI')}</h2><p style="color:var(--muted);font-size:.88rem;margin-bottom:10px">${t('aiIntroPro')}</p><div class="body" id="aiBody"></div><div class="crow"><input id="aiInput" placeholder="${t('aiPhPro')}" onkeydown="if(event.key==='Enter')aiSend()"><button onclick="aiSend()" aria-label="Send"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div></div>`; AI_MODE='pro'; aiHist=[]; aiGreet(); }
   else if(k==='account'){ el.innerHTML=accountHtml(); loadBilling(); }
@@ -798,17 +803,48 @@ async function saveProfile(){
 function areaHtml(){
   const u=ME; const sel=new Set(u.workCategories||[]);
   return `<div class="card"><h2>${t('arTitle')}</h2>
-    <label>${t('arZip')}</label><input class="inp" id="arZip" value="${htmlesc(u.workZip||'')}" placeholder="${t('cZipPh')}">
-    <label>${t('arRadius')}</label><select class="inp" id="arRadius">${[10,20,30,50,100,150].map(km=>`<option value="${km}" ${(u.workRadius||30)==km?'selected':''}>${km} km</option>`).join('')}</select>
+    <label>${t('prCity')}</label>
+    <input class="inp" id="arCity" value="${htmlesc(u.city||'')}" placeholder="bijv. Amsterdam" onblur="updateAreaMap()" onkeydown="if(event.key==='Enter'){event.preventDefault();updateAreaMap();}">
+    <p class="hint">${t('arNote')}</p>
+    <label>${t('arRadius')}</label>
+    <select class="inp" id="arRadius" onchange="updateAreaMap()">${[5,10,20,30,50,75,100,150].map(km=>`<option value="${km}" ${(u.workRadius||30)==km?'selected':''}>${km} km</option>`).join('')}</select>
+    <div id="areaMap" class="area-map"></div>
+    <div class="area-label" id="areaLabel"></div>
     <label>${t('arCats')}</label>
     <div class="cat-pick" id="arCats">${cats().map(c=>`<label class="${sel.has(c)?'on':''}"><input type="checkbox" value="${htmlesc(c)}" ${sel.has(c)?'checked':''} onchange="this.parentNode.classList.toggle('on',this.checked)">${htmlesc(c)}</label>`).join('')}</div>
     <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="saveArea()">${t('save')}</button>
     <div class="note" id="arNote">${t('saved')}</div></div>`;
 }
+let areaMap=null, areaCircle=null, areaMarker=null;
+function initAreaMap(){
+  const el=document.getElementById('areaMap');
+  if(!el || typeof L==='undefined') return;
+  areaMap=L.map('areaMap',{scrollWheelZoom:false,attributionControl:true}).setView([52.15,5.3],7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'\u00a9 OpenStreetMap'}).addTo(areaMap);
+  updateAreaMap();
+}
+async function geocodeCity(city){
+  try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(city)}`,{headers:{Accept:'application/json'}});
+    const d=await r.json(); if(d&&d[0]) return [parseFloat(d[0].lat), parseFloat(d[0].lon)]; }catch(e){}
+  return null;
+}
+async function updateAreaMap(){
+  const cityEl=document.getElementById('arCity'), radEl=document.getElementById('arRadius'), lbl=document.getElementById('areaLabel');
+  if(!cityEl||!radEl) return;
+  const city=(cityEl.value||'').trim(), km=parseInt(radEl.value,10)||30;
+  if(lbl) lbl.textContent = city ? `\u00b1 ${km} km rondom ${city}` : '';
+  if(!areaMap||!city) return;
+  const ll=await geocodeCity(city); if(!ll) return;
+  if(areaMarker) areaMarker.remove();
+  if(areaCircle) areaCircle.remove();
+  areaMarker=L.marker(ll).addTo(areaMap);
+  areaCircle=L.circle(ll,{radius:km*1000,color:'#C9A227',weight:2,fillColor:'#C9A227',fillOpacity:0.12}).addTo(areaMap);
+  areaMap.fitBounds(areaCircle.getBounds(),{padding:[24,24]});
+}
 async function saveArea(){
   const cats=[...document.querySelectorAll('#arCats input:checked')].map(i=>i.value);
-  const r=await api('/api/profile',{method:'POST',body:JSON.stringify({workZip:$('#arZip').value,workRadius:$('#arRadius').value,workCategories:cats})});
-  if(r.user){ ME=r.user; const n=$('#arNote'); if(n)n.classList.add('show'); }
+  const r=await api('/api/profile',{method:'POST',body:JSON.stringify({city:document.getElementById('arCity').value,workRadius:document.getElementById('arRadius').value,workCategories:cats})});
+  if(r.user){ ME=r.user; const n=document.getElementById('arNote'); if(n)n.classList.add('show'); }
 }
 /* ---- Helpdesk ---- */
 function helpHtml(){
