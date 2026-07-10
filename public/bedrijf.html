@@ -128,7 +128,7 @@ function renderCta(){
     <label>Dienst</label><select class="inp" id="qService">${cats.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
     <label>Wanneer?</label><select class="inp" id="qTiming"><option>Spoed</option><option>Binnen 1 maand</option><option>Tussen 1-3 maanden</option><option>Meer dan 3 maanden</option></select>
     <label>Omschrijving</label><textarea class="inp" id="qDesc" rows="4" placeholder="Beschrijf je klus zo duidelijk mogelijk"></textarea>
-    <label>Postcode</label><input class="inp" id="qZip" placeholder="bijv. 1011 AB">
+    <label>Plaats</label><input class="inp" id="qZip" placeholder="bijv. Amsterdam">
     <button class="btn" style="width:100%" onclick="sendRequest()">Verstuur aanvraag</button>
     <div class="note" id="qNote">✓ Je aanvraag is verstuurd. ${esc(p.company)} reageert via het portaal.</div>`;
 }

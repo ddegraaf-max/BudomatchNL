@@ -384,6 +384,7 @@ app.post('/api/profile', requireRole('pro'), async (req, res) => {
     if (Array.isArray(b.workCategories)) patch.workCategories = b.workCategories.slice(0, 41).map(x => String(x).slice(0, 60));
     if (Array.isArray(b.photos)) patch.photos = cleanPhotos(b.photos, 6);
     if (b.logo !== undefined) { const l = cleanPhotos([b.logo], 1)[0]; patch.logo = l || ''; }
+    if (patch.city) { const g = await geocodeNL(patch.city); if (g) { patch.lat = g.lat; patch.lng = g.lng; } }
     const u = await store.updateUser(req.user.id, patch);
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -433,6 +434,31 @@ app.get('/api/pros/:id', async (req, res) => {
       rating: r.rating, comment: r.comment || '', name: (String(r.customerName || '').split(' ')[0] || 'Klant'), createdAt: r.createdAt,
     }));
     res.json({ pro: await publicProfile(u), reviews: rv });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant zoekt passende vakmensen: juiste categorie ÉN binnen de straal van de vakman.
+app.get('/api/match', requireRole('customer'), async (req, res) => {
+  try {
+    const category = String(req.query.category || '').trim().toLowerCase();
+    const city = String(req.query.city || '').trim();
+    if (!category || !city) return res.json({ pros: [], need: true });
+    const cust = await geocodeNL(city);
+    if (!cust) return res.json({ pros: [], geocodeFailed: true });
+    const pros = await store.listPros();
+    const out = [];
+    for (const p of pros) {
+      const cats = (p.workCategories || []).map(c => String(c).toLowerCase());
+      if (!cats.includes(category)) continue;
+      if (p.lat == null || p.lng == null) continue;
+      const distance = haversineKm(cust, { lat: p.lat, lng: p.lng });
+      if (distance > (p.workRadius || 30)) continue;
+      const prof = await publicProfile(p);
+      prof.distanceKm = Math.round(distance);
+      out.push(prof);
+    }
+    out.sort((a, b) => (b.tier.bonus - a.tier.bonus) || (b.rating.avg - a.rating.avg) || (a.distanceKm - b.distanceKm));
+    res.json({ pros: out });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -545,6 +571,37 @@ function tierInfo(rating) {
   return { key, label, bonus, score: Math.round(score * 10) / 10 };
 }
 const monthKey = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
+// Geocoding: kleine tabel voor veelvoorkomende NL-plaatsen (werkt zonder internet),
+// anders val terug op OpenStreetMap Nominatim.
+const NL_CITIES = {
+  amsterdam: [52.3728, 4.8936], rotterdam: [51.9244, 4.4777], 'den haag': [52.0705, 4.3007], 'the hague': [52.0705, 4.3007],
+  utrecht: [52.0907, 5.1214], eindhoven: [51.4416, 5.4697], groningen: [53.2194, 6.5665], tilburg: [51.5606, 5.0919],
+  almere: [52.3508, 5.2647], breda: [51.5719, 4.7683], nijmegen: [51.8126, 5.8372], apeldoorn: [52.2112, 5.9699],
+  haarlem: [52.3874, 4.6462], arnhem: [51.9851, 5.8987], amersfoort: [52.1561, 5.3878], zaanstad: [52.4389, 4.8167],
+  'den bosch': [51.6978, 5.3037], "'s-hertogenbosch": [51.6978, 5.3037], zwolle: [52.5168, 6.0830], leiden: [52.1601, 4.4970],
+  maastricht: [50.8514, 5.6910], dordrecht: [51.8133, 4.6901], ede: [52.0402, 5.6649], leeuwarden: [53.2012, 5.7999],
+  alkmaar: [52.6324, 4.7534], emmen: [52.7792, 6.9069], delft: [52.0116, 4.3571], venlo: [51.3704, 6.1724],
+  deventer: [52.2551, 6.1639], hilversum: [52.2242, 5.1758], amstelveen: [52.3114, 4.8701], hoorn: [52.6425, 5.0597],
+  aalsmeer: [52.2645, 4.7621], bussum: [52.2769, 5.1614], purmerend: [52.5050, 4.9592], roosendaal: [51.5306, 4.4654],
+};
+async function geocodeNL(q) {
+  const raw = String(q || '').toLowerCase().trim(); if (!raw) return null;
+  const cityKey = raw.replace(/[0-9]/g, '').replace(/\s+/g, ' ').trim().replace(/\s+[a-z]{2}$/, '').trim();
+  if (NL_CITIES[cityKey]) return { lat: NL_CITIES[cityKey][0], lng: NL_CITIES[cityKey][1] };
+  for (const k in NL_CITIES) { if (cityKey.length > 3 && (cityKey.includes(k) || k.includes(cityKey))) return { lat: NL_CITIES[k][0], lng: NL_CITIES[k][1] }; }
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': 'Budomatch/1.0 (info@budomatch.pl)' } });
+    const d = await r.json();
+    if (d && d[0]) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+  } catch (e) { /* stil */ }
+  return null;
+}
+function haversineKm(a, b) {
+  const R = 6371, toR = x => x * Math.PI / 180;
+  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
 // Credit-overzicht: welkomstbucket (5 eenmalig) + maandbonus op basis van tier.
 async function creditInfo(pro) {
   const claims = await store.claimsByPro(pro.id);
@@ -766,11 +823,34 @@ app.get('/api/projobs', requireRole('pro'), async (req, res) => {
       note: j.note || '', posterName: j.posterName, createdAt: j.createdAt,
       photoCount: Array.isArray(j.photos) ? j.photos.length : 0,
     }));
-    const mine = (await store.proJobsForPro(u.id)).map(j => ({
-      id: j.id, service: j.service, status: j.status, minefPosted: j.posterProId === u.id,
-      posterName: j.posterName, createdAt: j.createdAt, taken: j.status === 'taken',
+    const mine = (await store.proJobsForPro(u.id)).filter(j => j.posterProId === u.id).map(j => ({
+      id: j.id, service: j.service, status: j.status, createdAt: j.createdAt,
+      taken: j.status === 'taken', photoCount: Array.isArray(j.photos) ? j.photos.length : 0,
     }));
     res.json({ jobs: open, mine });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Status aanpassen (Actueel = open / Opgelost) — alleen de plaatser
+app.post('/api/projobs/:id/status', requireRole('pro'), async (req, res) => {
+  try {
+    const j = await store.findProJob(req.params.id);
+    if (!j) return res.status(404).json({ error: 'not_found' });
+    if (j.posterProId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
+    const status = (req.body && req.body.status === 'opgelost') ? 'opgelost' : 'open';
+    await store.updateProJob(j.id, { status });
+    res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Verwijderen — alleen de plaatser
+app.post('/api/projobs/:id/delete', requireRole('pro'), async (req, res) => {
+  try {
+    const j = await store.findProJob(req.params.id);
+    if (!j) return res.status(404).json({ error: 'not_found' });
+    if (j.posterProId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
+    await store.deleteProJob(j.id);
+    res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -896,7 +976,8 @@ async function seedDemo() {
     }
     const v = await store.findUserByEmail('vakman@budomatch.nl');
     if (!v) {
-      await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'] });
+      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'] });
+      const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
     }
     console.log('[seed] demo-accounts gereed — klant@budomatch.nl / vakman@budomatch.nl (wachtwoord: demo1234)');
   } catch (e) { console.error('[seed] mislukt:', e.message); }

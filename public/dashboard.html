@@ -52,6 +52,7 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .tag.match{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--gold-bright)}
 .tag.green{background:rgba(63,166,106,.16);border-color:var(--green);color:#bfe6cf}
 .tag.biz{background:rgba(90,140,200,.16);border-color:rgba(90,140,200,.5);color:#bcd0ec}
+.tag.red{background:rgba(200,80,90,.16);border-color:rgba(200,80,90,.5);color:#e2a0aa}
 .item .desc{color:var(--muted);font-size:.92rem;margin:6px 0 12px}
 .item .meta{font-size:.82rem;color:var(--muted)}
 .contact{background:rgba(201,162,39,.08);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:.9rem;margin-top:8px}
@@ -208,7 +209,7 @@ const T = {
     toSite:'Site', logout:'Log out', loading:'Loading…',
     roleCust:'Customer', rolePro:'Tradesman',
     cWelcome:'Welcome', cIntro:'Post a job for free — tradesmen will send you no-obligation quotes.',
-    cNew:'Post a new job', cService:'Service', cZip:'City / postcode', cZipPh:'e.g. 1011 AB Amsterdam',
+    cNew:'Post a new job', cService:'Service', cZip:'City', cZipPh:'e.g. Amsterdam',
     cPhone:'Phone (tradesmen see it only after unlocking)', cPhonePh:'+31 6 12345678',
     cDesc:'Job description', cDescPh:'Describe what needs doing, scope, desired timing…',
     cPhotos:'Photos (optional, max 3)', cPhotosHint:'Tap or drag to add photos',
@@ -230,7 +231,7 @@ const T = {
     hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
-    dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
+    dirTitle:'Companies', dirIntro:'Choose the type of work and your city — you only see tradesmen who do that work AND whose service radius covers you. The company only pays when it unlocks your request.', dirCat:'Type of work', dirCity:'Your city', dirSearch2:'Find matching tradesmen', dirPrompt:'Choose the type of work and your city to see matching tradesmen.', dirNone:'No matching tradesmen in your area yet.', dirView:'View profile', dirEmpty:'No companies yet.', pjPhotos:'Add photos (max 3)', pjMine:'My posted jobs', pjMineEmpty:'You have not posted any jobs yet.', stActueel:'Active', stOpgelost:'Resolved', stOpgepakt:'Taken', pjResolve:'Mark resolved', pjReopen:'Reopen', pjDelete:'Delete', pjDelConfirm:'Delete this job? This cannot be undone.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
     prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
@@ -252,7 +253,7 @@ const T = {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
     roleCust:'Klant', rolePro:'Vakman',
     cWelcome:'Welkom', cIntro:'Plaats gratis een aanvraag — vakmensen sturen je vrijblijvend offertes.',
-    cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats / postcode', cZipPh:'bijv. 1011 AB Amsterdam',
+    cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats', cZipPh:'bijv. Amsterdam',
     cPhone:'Telefoon (zien vakmensen pas na ontgrendeling)', cPhonePh:'+31 6 12345678',
     cDesc:'Omschrijving van de klus', cDescPh:'Beschrijf wat er moet gebeuren, omvang, gewenste termijn…',
     cPhotos:'Foto\'s (optioneel, max 3)', cPhotosHint:'Tik of sleep om foto\'s toe te voegen',
@@ -274,7 +275,7 @@ const T = {
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
-    dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
+    dirTitle:'Bedrijven', dirIntro:'Kies soort werk en je plaats — je ziet alleen vakmensen die dat werk doen én binnen wiens straal je valt. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirCat:'Soort werk', dirCity:'Jouw plaats', dirSearch2:'Zoek passende vakmensen', dirPrompt:'Kies soort werk en je plaats om passende vakmensen te zien.', dirNone:'Nog geen passende vakmensen in jouw omgeving.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', pjPhotos:'Foto toevoegen (max 3)', pjMine:'Mijn geplaatste klussen', pjMineEmpty:'Je hebt nog geen klussen geplaatst.', stActueel:'Actueel', stOpgelost:'Opgelost', stOpgepakt:'Opgepakt', pjResolve:'Markeer opgelost', pjReopen:'Heropenen', pjDelete:'Verwijderen', pjDelConfirm:'Deze klus verwijderen? Dit kan niet ongedaan worden gemaakt.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
     prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
@@ -336,25 +337,56 @@ function proJobsCardHtml(){
         <select class="inp" id="pjTiming"><option>${t('tmAsap')}</option><option>${t('tm1')}</option><option>${t('tm13')}</option><option>${t('tmLater')}</option></select>
         <textarea class="inp" id="pjDesc" rows="3" placeholder="${t('cDescPh')}"></textarea>
         <input class="inp" id="pjNote" placeholder="${t('pjNote')}">
-        <button class="btn btn-gold" style="width:100%" onclick="postProJob()">${t('pjPost')}</button>
+        <label style="font-size:.85rem;color:var(--gold-soft);display:block;margin-bottom:4px">${t('pjPhotos')}</label>
+        <div class="photo-up" onclick="document.getElementById('pjFiles').click()"><span>${t('cPhotosHint')}</span></div>
+        <input type="file" id="pjFiles" accept="image/*" multiple hidden onchange="addPjPhotos(this.files)">
+        <div class="photo-thumbs" id="pjThumbs"></div>
+        <button class="btn btn-gold" style="width:100%;margin-top:8px" onclick="postProJob()">${t('pjPost')}</button>
         <div class="note" id="pjPosted">${t('cNote')}</div>
       </div>
       <div><h3 style="font-size:1rem;margin:0 0 8px">${t('pjOpen')}</h3><div id="pjList"></div></div>
-    </div></div>`;
+    </div>
+    <h3 style="font-size:1rem;margin:22px 0 8px">${t('pjMine')}</h3>
+    <div id="pjMine"></div>
+  </div>`;
 }
+let PJPHOTOS=[];
+function addPjPhotos(files){ Array.from(files||[]).forEach(f=>{ if(PJPHOTOS.length>=3)return; if(f.type&&f.type.indexOf('image/')===0) downscale(f,1280,d=>{ if(PJPHOTOS.length<3){PJPHOTOS.push(d);renderPjThumbs2();} }); }); const fi=document.getElementById('pjFiles'); if(fi)fi.value=''; }
+function renderPjThumbs2(){ const el=document.getElementById('pjThumbs'); if(!el)return; el.innerHTML=PJPHOTOS.map((d,i)=>`<div class="th"><img src="${d}" alt=""><button type="button" onclick="rmPjPhoto(${i})">\u00d7</button></div>`).join(''); }
+function rmPjPhoto(i){ PJPHOTOS.splice(i,1); renderPjThumbs2(); }
+function renderPjMine(mine){ const el=document.getElementById('pjMine'); if(!el)return;
+  if(!mine||!mine.length){ el.innerHTML=`<p class="empty">${t('pjMineEmpty')}</p>`; return; }
+  el.innerHTML=mine.map(j=>{
+    const cls=j.status==='opgelost'?'red':(j.status==='taken'?'':'green');
+    const lbl=j.status==='opgelost'?t('stOpgelost'):(j.status==='taken'?t('stOpgepakt'):t('stActueel'));
+    return `<div class="item"><div class="top"><span class="svc">${htmlesc(j.service)}</span>
+      <span class="tag ${cls}">${lbl}</span>
+      ${j.photoCount?`<span class="tag">${j.photoCount} foto${j.photoCount>1?'s':''}</span>`:''}
+      <span class="meta" style="margin-left:auto">${fmtDate(j.createdAt)}</span></div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        ${j.status==='opgelost'
+          ? `<button class="btn btn-ghost btn-sm" onclick="setPjStatus('${j.id}','open')">${t('pjReopen')}</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="setPjStatus('${j.id}','opgelost')">${t('pjResolve')}</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="deletePjJob('${j.id}')">${t('pjDelete')}</button>
+      </div></div>`;
+  }).join('');
+}
+async function setPjStatus(id,status){ try{ await api('/api/projobs/'+id+'/status',{method:'POST',body:JSON.stringify({status})}); }catch(e){} loadProJobs(); }
+async function deletePjJob(id){ if(!confirm(t('pjDelConfirm')))return; try{ await api('/api/projobs/'+id+'/delete',{method:'POST',body:'{}'}); }catch(e){} loadProJobs(); }
 async function loadProJobs(){ const el=document.getElementById('pjList'); if(!el)return;
   let r; try{ r=await api('/api/projobs'); }catch(e){ return; }
-  if(!r.jobs||!r.jobs.length){ el.innerHTML=`<p class="empty">${t('pjEmpty')}</p>`; return; }
-  el.innerHTML=r.jobs.map(j=>`<div class="item"><div class="top"><span class="svc">${htmlesc(j.service)}</span>${j.photoCount?`<span class="tag">${j.photoCount} foto${j.photoCount>1?'s':''}</span>`:''}<span class="meta" style="margin-left:auto">${fmtDate(j.createdAt)}</span></div>
+  if(!r.jobs||!r.jobs.length){ el.innerHTML=`<p class="empty">${t('pjEmpty')}</p>`; }
+  else { el.innerHTML=r.jobs.map(j=>`<div class="item"><div class="top"><span class="svc">${htmlesc(j.service)}</span>${j.photoCount?`<span class="tag">${j.photoCount} foto${j.photoCount>1?'s':''}</span>`:''}<span class="meta" style="margin-left:auto">${fmtDate(j.createdAt)}</span></div>
     <div class="desc">${htmlesc(j.description)}</div>
-    <div class="meta">${htmlesc(j.zip||'')}${j.timing?` · ${htmlesc(j.timing)}`:''} · ${t('pjBy')} ${htmlesc(j.posterName)}</div>
-    ${j.note?`<div class="meta">“${htmlesc(j.note)}”</div>`:''}
-    <div style="margin-top:10px"><button class="btn btn-gold btn-sm" onclick="takeProJob('${j.id}',this)">${t('pjTake')}</button></div></div>`).join('');
+    <div class="meta">${htmlesc(j.zip||'')}${j.timing?` \u00b7 ${htmlesc(j.timing)}`:''} \u00b7 ${t('pjBy')} ${htmlesc(j.posterName)}</div>
+    ${j.note?`<div class="meta">\u201c${htmlesc(j.note)}\u201d</div>`:''}
+    <div style="margin-top:10px"><button class="btn btn-gold btn-sm" onclick="takeProJob('${j.id}',this)">${t('pjTake')}</button></div></div>`).join(''); }
+  renderPjMine(r.mine||[]);
 }
-async function postProJob(){ const body={service:document.getElementById('pjService').value,zip:document.getElementById('pjZip').value,timing:document.getElementById('pjTiming').value,description:document.getElementById('pjDesc').value,note:document.getElementById('pjNote').value};
+async function postProJob(){ const body={service:document.getElementById('pjService').value,zip:document.getElementById('pjZip').value,timing:document.getElementById('pjTiming').value,description:document.getElementById('pjDesc').value,note:document.getElementById('pjNote').value,photos:PJPHOTOS};
   if(!body.description.trim()){document.getElementById('pjDesc').focus();return;}
   const r=await api('/api/projobs',{method:'POST',body:JSON.stringify(body)});
-  if(r.job){ document.getElementById('pjPosted').classList.add('show'); document.getElementById('pjDesc').value='';document.getElementById('pjZip').value='';document.getElementById('pjNote').value=''; loadProJobs(); }
+  if(r.job){ document.getElementById('pjPosted').classList.add('show'); document.getElementById('pjDesc').value='';document.getElementById('pjZip').value='';document.getElementById('pjNote').value=''; PJPHOTOS=[]; renderPjThumbs2(); loadProJobs(); }
 }
 async function takeProJob(id,btn){ btn.disabled=true; btn.textContent=t('busy');
   let r; try{ r=await api('/api/projobs/'+id+'/take',{method:'POST',body:'{}'}); }catch(e){}
@@ -534,18 +566,25 @@ function stopChatPoll(){ if(chatTimer)clearInterval(chatTimer); chatTimer=null; 
 function prosCardHtml(){
   return `<div class="card" style="margin-top:22px"><h2>${t('dirTitle')}</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">${t('dirIntro')}</p>
-    <div id="prosList"></div></div>`;
+    <div class="grid two">
+      <div><label>${t('dirCat')}</label><select class="inp" id="mCat">${cats().map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label>${t('dirCity')}</label><input class="inp" id="mCity" placeholder="bijv. Amsterdam" onkeydown="if(event.key==='Enter')matchPros()"></div>
+    </div>
+    <button class="btn btn-gold" style="width:100%" onclick="matchPros()">${t('dirSearch2')}</button>
+    <div id="prosList" style="margin-top:14px"><p class="empty">${t('dirPrompt')}</p></div></div>`;
 }
-const TIERLBL_={goud:'Goud',zilver:'Zilver',brons:'Brons'};
-async function loadPros(){ const el=document.getElementById('prosList'); if(!el)return;
-  let r; try{ r=await api('/api/pros'); }catch(e){ return; }
-  if(!r.pros||!r.pros.length){ el.innerHTML=`<p class="empty">${t('dirEmpty')}</p>`; return; }
+async function matchPros(){
+  const category=document.getElementById('mCat').value, city=(document.getElementById('mCity').value||'').trim();
+  const el=document.getElementById('prosList'); if(!el)return;
+  if(!city){ document.getElementById('mCity').focus(); return; }
+  el.innerHTML=`<p class="empty">\u2026</p>`;
+  let r; try{ r=await api(`/api/match?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`); }catch(e){ el.innerHTML=`<p class="empty">${t('dirNone')}</p>`; return; }
+  if(!r.pros||!r.pros.length){ el.innerHTML=`<p class="empty">${t('dirNone')}</p>`; return; }
   el.innerHTML=r.pros.map(p=>`<div class="item"><div class="top">
-      <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span>${p.kvkVerified?' <span title="KvK geverifieerd" style="color:#7fd6a0">✓</span>':''}</span>
+      <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span>${p.kvkVerified?' <span title="KvK geverifieerd" style="color:#7fd6a0">\u2713</span>':''}</span>
       ${p.rating.count?`<span class="stars-view" style="font-size:.8rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:`<span class="meta">${t('rvNone')}</span>`}
       <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf.html?id=${p.id}">${t('dirView')}</a></div>
-      <div class="meta">${htmlesc(p.spec||'')}${p.city?' · '+htmlesc(p.city):''}</div>
-      ${(p.workCategories&&p.workCategories.length)?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${p.workCategories.slice(0,5).map(c=>`<span class="tag">${htmlesc(c)}</span>`).join('')}</div>`:''}
+      <div class="meta">${htmlesc(p.spec||'')}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}</div>
     </div>`).join('');
 }
 function supportCardHtml(){
@@ -606,7 +645,7 @@ function renderCustomer(){
     ${prosCardHtml()}
     ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  reqIntent='opdracht'; AI_MODE='customer'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads(); loadPros();
+  reqIntent='opdracht'; AI_MODE='customer'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads();
 }
 let DPHOTOS=[];
 function addDPhotos(files){
@@ -803,6 +842,7 @@ async function saveProfile(){
 function areaHtml(){
   const u=ME; const sel=new Set(u.workCategories||[]);
   return `<div class="card"><h2>${t('arTitle')}</h2>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${tierBadge((ME.tier||{}).key||'brons',38)}<span class="meta">${t('acTier')}: <b style="color:var(--gold-bright)">${(ME.tier||{}).label||'Brons'}</b> \u00b7 +${(ME.tier||{}).bonus||1} lead/mnd</span></div>
     <label>${t('prCity')}</label>
     <input class="inp" id="arCity" value="${htmlesc(u.city||'')}" placeholder="bijv. Amsterdam" onblur="updateAreaMap()" onkeydown="if(event.key==='Enter'){event.preventDefault();updateAreaMap();}">
     <p class="hint">${t('arNote')}</p>
