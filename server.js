@@ -110,6 +110,7 @@ async function publicUser(u) {
     rest.bio = u.bio || ''; rest.website = u.website || ''; rest.logo = u.logo || '';
     rest.photos = u.photos || []; rest.workRadius = u.workRadius || 0; rest.workZip = u.workZip || '';
     rest.workCategories = u.workCategories || [];
+    rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -378,6 +379,7 @@ app.post('/api/profile', requireRole('pro'), async (req, res) => {
     if (b.city !== undefined) patch.city = String(b.city).slice(0, 80);
     if (b.spec !== undefined) patch.spec = String(b.spec).slice(0, 80);
     if (b.workZip !== undefined) patch.workZip = String(b.workZip).slice(0, 20);
+    if (b.kvk !== undefined) patch.kvk = String(b.kvk).replace(/\D/g, '').slice(0, 8);
     if (b.workRadius !== undefined) patch.workRadius = Math.min(500, Math.max(0, parseInt(b.workRadius, 10) || 0));
     if (Array.isArray(b.workCategories)) patch.workCategories = b.workCategories.slice(0, 41).map(x => String(x).slice(0, 60));
     if (Array.isArray(b.photos)) patch.photos = cleanPhotos(b.photos, 6);
@@ -394,9 +396,27 @@ async function publicProfile(u) {
     id: u.id, company: u.company || u.name, spec: u.spec || '', city: u.city || '',
     bio: u.bio || '', website: u.website || '', logo: u.logo || '', photos: u.photos || [],
     workCategories: u.workCategories || [], workRadius: u.workRadius || 0,
+    kvk: u.kvk || '', kvkVerified: !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk), kvkName: u.kvkName || '',
     rating, tier: tierInfo(rating), createdAt: u.createdAt || 0,
   };
 }
+// KvK-controle: haalt bedrijfsgegevens op en verifieert registratie (vereist KVK_API_KEY).
+app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
+  try {
+    const num = String(req.params.number).replace(/\D/g, '');
+    if (num.length !== 8) return res.json({ ok: false, error: 'invalid' });
+    if (!process.env.KVK_API_KEY) return res.json({ ok: false, configured: false });
+    const r = await fetch(`https://api.kvk.nl/api/v2/zoeken?kvkNummer=${num}`, { headers: { apikey: process.env.KVK_API_KEY } });
+    if (!r.ok) return res.json({ ok: false, error: 'lookup', status: r.status });
+    const d = await r.json();
+    const item = (d.resultaten || [])[0];
+    if (!item) return res.json({ ok: false, error: 'not_found' });
+    const name = item.naam || '';
+    const city = item.plaats || (item.adres && item.adres.binnenlandsAdres && item.adres.binnenlandsAdres.plaats) || '';
+    await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name });
+    res.json({ ok: true, kvk: num, name, city, type: item.type || '' });
+  } catch (e) { console.error('KvK-fout:', e.message); res.json({ ok: false, error: 'server' }); }
+});
 app.get('/api/pros', async (req, res) => {
   try {
     const pros = await store.listPros();
@@ -778,29 +798,29 @@ function systemPrompt(lang, user, mode) {
   const cats = lang === 'en' ? CATS_EN : CATS_NL;
   const who = user
     ? (lang === 'en'
-        ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}.`
-        : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}.`)
+        ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`
+        : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`)
     : '';
   if (lang === 'en') {
-    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople. ${who}
-Specialisations (41): ${cats}.
-${mode === 'customer'
-  ? 'Your goal is to guide the customer smoothly: sharpen the job (scope, location, desired timing, indicative budget), pick the right trade, and write a clear job description that tradesmen understand right away. When the description is complete, summarise it briefly so the customer can paste it into the form.'
-  : 'Help choose the right trade, describe the job and explain how Budomatch works (customers post a request for free; tradesmen send quotes).'}
-Answer in English, short, warm and concrete. Do not give fixed prices — tradesmen send individual quotes.`;
+    const goal = mode === 'customer'
+      ? 'Your goal is to guide the customer: sharpen the job (scope, location, timing, indicative budget), pick the right trade, and write a clear job description. When complete, summarise it so the customer can paste it into the form.'
+      : mode === 'pro'
+      ? 'You assist the TRADESMAN (professional). Help them win and handle jobs: draft a professional, friendly reply or quote text to a (potential) customer based on the request, suggest the right questions to ask the customer, and give practical tips. When drafting a reply, write it ready-to-send in the customer\'s language, concise and concrete. Never invent prices or facts — leave placeholders like [price] where needed.'
+      : 'Help choose the right trade, describe the job and explain how Budomatch works.';
+    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople. ${who}\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. Do not invent fixed prices.`;
   }
-  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Polen koppelt aan betrouwbare, lokale bouwvakmensen. ${who}
-Vakgebieden (41): ${cats}.
-${mode === 'customer'
-  ? 'Je doel is de klant soepel door het traject loodsen: de klus aanscherpen (omvang, locatie, gewenste termijn, indicatief budget), het juiste vakgebied kiezen, en een heldere klusomschrijving opstellen die vakmensen meteen begrijpen. Als de omschrijving compleet is, vat je die kort samen zodat de klant hem in het formulier kan plakken.'
-  : 'Help het juiste vakgebied kiezen, de klus beschrijven en leg uit hoe Budomatch werkt (klant plaatst gratis een aanvraag; vakmensen sturen offertes).'}
-Antwoord in het Nederlands, kort, warm en concreet. Geef geen vaste prijzen — vakmensen sturen individuele offertes.`;
+  const goal = mode === 'customer'
+    ? 'Je doel is de klant soepel door het traject loodsen: de klus aanscherpen (omvang, locatie, gewenste termijn, indicatief budget), het juiste vakgebied kiezen, en een heldere klusomschrijving opstellen. Als die compleet is, vat je die kort samen zodat de klant hem in het formulier kan plakken.'
+    : mode === 'pro'
+    ? 'Je ondersteunt de VAKMAN (professional). Help hem opdrachten binnenhalen en afhandelen: stel een professionele, vriendelijke reactie of offertetekst op aan een (potentiële) klant op basis van de aanvraag, bedenk de juiste vragen om aan de klant te stellen, en geef praktische tips. Als je een reactie opstelt, schrijf die kant-en-klaar zodat de vakman hem direct kan versturen — in de taal van de klant, beknopt en concreet. Verzin nooit prijzen of feiten; gebruik desnoods een plaatshouder als [prijs].'
+    : 'Help het juiste vakgebied kiezen, de klus beschrijven en leg uit hoe Budomatch werkt.';
+  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen. ${who}\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Verzin geen vaste prijzen.`;
 }
 
 app.post('/api/chat', async (req, res) => {
   try {
     const lang = req.body.lang === 'en' ? 'en' : 'nl';
-    const mode = req.body.mode === 'customer' ? 'customer' : 'site';
+    const mode = ['customer', 'pro'].includes(req.body.mode) ? req.body.mode : 'site';
     const user = await getUser(req);
     const messages = (Array.isArray(req.body.messages) ? req.body.messages : [])
       .slice(-20)

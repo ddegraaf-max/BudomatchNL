@@ -115,3 +115,9 @@ Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf.html?id=...`) met
 
 ## PDF-factuur (Poolse verkoper, zonder btw)
 Elke betaalde ontgrendeling levert een **downloadbare PDF-factuur** op (`GET /api/invoice/:claimId`), via de knop **Factuur (PDF)** onder Account → facturatie. De factuur wordt uitgegeven door de Poolse onderneming **Budomatch (NIP 7010869430, REGON 381430120, Białka, Polska)**, is tweetalig (PL/NL), **zonder btw** met de vermelding *odwrotne obciążenie / btw verlegd (reverse charge)*, en gebruikt een Unicode-lettertype (`assets/DejaVuSans.ttf`) zodat Poolse tekens correct weergegeven worden. Verkopergegevens zijn overschrijfbaar via env (`SELLER_NAME`, `SELLER_NIP`, enz.).
+
+## Bedrijfsprofiel + KvK-controle
+Het bedrijfsprofiel is heringedeeld (logo, reviews, tweekoloms velden). Vakmensen kunnen hun **KvK-nummer** invoeren en op **Ophalen & controleren** klikken: de server haalt via de KvK-API de officiele bedrijfsnaam/plaats op en markeert het profiel als **geregistreerd/geverifieerd** (vinkje op profiel, in de bedrijvenlijst en op de openbare pagina). Vereist `KVK_API_KEY`; zonder sleutel is handmatig invullen mogelijk. Alle pagina's staan op `lang=nl` met `notranslate` zodat browsers de eigen NL/EN-teksten niet meer automatisch (verkeerd) vertalen.
+
+## AI-assistent voor de vakman
+De AI-assistent in het vakman-portaal draait nu in **vakman-modus**: hij helpt opdrachten binnenhalen en afhandelen — een professionele **reactie of offertetekst aan de klant** opstellen, bedenken welke vragen je moet stellen, en tips geven. In elk klantgesprek (Berichten) staat een knop **"Reactie voorstellen (AI)"** die op basis van de klus en het gesprek een kant-en-klare reactie in het invoerveld zet, die de vakman kan aanpassen en versturen. (Vereist `ANTHROPIC_API_KEY`.) De klant-assistent blijft de klant helpen met een heldere klusomschrijving.

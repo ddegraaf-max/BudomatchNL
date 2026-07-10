@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bedrijfsprofiel — Budomatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,6 +86,7 @@ function render(d){
         <h1>${esc(p.company)}</h1>
         <div class="meta">${esc(p.spec||'')}${p.city?' · '+esc(p.city):''}</div>
         <div class="stars" style="margin-top:6px">${stars(p.rating.avg,p.rating.count)}</div>
+        ${p.kvkVerified?`<div style="color:#7fd6a0;font-size:.85rem;margin-top:5px">✓ Geregistreerd bedrijf (KvK${p.kvk?' '+esc(p.kvk):''})</div>`:''}
         <div class="tags">${cats.slice(0,8).map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>
       </div>
       <div class="badge-wrap">${tierBadge(tier.key,76)}<span class="badge-label">${TIERLBL[tier.key]||tier.label}</span>

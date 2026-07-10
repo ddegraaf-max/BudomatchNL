@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="nl" translate="no">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Budomatch — Panel</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%2313110B'/%3E%3Cpath d='M24 9 L39 24 L33 24 L24 15 L15 24 L9 24 Z' fill='%23E3C158'/%3E%3C/svg%3E">
@@ -160,6 +161,17 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .cat-pick label.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.08)}
 .cat-pick input{display:none}
 .prof-logo{width:96px;height:96px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:var(--panel)}
+
+.pf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.pf-logo-wrap{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.pf-head-meta{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.verified-badge{background:rgba(63,166,106,.14);border:1px solid rgba(63,166,106,.45);color:#bfe6cf;border-radius:20px;padding:5px 12px;font-size:.82rem;font-weight:600}
+.kvk-box{background:var(--bg-2,var(--panel));border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+.kvk-row{display:flex;gap:8px;align-items:center}
+.kvk-row .inp{margin:0}
+.kvk-status{font-size:.85rem;margin-top:8px;min-height:18px;color:var(--muted)}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:600px){.pf-grid{grid-template-columns:1fr}}
 </style>
 
 </head>
@@ -214,6 +226,7 @@ const T = {
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
     dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
+    prCompany:'Company name', prSpec:'Main specialism', prCity:'City / region', prPhone:'Phone', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -257,6 +270,7 @@ const T = {
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
     dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
+    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats / regio', prPhone:'Telefoon', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -364,6 +378,7 @@ function messagesCardHtml(){
       </div>
       <div class="chat-compose">
         <button id="quoteBtn" class="chat-quote" onclick="toggleQuoteForm()" style="display:none">+ ${t('qpNew')}</button>
+        <button id="draftBtn" class="chat-ico" onclick="draftReply(this)" title="${t('aiDraft')}" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/><path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg></button>
         <button class="chat-ico" onclick="toggleApptForm()" title="${t('apTitle')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>
         <button class="chat-ico" onclick="document.getElementById('chatFile').click()" title="${t('msgPhoto')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10 18"/></svg></button>
         <input type="file" id="chatFile" accept="image/*" hidden onchange="sendPhoto(this.files)">
@@ -417,6 +432,7 @@ async function loadMessages(scroll){ if(!CT)return;
     const cr=document.getElementById('chatRating'); if(cr)cr.innerHTML=(r.rating&&r.rating.count)?starsHtml(r.rating.avg,r.rating.count):'';
     const rb=document.getElementById('revBtn'); if(rb)rb.style.display=(r.me==='customer'&&!r.reviewed)?'inline-block':'none';
     const qb=document.getElementById('quoteBtn'); if(qb)qb.style.display=(r.me==='pro'&&r.kind==='request')?'inline-flex':'none';
+    const db=document.getElementById('draftBtn'); if(db)db.style.display=(r.me==='pro')?'inline-flex':'none';
     renderMessages(r.messages||[], r.me, r.meId, scroll);
   }catch(e){}
 }
@@ -496,6 +512,18 @@ async function submitReview(){ if(!CT||!revStars)return; const comment=(document
   const r=await api('/api/reviews',{method:'POST',body:JSON.stringify({proId:CT.pid,requestId:CT.rid,rating:revStars,comment})});
   if(r&&r.ok){ const p=document.getElementById('revPanel'); if(p)p.style.display='none'; const b=document.getElementById('revBtn'); if(b)b.style.display='none'; loadMessages(true); }
 }
+async function draftReply(btn){ if(!CT)return;
+  const th=THREADS.find(x=>x.requestId===CT.rid&&x.proId===CT.pid)||{};
+  const old=btn.innerHTML; btn.disabled=true; btn.textContent='…';
+  let msgs=[]; try{ const r=await api(`/api/threads/${CT.rid}/${CT.pid}/messages`); msgs=r.messages||[]; }catch(e){}
+  const transcript=msgs.filter(m=>m.type==='text').map(m=>`${m.fromRole==='pro'?'Vakman':'Klant'}: ${m.text}`).join('\n')||'(nog geen berichten)';
+  const prompt=`Ik ben de vakman. Stel een korte, professionele en vriendelijke reactie op aan de klant voor deze klus: "${th.service||''}". Gesprek tot nu toe:\n${transcript}\nSchrijf ALLEEN de reactie die ik direct kan versturen, in het Nederlands, zonder verzonnen prijzen (gebruik desnoods [prijs]).`;
+  try{ const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],lang:LANG,mode:'pro'})});
+    const d=await r.json(); const reply=(d.reply||'').trim();
+    const inp=document.getElementById('chatInput'); if(inp&&reply){ inp.value=reply; inp.focus(); }
+  }catch(e){}
+  btn.disabled=false; btn.innerHTML=old;
+}
 function startChatPoll(){ stopChatPoll(); chatTimer=setInterval(()=>loadMessages(false),4000); }
 function stopChatPoll(){ if(chatTimer)clearInterval(chatTimer); chatTimer=null; }
 function prosCardHtml(){
@@ -508,7 +536,7 @@ async function loadPros(){ const el=document.getElementById('prosList'); if(!el)
   let r; try{ r=await api('/api/pros'); }catch(e){ return; }
   if(!r.pros||!r.pros.length){ el.innerHTML=`<p class="empty">${t('dirEmpty')}</p>`; return; }
   el.innerHTML=r.pros.map(p=>`<div class="item"><div class="top">
-      <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span></span>
+      <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span>${p.kvkVerified?' <span title="KvK geverifieerd" style="color:#7fd6a0">✓</span>':''}</span>
       ${p.rating.count?`<span class="stars-view" style="font-size:.8rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:`<span class="meta">${t('rvNone')}</span>`}
       <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf.html?id=${p.id}">${t('dirView')}</a></div>
       <div class="meta">${htmlesc(p.spec||'')}${p.city?' · '+htmlesc(p.city):''}</div>
@@ -573,7 +601,7 @@ function renderCustomer(){
     ${prosCardHtml()}
     ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  reqIntent='opdracht'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads(); loadPros();
+  reqIntent='opdracht'; AI_MODE='customer'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads(); loadPros();
 }
 let DPHOTOS=[];
 function addDPhotos(files){
@@ -618,21 +646,22 @@ async function loadMyRequests(){
       <div class="desc">${q.description}</div><div class="meta">${q.zip||''}</div></div>`).join('');
 }
 let aiHist = [];
+let AI_MODE='customer';
 function aiMsg(role,text){
   const d=document.createElement('div'); d.className='msg '+(role==='me'?'me':'bot'); d.textContent=text;
   const wrap=document.createElement('div'); wrap.appendChild(d);
-  if(role==='bot'){ const b=document.createElement('button'); b.className='useit'; b.textContent=t('aiUse');
+  if(role==='bot' && AI_MODE==='customer'){ const b=document.createElement('button'); b.className='useit'; b.textContent=t('aiUse');
     b.onclick=()=>{ const ta=$('#cDesc'); if(ta){ta.value=text;ta.scrollIntoView({behavior:'smooth',block:'center'});} }; wrap.appendChild(b); }
   $('#aiBody').appendChild(wrap); $('#aiBody').scrollTop=$('#aiBody').scrollHeight;
 }
-function aiGreet(){ aiMsg('bot', t('aiGreet')); }
+function aiGreet(){ aiMsg('bot', AI_MODE==='pro'?t('aiGreetPro'):t('aiGreet')); }
 async function aiSend(){
   const inp=$('#aiInput'); const x=inp.value.trim(); if(!x)return; inp.value='';
   aiMsg('me',x); aiHist.push({role:'user',content:x});
   const typ=document.createElement('div'); typ.className='msg bot'; typ.innerHTML='<span class="typing"><span></span><span></span><span></span></span>';
   $('#aiBody').appendChild(typ); $('#aiBody').scrollTop=$('#aiBody').scrollHeight;
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:aiHist,lang:LANG,mode:'customer'})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:aiHist,lang:LANG,mode:AI_MODE})});
     const d=await r.json(); typ.remove();
     const reply=d.reply||t('aiErr'); aiMsg('bot',reply); aiHist.push({role:'assistant',content:reply});
   }catch(e){ typ.remove(); aiMsg('bot',t('aiErr')); }
@@ -669,7 +698,7 @@ function showProTab(k){
   else if(k==='profiel'){ el.innerHTML=profileHtml(); renderPfThumbs(); }
   else if(k==='werkgebied'){ el.innerHTML=areaHtml(); }
   else if(k==='help'){ el.innerHTML=helpHtml(); }
-  else if(k==='ai'){ el.innerHTML=`<div class="card assistant"><h2>${t('tabAI')}</h2><p style="color:var(--muted);font-size:.88rem;margin-bottom:10px">${t('aiIntro')}</p><div class="body" id="aiBody"></div><div class="crow"><input id="aiInput" placeholder="${t('aiPh')}" onkeydown="if(event.key==='Enter')aiSend()"><button onclick="aiSend()" aria-label="Send"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div></div>`; aiHist=[]; aiGreet(); }
+  else if(k==='ai'){ el.innerHTML=`<div class="card assistant"><h2>${t('tabAI')}</h2><p style="color:var(--muted);font-size:.88rem;margin-bottom:10px">${t('aiIntroPro')}</p><div class="body" id="aiBody"></div><div class="crow"><input id="aiInput" placeholder="${t('aiPhPro')}" onkeydown="if(event.key==='Enter')aiSend()"><button onclick="aiSend()" aria-label="Send"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div></div>`; AI_MODE='pro'; aiHist=[]; aiGreet(); }
   else if(k==='account'){ el.innerHTML=accountHtml(); loadBilling(); }
 }
 function renderKpi(r){
@@ -711,32 +740,57 @@ function renderLeadList(){
 function downscale(f,max,cb){ const r=new FileReader(); r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height; if(w>max||h>max){const sc=Math.min(max/w,max/h);w=Math.round(w*sc);h=Math.round(h*sc);} const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.72));};img.src=r.result;}; r.readAsDataURL(f); }
 function profileHtml(){
   const u=ME; PROFILE_PHOTOS=(u.photos||[]).slice(); PROFILE_LOGO=u.logo||'';
+  const verified=u.kvkVerified;
   return `<div class="card"><h2>${t('tabProfile')}</h2>
-    <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-      <img class="prof-logo" id="profLogo" src="${u.logo||''}" alt="" ${u.logo?'':'style="visibility:hidden"'}>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logoFile').click()">${t('prLogo')}</button>
-      <input type="file" id="logoFile" accept="image/*" hidden onchange="setProfileLogo(this.files)">
-      <div style="margin-left:auto" class="stars-view">${ME.rating&&ME.rating.count?starsHtml(ME.rating.avg,ME.rating.count):t('rvNone')}</div>
+    <div class="pf-head">
+      <div class="pf-logo-wrap">
+        <img class="prof-logo" id="profLogo" src="${u.logo||''}" alt="" ${u.logo?'':'style="visibility:hidden"'}>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logoFile').click()">${t('prLogo')}</button>
+        <input type="file" id="logoFile" accept="image/*" hidden onchange="setProfileLogo(this.files)">
+      </div>
+      <div class="pf-head-meta">
+        <div class="stars-view">${ME.rating&&ME.rating.count?starsHtml(ME.rating.avg,ME.rating.count):t('rvNone')}</div>
+        ${verified?`<div class="verified-badge">✓ ${t('kvkVerified')}</div>`:''}
+      </div>
     </div>
-    <label>${t('authCompany')}</label><input class="inp" id="pfCompany" value="${htmlesc(u.company||'')}">
-    <label>${t('authSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}">
-    <label>${t('authCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}">
-    <label>${t('authPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}">
-    <label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}">
+    <div class="kvk-box">
+      <label>${t('kvkNum')}</label>
+      <div class="kvk-row"><input class="inp" id="pfKvk" value="${htmlesc(u.kvk||'')}" placeholder="12345678" inputmode="numeric"><button class="btn btn-gold btn-sm" onclick="checkKvk()">${t('kvkCheck')}</button></div>
+      <div class="kvk-status" id="kvkStatus">${verified?('✓ '+t('kvkVerified')+(u.kvkName?' — '+htmlesc(u.kvkName):'')):''}</div>
+    </div>
+    <div class="pf-grid">
+      <div><label>${t('prCompany')}</label><input class="inp" id="pfCompany" value="${htmlesc(u.company||'')}"></div>
+      <div><label>${t('prSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}"></div>
+      <div><label>${t('prCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}"></div>
+      <div><label>${t('prPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}"></div>
+      <div style="grid-column:1/-1"><label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}"></div>
+    </div>
     <label>${t('prBio')}</label><textarea class="inp" id="pfBio" rows="4">${htmlesc(u.bio||'')}</textarea>
     <label>${t('prPhotos')}</label>
     <div class="photo-up" onclick="document.getElementById('pfFiles').click()"><span>${t('cPhotosHint')}</span></div>
     <input type="file" id="pfFiles" accept="image/*" multiple hidden onchange="addProfilePhotos(this.files)">
     <div class="photo-thumbs" id="pfThumbs"></div>
-    <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="saveProfile()">${t('save')}</button>
+    <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="saveProfile()">${t('save')}</button>
     <div class="note" id="pfNote">${t('saved')}</div></div>`;
+}
+async function checkKvk(){
+  const num=(document.getElementById('pfKvk').value||'').replace(/\D/g,''); const st=document.getElementById('kvkStatus');
+  if(num.length!==8){ st.textContent=t('kvkInvalid'); st.style.color='var(--muted)'; return; }
+  st.textContent='…'; st.style.color='var(--muted)';
+  let r; try{ r=await api('/api/kvk/'+num); }catch(e){ st.textContent=t('kvkNotFound'); return; }
+  if(r.ok){ st.innerHTML='✓ '+t('kvkVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
+    if(r.name && !document.getElementById('pfCompany').value) document.getElementById('pfCompany').value=r.name;
+    if(r.city && !document.getElementById('pfCity').value) document.getElementById('pfCity').value=r.city;
+    if(ME) ME.kvkVerified=true;
+  } else if(r.configured===false){ st.textContent=t('kvkNotSet'); st.style.color='var(--muted)'; }
+  else { st.textContent=t('kvkNotFound'); st.style.color='#e2708a'; }
 }
 function setProfileLogo(files){ const f=(files||[])[0]; if(!f)return; downscale(f,256,d=>{ PROFILE_LOGO=d; const el=$('#profLogo'); if(el){el.src=d;el.style.visibility='visible';} }); }
 function addProfilePhotos(files){ Array.from(files||[]).forEach(f=>{ if(PROFILE_PHOTOS.length>=6)return; if(f.type&&f.type.indexOf('image/')===0) downscale(f,1280,d=>{ if(PROFILE_PHOTOS.length<6){PROFILE_PHOTOS.push(d);renderPfThumbs();} }); }); const fi=$('#pfFiles'); if(fi)fi.value=''; }
 function renderPfThumbs(){ const el=$('#pfThumbs'); if(!el)return; el.innerHTML=PROFILE_PHOTOS.map((d,i)=>`<div class="th"><img src="${d}" alt=""><button type="button" onclick="rmPfPhoto(${i})">×</button></div>`).join(''); }
 function rmPfPhoto(i){ PROFILE_PHOTOS.splice(i,1); renderPfThumbs(); }
 async function saveProfile(){
-  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,website:$('#pfWebsite').value,bio:$('#pfBio').value,photos:PROFILE_PHOTOS,logo:PROFILE_LOGO};
+  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,website:$('#pfWebsite').value,bio:$('#pfBio').value,kvk:(document.getElementById('pfKvk')||{}).value||'',photos:PROFILE_PHOTOS,logo:PROFILE_LOGO};
   const r=await api('/api/profile',{method:'POST',body:JSON.stringify(body)});
   if(r.user){ ME=r.user; const n=$('#pfNote'); if(n)n.classList.add('show'); applyChrome(); }
 }
@@ -840,7 +894,7 @@ function showReceipt(c){
     ME.nip?`<p>Btw-nummer: ${ME.nip}</p>`:'',
     `<p>${ME.email}</p>`
   ].join('');
-  w.document.write(`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Factuur ${no}</title>
+  w.document.write(`<!DOCTYPE html><html lang="nl" translate="no"><head><meta charset="UTF-8"><title>Factuur ${no}</title>
   <style>
   body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;max-width:720px;margin:28px auto;padding:0 26px;line-height:1.55;font-size:14px}
   h1{font-size:1.5rem;margin:0 0 2px}
