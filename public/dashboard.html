@@ -213,7 +213,7 @@ const T = {
     hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
-    dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request',
+    dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -256,7 +256,7 @@ const T = {
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
-    dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou',
+    dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -821,7 +821,8 @@ async function loadBilling(){
       ${c.free?`<span class="tag green">${t('free')}</span>`:`<span class="tag">${money(c.gross)} ${t('incl')}</span>`}
       <span class="meta" style="margin-left:auto">${fmtDate(c.createdAt)}</span></div>
       ${c.free?'':`<div class="meta">${t('exclVat').replace('{net}',money(c.net)).replace('{vat}',money(c.vat))}</div>
-      <button class="recpt" onclick='showReceipt(${JSON.stringify(c).replace(/'/g,"&#39;")})'>${t('receipt')}</button>`}
+      <button class="recpt" onclick='showReceipt(${JSON.stringify(c).replace(/'/g,"&#39;")})'>${t('receipt')}</button>
+      <a class="recpt" href="/api/invoice/${c.id}" style="text-decoration:none">${t('invPdf')}</a>`}
     </div>`).join('') : `<p class="empty">${t('bNone')}</p>`;
   el.innerHTML = `<div class="kpi">
       <div class="k"><div class="n">${r.creditsLeft}/${r.freeLeads}</div><div class="l">${t('bFree')}</div></div>

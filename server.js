@@ -8,6 +8,18 @@ const path = require('path');
 const store = process.env.DATABASE_URL ? require('./lib/db') : require('./lib/store');
 console.log('[store]', store._pg ? 'PostgreSQL (DATABASE_URL)' : 'JSON-bestand (lib/store)');
 const A = require('./lib/auth');
+const PDFDocument = require('pdfkit');
+const INVOICE_FONT = path.join(__dirname, 'assets', 'DejaVuSans.ttf');
+// Verkoper = de Poolse onderneming Budomatch (factuur zonder btw / reverse charge)
+const SELLER = {
+  name: process.env.SELLER_NAME || 'Budomatch DANIËL DE GRAAF',
+  addr: process.env.SELLER_ADDR || 'Białka 15',
+  zipcity: process.env.SELLER_ZIPCITY || '09-550 Białka',
+  country: process.env.SELLER_COUNTRY || 'Polska',
+  nip: process.env.SELLER_NIP || '7010869430',
+  regon: process.env.SELLER_REGON || '381430120',
+  email: process.env.SELLER_EMAIL || 'info@budomatch.pl',
+};
 
 const PORT = process.env.PORT || 3000;
 const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
@@ -340,7 +352,7 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
   try {
     const raw = (await store.claimsByPro(req.user.id)).sort((a, b) => b.createdAt - a.createdAt);
     const claims = await Promise.all(raw.map(async c => ({
-      createdAt: c.createdAt, free: c.free, gross: c.amountGross, net: c.amountNet, vat: c.amountVat,
+      id: c.id, createdAt: c.createdAt, free: c.free, gross: c.amountGross, net: c.amountNet, vat: c.amountVat,
       invoiceNo: c.invoiceNo || null, invoiceDate: c.invoiceDate || c.createdAt, method: c.method || 'online',
       service: ((await store.findRequest(c.requestId)) || {}).service || '',
     })));
@@ -402,6 +414,76 @@ app.get('/api/pros/:id', async (req, res) => {
     }));
     res.json({ pro: await publicProfile(u), reviews: rv });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- PDF-factuur (Poolse verkoper, zonder btw / reverse charge) ----------------
+app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {
+  try {
+    const c = (await store.claimsByPro(req.user.id)).find(x => x.id === req.params.id);
+    if (!c) return res.status(404).send('Factuur niet gevonden');
+    if (c.free || !c.invoiceNo) return res.status(400).send('Geen factuur voor een gratis lead');
+    const r = (await store.findRequest(c.requestId)) || {};
+    const b = req.user;
+    const eur = n => '\u20ac ' + Number(n || 0).toFixed(2).replace('.', ',');
+    const dt = ms => { const d = new Date(ms); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`; };
+    const date = dt(c.invoiceDate || c.createdAt);
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="factuur-${c.invoiceNo}.pdf"`);
+    doc.pipe(res);
+    doc.font(INVOICE_FONT);
+
+    doc.fontSize(22).fillColor('#1a1a1a').text('FAKTURA / FACTUUR', 50, 50);
+    doc.fontSize(10).fillColor('#555');
+    doc.text(`Nr / Numer: ${c.invoiceNo}`, 300, 55, { width: 245, align: 'right' });
+    doc.text(`Datum / Data: ${date}`, 300, 70, { width: 245, align: 'right' });
+
+    const y = 115;
+    doc.fontSize(11).fillColor('#111').text('Sprzedawca / Verkoper', 50, y);
+    doc.fontSize(9.5).fillColor('#333')
+      .text(SELLER.name, 50, y + 17, { width: 240 })
+      .text(SELLER.addr, 50, y + 31)
+      .text(`${SELLER.zipcity}, ${SELLER.country}`, 50, y + 45)
+      .text(`NIP: ${SELLER.nip}   REGON: ${SELLER.regon}`, 50, y + 59)
+      .text(SELLER.email, 50, y + 73);
+    doc.fontSize(11).fillColor('#111').text('Nabywca / Afnemer', 320, y);
+    doc.fontSize(9.5).fillColor('#333')
+      .text(b.company || b.name, 320, y + 17, { width: 225 })
+      .text(b.address || '', 320, y + 31, { width: 225 })
+      .text([b.zip, b.city].filter(Boolean).join(' '), 320, y + 45)
+      .text(b.nip ? `BTW/NIP: ${b.nip}` : '', 320, y + 59)
+      .text(b.email || '', 320, y + 73);
+
+    let ty = y + 110;
+    doc.moveTo(50, ty).lineTo(545, ty).strokeColor('#ccc').stroke();
+    doc.fontSize(9).fillColor('#666')
+      .text('Omschrijving / Opis', 55, ty + 7)
+      .text('Aantal', 320, ty + 7)
+      .text('Bedrag', 425, ty + 7, { width: 115, align: 'right' });
+    ty += 26;
+    doc.fontSize(10).fillColor('#111')
+      .text(`Budomatch lead: ${r.service || 'aanvraag'} \u2014 ontgrendeling / odblokowanie`, 55, ty, { width: 250 })
+      .text('1', 320, ty)
+      .text(eur(c.amountGross), 425, ty, { width: 115, align: 'right' });
+    ty += 44;
+    doc.moveTo(50, ty).lineTo(545, ty).strokeColor('#ccc').stroke();
+    doc.fontSize(10).fillColor('#333')
+      .text('Subtotaal / Netto', 300, ty + 10, { width: 160, align: 'right' })
+      .text(eur(c.amountNet), 470, ty + 10, { width: 75, align: 'right' })
+      .text('BTW / VAT (0% \u2014 verlegd)', 300, ty + 26, { width: 160, align: 'right' })
+      .text(eur(0), 470, ty + 26, { width: 75, align: 'right' });
+    doc.fontSize(13).fillColor('#111')
+      .text('Totaal / Suma', 300, ty + 46, { width: 160, align: 'right' })
+      .text(eur(c.amountGross), 470, ty + 46, { width: 75, align: 'right' });
+
+    doc.fontSize(9).fillColor('#555')
+      .text('Odwrotne obci\u0105\u017cenie \u2014 podatek VAT rozlicza nabywca.', 50, ty + 90, { width: 495 })
+      .text('Btw verlegd naar de afnemer (reverse charge). Er is geen btw in rekening gebracht.', 50, ty + 104, { width: 495 })
+      .text(`Betaalwijze / Sposób p\u0142atno\u015bci: online. Betaald / Zap\u0142acono: ${date}.`, 50, ty + 128, { width: 495 });
+    doc.fontSize(8).fillColor('#999').text(`Budomatch \u00b7 ${SELLER.email}`, 50, 790, { width: 495, align: 'center' });
+    doc.end();
+  } catch (e) { console.error('Factuur-fout:', e.message); if (!res.headersSent) res.status(500).send('Kon factuur niet maken'); }
 });
 
 // ---------------- chat / berichten (klant ⇆ vakman) ----------------

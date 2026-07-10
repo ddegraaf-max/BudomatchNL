@@ -112,3 +112,6 @@ Het vakman-portaal heeft tabbladen: **Nieuw** (5 recente aanvragen + KPI's), **O
 
 ## Openbare bedrijfsprofielen + directe aanvraag (USP)
 Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf.html?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.
+
+## PDF-factuur (Poolse verkoper, zonder btw)
+Elke betaalde ontgrendeling levert een **downloadbare PDF-factuur** op (`GET /api/invoice/:claimId`), via de knop **Factuur (PDF)** onder Account → facturatie. De factuur wordt uitgegeven door de Poolse onderneming **Budomatch (NIP 7010869430, REGON 381430120, Białka, Polska)**, is tweetalig (PL/NL), **zonder btw** met de vermelding *odwrotne obciążenie / btw verlegd (reverse charge)*, en gebruikt een Unicode-lettertype (`assets/DejaVuSans.ttf`) zodat Poolse tekens correct weergegeven worden. Verkopergegevens zijn overschrijfbaar via env (`SELLER_NAME`, `SELLER_NIP`, enz.).
