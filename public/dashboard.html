@@ -176,6 +176,19 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .area-map{height:290px;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin:6px 0}
 .area-label{color:var(--gold-soft);font-size:.92rem;margin-bottom:10px}
 .leaflet-container{background:#1b180f}
+
+.cfg{background:var(--bg-2,var(--panel));border:1px solid var(--gold);border-radius:14px;padding:16px;margin:6px 0 14px}
+.cfg-h{font-family:'Marcellus',serif;color:var(--gold-bright);margin-bottom:10px;font-size:1.05rem}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
+.cfg-grid label{font-size:.85rem;color:var(--gold-soft);display:block}
+.cfg-grid input[type=range]{width:100%;accent-color:var(--gold);margin-top:6px}
+.cfg-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.cfg-row2 label{font-size:.82rem;color:var(--gold-soft);display:block;margin-bottom:3px}
+.cfg-row2 input[type=range]{width:100%;accent-color:var(--gold)}
+.cfg-preview{background:#141109;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+.cfg-preview svg{width:100%;height:200px;display:block}
+.cfg-sum{background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:8px;padding:9px 12px;color:var(--gold-soft);font-size:.88rem}
+@media(max-width:600px){.cfg-grid{grid-template-columns:1fr}.cfg-row2{grid-template-columns:1fr}}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -209,6 +222,7 @@ const T = {
     toSite:'Site', logout:'Log out', loading:'Loading…',
     roleCust:'Customer', rolePro:'Tradesman',
     cWelcome:'Welcome', cIntro:'Post a job for free — tradesmen will send you no-obligation quotes.',
+    cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = a new room added to the house (e.g. side or rear).', cfgUitbouwHint:'Bump-out = enlarging an existing room (e.g. extending the living room).', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', cfgRamen:'Windows',
     cNew:'Post a new job', cService:'Service', cZip:'City', cZipPh:'e.g. Amsterdam',
     cPhone:'Phone (tradesmen see it only after unlocking)', cPhonePh:'+31 6 12345678',
     cDesc:'Job description', cDescPh:'Describe what needs doing, scope, desired timing…',
@@ -253,6 +267,7 @@ const T = {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
     roleCust:'Klant', rolePro:'Vakman',
     cWelcome:'Welkom', cIntro:'Plaats gratis een aanvraag — vakmensen sturen je vrijblijvend offertes.',
+    cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = nieuwe ruimte aan het huis (bijv. aan de zij- of achterkant).', cfgUitbouwHint:'Uitbouw = bestaande ruimte vergroten (bijv. de woonkamer naar achteren).', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', cfgRamen:'Aantal ramen',
     cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats', cZipPh:'bijv. Amsterdam',
     cPhone:'Telefoon (zien vakmensen pas na ontgrendeling)', cPhonePh:'+31 6 12345678',
     cDesc:'Omschrijving van de klus', cDescPh:'Beschrijf wat er moet gebeuren, omvang, gewenste termijn…',
@@ -321,8 +336,8 @@ async function logout(){ await fetch('/api/logout',{method:'POST'}); location.hr
   ME.role==='pro' ? renderPro() : renderCustomer();
 })();
 
-const CATS_EN = "Extension,Air conditioning,Architect,Asbestos removal,Bathroom,Paving,Boiler (CH),Roofing,Dormer,Roof window,Electrician,Garage door,Facade cleaning,Glazing,Fencing,Burglary protection,Insulation,Kitchen,Window frames,EV charging,Plumber,Pest control,Roller shutters,Painting,Sliding doors,Conservatory,Plastering,Tiling,Home battery,Stairs,Landscaping,Garden maintenance,Ventilation,Renovation,Flooring,Underfloor heating,Damp proofing,Heat pump,Wellness & sauna,Solar panels,Awnings & sun protection".split(',');
-const CATS_NL = "Aanbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,Bestraten,Cv-ketel,Dakbedekking,Dakkapel,Dakraam,Elektricien,Garagedeur,Gevelreiniging,Glas,Hekwerken,Inbraakbeveiliging,Isolatie,Keukenspecialist,Kozijnen,Laadpalen,Loodgieter,Ongediertebestrijding,Rolluiken,Schilderwerk,Schuifpui,Serre,Stucwerk,Tegels zetten,Thuisbatterij,Trap,Tuinaanleg,Tuinonderhoud,Ventilatie,Verbouwing,Vloeren,Vloerverwarming,Vochtbestrijding,Warmtepomp,Wellness,Zonnepanelen,Zonwering".split(',');
+const CATS_EN = "Extension,Bump-out extension,Storey addition,Air conditioning,Architect,Asbestos removal,Bathroom,Paving,Boiler (CH),Roofing,Dormer,Roof window,Electrician,Garage door,Facade cleaning,Glazing,Fencing,Burglary protection,Insulation,Kitchen,Window frames,EV charging,Plumber,Pest control,Roller shutters,Painting,Sliding doors,Conservatory,Plastering,Tiling,Home battery,Stairs,Landscaping,Garden maintenance,Ventilation,Renovation,Flooring,Underfloor heating,Damp proofing,Heat pump,Wellness & sauna,Solar panels,Awnings & sun protection".split(',');
+const CATS_NL = "Aanbouw,Uitbouw,Opbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,Bestraten,Cv-ketel,Dakbedekking,Dakkapel,Dakraam,Elektricien,Garagedeur,Gevelreiniging,Glas,Hekwerken,Inbraakbeveiliging,Isolatie,Keukenspecialist,Kozijnen,Laadpalen,Loodgieter,Ongediertebestrijding,Rolluiken,Schilderwerk,Schuifpui,Serre,Stucwerk,Tegels zetten,Thuisbatterij,Trap,Tuinaanleg,Tuinonderhoud,Ventilatie,Verbouwing,Vloeren,Vloerverwarming,Vochtbestrijding,Warmtepomp,Wellness,Zonnepanelen,Zonwering".split(',');
 const cats = () => LANG==='nl'?CATS_NL:CATS_EN;
 
 /* ============ KLANT / KLIENT ============ */
@@ -608,7 +623,8 @@ function renderCustomer(){
       <div class="card">
         <h2>${t('cNew')}</h2>
         <label>${t('cService')}</label>
-        <select class="inp" id="cService">${cats().map(c=>`<option>${c}</option>`).join('')}</select>
+        <select class="inp" id="cService" onchange="onServiceChange()">${cats().map(c=>`<option>${c}</option>`).join('')}</select>
+        <div id="configBox" style="display:none"></div>
         <label>${t('cIntent')}</label>
         <div class="seg" id="cIntentSeg">
           <button type="button" class="on" onclick="setIntent('opdracht')">${t('cIntentJob')}</button>
@@ -645,7 +661,7 @@ function renderCustomer(){
     ${prosCardHtml()}
     ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  reqIntent='opdracht'; AI_MODE='customer'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads();
+  reqIntent='opdracht'; AI_MODE='customer'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads(); onServiceChange();
 }
 let DPHOTOS=[];
 function addDPhotos(files){
@@ -674,9 +690,122 @@ function setIntent(v){ reqIntent=v;
   const seg=document.getElementById('cIntentSeg'); if(seg){seg.children[0].classList.toggle('on',v==='opdracht');seg.children[1].classList.toggle('on',v==='orientatie');}
   const h=document.getElementById('cIntentHint'); if(h)h.textContent=t(v==='orientatie'?'cIntentOrientHint':'cIntentJobHint');
 }
+let CFG_TYPE=null, __extType='aanbouw';
+function configForService(svc){
+  if(['Aanbouw','Uitbouw','Opbouw','Extension','Bump-out extension','Storey addition'].includes(svc)) return 'ext';
+  if(['Kozijnen','Window frames','Schuifpui','Sliding doors'].includes(svc)) return 'kozijn';
+  if(['Dakkapel','Dormer'].includes(svc)) return 'dakkapel';
+  return null;
+}
+function onServiceChange(){
+  const svc=document.getElementById('cService').value; CFG_TYPE=configForService(svc);
+  const box=document.getElementById('configBox'); if(!box)return;
+  if(CFG_TYPE==='ext'){ __extType=(svc==='Uitbouw'||svc==='Bump-out extension')?'uitbouw':((svc==='Opbouw'||svc==='Storey addition')?'opbouw':'aanbouw'); box.innerHTML=extConfigHtml(); box.style.display='block'; updateExt(); }
+  else if(CFG_TYPE==='kozijn'){ box.innerHTML=kozijnConfigHtml(); box.style.display='block'; updateKoz(); }
+  else if(CFG_TYPE==='dakkapel'){ box.innerHTML=dakkapelConfigHtml(); box.style.display='block'; updateDak(); }
+  else { box.innerHTML=''; box.style.display='none'; }
+}
+function extConfigHtml(){
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
+    <div class="seg" id="extTypeSeg" style="max-width:440px;margin-bottom:6px">
+      <button type="button" data-v="aanbouw" class="${__extType==='aanbouw'?'on':''}" onclick="setExtType('aanbouw')">${t('cfgAanbouw')}</button>
+      <button type="button" data-v="uitbouw" class="${__extType==='uitbouw'?'on':''}" onclick="setExtType('uitbouw')">${t('cfgUitbouw')}</button>
+      <button type="button" data-v="opbouw" class="${__extType==='opbouw'?'on':''}" onclick="setExtType('opbouw')">${t('cfgOpbouw')}</button>
+    </div>
+    <p class="hint" id="extHint"></p>
+    <div class="cfg-grid">
+      <label>${t('cfgWidth')} <b id="extWv">4,0</b> m<input type="range" id="extW" min="2" max="12" step="0.5" value="4" oninput="updateExt()"></label>
+      <label>${t('cfgDepth')} <b id="extDv">3,0</b> m<input type="range" id="extD" min="2" max="8" step="0.5" value="3" oninput="updateExt()"></label>
+    </div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgFloors')}</label><select class="inp" id="extF" onchange="updateExt()"><option value="1">1</option><option value="2">2</option></select></div>
+      <div><label>${t('cfgRoof')}</label><select class="inp" id="extR" onchange="updateExt()"><option>${t('cfgFlat')}</option><option>${t('cfgSloped')}</option></select></div>
+      <div><label>${t('cfgUse')}</label><select class="inp" id="extU" onchange="updateExt()">${['Keuken','Woonkamer','Bijkeuken','Slaapkamer','Kantoor','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="cfg-preview"><svg id="extSvg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="cfg-sum" id="extSum"></div></div>`;
+}
+function setExtType(tp){ __extType=tp; document.querySelectorAll('#extTypeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===tp)); updateExt(); }
+function nl1(x){ return Number(x).toFixed(1).replace('.',','); }
+function updateExt(){
+  const w=parseFloat(document.getElementById('extW').value), d=parseFloat(document.getElementById('extD').value);
+  const f=document.getElementById('extF').value, r=document.getElementById('extR').value, u=document.getElementById('extU').value;
+  document.getElementById('extWv').textContent=nl1(w); document.getElementById('extDv').textContent=nl1(d);
+  const HINT={aanbouw:t('cfgAanbouwHint'),uitbouw:t('cfgUitbouwHint'),opbouw:t('cfgOpbouwHint')}, LBL={aanbouw:t('cfgAanbouw'),uitbouw:t('cfgUitbouw'),opbouw:t('cfgOpbouw')};
+  const hint=document.getElementById('extHint'); if(hint)hint.textContent=HINT[__extType];
+  drawExtSvg(w,d);
+  const m2=nl1(w*d);
+  document.getElementById('extSum').textContent=`${LBL[__extType]}: ${nl1(w)} \u00d7 ${nl1(d)} m (${m2} m\u00b2), ${f} ${f==='1'?t('cfgFloor'):t('cfgFloors2')}, ${r.toLowerCase()}, ${u.toLowerCase()}.`;
+}
+function drawExtSvg(w,d){
+  const svg=document.getElementById('extSvg'); if(!svg)return;
+  const GRAD=`<defs><linearGradient id="cfgGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E3C158"/><stop offset="1" stop-color="#b8901e"/></linearGradient></defs>`;
+  if(__extType==='opbouw'){
+    const S=15, bw=Math.min(w,12)*S, houseH=80, floorH=44;
+    const gx=(300-bw)/2, baseY=190, topExisting=baseY-houseH, topNew=topExisting-floorH;
+    svg.innerHTML=GRAD
+      +`<rect x="${gx}" y="${topExisting}" width="${bw}" height="${houseH}" fill="none" stroke="#8a7a4a" stroke-width="1.5"/>`
+      +`<text x="${gx+bw/2}" y="${topExisting+houseH/2+3}" fill="#8a7a4a" font-size="8.5" text-anchor="middle">bestaande woning</text>`
+      +`<rect x="${gx}" y="${topNew}" width="${bw}" height="${floorH}" fill="url(#cfgGrad)" stroke="#C9A227" stroke-width="1.6"/>`
+      +`<text x="${gx+bw/2}" y="${topNew+floorH/2+3}" fill="#20180a" font-size="9" font-weight="700" text-anchor="middle">opbouw</text>`
+      +`<polygon points="${gx-2},${topNew} ${gx+bw+2},${topNew} ${gx+bw/2},${topNew-22}" fill="none" stroke="#8a7a4a" stroke-width="1.3"/>`
+      +`<text x="${gx+bw/2}" y="${baseY+14}" fill="#E3C158" font-size="9" text-anchor="middle">${nl1(w)} m</text>`;
+    return;
+  }
+  const S=12, hW=6*S, hD=5*S, eW=Math.min(w,12)*S, eD=Math.min(d,8)*S;
+  const totW=Math.max(hW,eW), totH=hD+eD;
+  let ox=(300-totW)/2; if(ox<34)ox=34; let oy=(200-totH)/2; if(oy<16)oy=16;
+  const houseX=ox+Math.max(0,(eW-hW)/2), extX=ox+Math.max(0,(hW-eW)/2), houseY=oy, extY=oy+hD;
+  svg.innerHTML=GRAD+`
+    <rect x="${houseX}" y="${houseY}" width="${hW}" height="${hD}" fill="none" stroke="#8a7a4a" stroke-width="1.5" rx="3"/>
+    <text x="${houseX+hW/2}" y="${houseY+hD/2+3}" fill="#8a7a4a" font-size="8.5" text-anchor="middle">bestaande woning</text>
+    <rect x="${extX}" y="${extY}" width="${eW}" height="${eD}" fill="url(#cfgGrad)" stroke="#C9A227" stroke-width="1.6" rx="3"/>
+    <text x="${extX+eW/2}" y="${extY+eD/2+3}" fill="#20180a" font-size="9" font-weight="700" text-anchor="middle">${__extType}</text>
+    <text x="${extX+eW/2}" y="${extY+eD+14}" fill="#E3C158" font-size="9" text-anchor="middle">${nl1(w)} m</text>
+    <text x="${extX+eW+13}" y="${extY+eD/2}" fill="#E3C158" font-size="9" text-anchor="middle" transform="rotate(90 ${extX+eW+13} ${extY+eD/2})">${nl1(d)} m</text>`;
+}
+function kozijnConfigHtml(){
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="kozM" onchange="updateKoz()">${['Kunststof','Aluminium','Hout'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgType')}</label><select class="inp" id="kozT" onchange="updateKoz()">${['Draai-kiepraam','Vast raam','Schuifpui','Voordeur','Achterdeur'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgAantal')}</label><input class="inp" id="kozN" type="number" min="1" value="1" oninput="updateKoz()"></div>
+    </div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgKleur')}</label><select class="inp" id="kozK" onchange="updateKoz()">${['Wit','Antraciet','Zwart','Houtnerf','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgWcm')}</label><input class="inp" id="kozW" type="number" min="0" placeholder="cm" oninput="updateKoz()"></div>
+      <div><label>${t('cfgHcm')}</label><input class="inp" id="kozH" type="number" min="0" placeholder="cm" oninput="updateKoz()"></div>
+    </div>
+    <div class="cfg-sum" id="kozSum"></div></div>`;
+}
+function updateKoz(){ const m=document.getElementById('kozM').value,tp=document.getElementById('kozT').value,n=document.getElementById('kozN').value||'1',k=document.getElementById('kozK').value,w=document.getElementById('kozW').value,h=document.getElementById('kozH').value;
+  const dim=(w&&h)?`, ca. ${w} \u00d7 ${h} cm`:''; document.getElementById('kozSum').textContent=`${n}\u00d7 ${tp.toLowerCase()}, ${m.toLowerCase()}, kleur ${k.toLowerCase()}${dim}.`; }
+function dakkapelConfigHtml(){
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
+    <div class="cfg-grid">
+      <label>${t('cfgBreedteCm')} <b id="dakBv">300</b> cm<input type="range" id="dakB" min="100" max="600" step="10" value="300" oninput="updateDak()"></label>
+      <div><label>${t('cfgType')}</label><select class="inp" id="dakT" onchange="updateDak()">${['Nieuwe dakkapel','Bestaande vervangen'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="dakM" onchange="updateDak()">${['Kunststof','Hout','Keralit','Aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgKleur')}</label><select class="inp" id="dakK" onchange="updateDak()">${['Wit','Antraciet','Zwart','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgRamen')}</label><input class="inp" id="dakN" type="number" min="1" value="2" oninput="updateDak()"></div>
+    </div>
+    <div class="cfg-sum" id="dakSum"></div></div>`;
+}
+function updateDak(){ const b=document.getElementById('dakB').value,tp=document.getElementById('dakT').value,m=document.getElementById('dakM').value,k=document.getElementById('dakK').value,n=document.getElementById('dakN').value||'1';
+  const bv=document.getElementById('dakBv'); if(bv)bv.textContent=b; document.getElementById('dakSum').textContent=`${tp.toLowerCase()}, ${b} cm breed, ${m.toLowerCase()} ${k.toLowerCase()}, ${n} ${n==='1'?'raam':'ramen'}.`; }
+function buildConfigSummary(){
+  if(CFG_TYPE==='ext'){ const e=document.getElementById('extSum'); return e?e.textContent:''; }
+  if(CFG_TYPE==='kozijn'){ const e=document.getElementById('kozSum'); return e?e.textContent:''; }
+  if(CFG_TYPE==='dakkapel'){ const e=document.getElementById('dakSum'); return e?e.textContent:''; }
+  return '';
+}
 async function postRequest(){
-  const body = { service:$('#cService').value, intent:reqIntent, timing:$('#cTiming').value, zip:$('#cZip').value, phone:$('#cPhone').value, description:$('#cDesc').value, photos:DPHOTOS, lang:LANG };
-  if (!body.description.trim()) { $('#cDesc').focus(); return; }
+  const cfg=buildConfigSummary(); const desc=$('#cDesc').value.trim();
+  const full=(cfg?('['+t('cfgTitle')+'] '+cfg):'')+((cfg&&desc)?'\n\n':'')+desc;
+  const body = { service:$('#cService').value, intent:reqIntent, timing:$('#cTiming').value, zip:$('#cZip').value, phone:$('#cPhone').value, description:full, photos:DPHOTOS, lang:LANG };
+  if (!full.trim()) { $('#cDesc').focus(); return; }
   const r = await api('/api/requests', { method:'POST', body:JSON.stringify(body) });
   if (r.request){ $('#cNote').classList.add('show'); $('#cDesc').value=''; $('#cZip').value=''; $('#cPhone').value=''; DPHOTOS=[]; renderDThumbs(); loadMyRequests(); }
 }
