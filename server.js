@@ -4,14 +4,16 @@
 
 const express = require('express');
 const path = require('path');
-const store = require('./lib/store');
+// Productie: PostgreSQL zodra DATABASE_URL is gezet (Railway). Lokaal: JSON-bestand.
+const store = process.env.DATABASE_URL ? require('./lib/db') : require('./lib/store');
+console.log('[store]', store._pg ? 'PostgreSQL (DATABASE_URL)' : 'JSON-bestand (lib/store)');
 const A = require('./lib/auth');
 
 const PORT = process.env.PORT || 3000;
 const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
 
 // ----- Pricing -----
-const FREE_LEADS = 10;
+const FREE_LEADS = 5;
 const LEAD_PRICE_GROSS = 12.50;         // euro incl. btw
 const VAT_RATE = 0;                      // 0% — btw verlegd (reverse charge, B2B NL)
 const LEAD_PRICE_NET = +(LEAD_PRICE_GROSS / (1 + VAT_RATE)).toFixed(2);   // 12.50 (btw verlegd)
@@ -25,7 +27,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 const app = express();
 
 // Stripe-webhook MOET de ruwe body krijgen → vóór express.json() registreren.
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !STRIPE_WEBHOOK_SECRET) return res.status(400).end();
   let event;
   try {
@@ -34,20 +36,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
     console.error('Stripe webhook-signatuur ongeldig:', e.message);
     return res.status(400).send(`Webhook Error: ${e.message}`);
   }
-  if (event.type === 'checkout.session.completed') {
-    const s = event.data.object;
-    const proId = s.metadata && s.metadata.proId;
-    const requestId = s.metadata && s.metadata.requestId;
-    // idempotent: alleen claim aanmaken als die nog niet bestaat
-    if (proId && requestId && !store.claimExists(proId, requestId)) {
-      store.addClaim({
-        proId, requestId, free: false, paid: true,
-        amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT,
-        invoiceNo: store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online',
-        stripeSession: s.id, paymentIntent: s.payment_intent || null,
-      });
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const s = event.data.object;
+      const proId = s.metadata && s.metadata.proId;
+      const requestId = s.metadata && s.metadata.requestId;
+      // idempotent: alleen claim aanmaken als die nog niet bestaat
+      if (proId && requestId && !(await store.claimExists(proId, requestId))) {
+        await store.addClaim({
+          proId, requestId, free: false, paid: true,
+          amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT,
+          invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online',
+          stripeSession: s.id, paymentIntent: s.payment_intent || null,
+        });
+      }
     }
-  }
+  } catch (e) { console.error('Webhook-verwerking mislukt:', e.message); }
   res.json({ received: true });
 });
 
@@ -60,71 +64,109 @@ const CATS_EN = "Extension, Air conditioning, Architect, Asbestos removal, Bathr
 
 // ---------------- helpers ----------------
 const isHttps = req => (req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
-function getUser(req) {
+async function getUser(req) {
   const t = A.parseCookies(req).bm_token;
   const p = A.verify(t);
   if (!p) return null;
-  const u = store.findUserById(p.uid);
+  const u = await store.findUserById(p.uid);
   return u || null;
 }
-function publicUser(u) {
+async function publicUser(u) {
   if (!u) return null;
   const { passHash, ...rest } = u;
   if (u.role === 'pro') {
-    const used = store.claimsByPro(u.id).length;
+    const used = (await store.claimsByPro(u.id)).length;
     rest.creditsUsed = used;
     rest.creditsLeft = Math.max(0, FREE_LEADS - used);
+  }
+  if (u.role === 'customer') {
+    rest.customerType = u.customerType || 'particulier';
   }
   return rest;
 }
 const esc = s => String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
-const requireRole = role => (req, res, next) => {
-  const u = getUser(req);
-  if (!u) return res.status(401).json({ error: 'auth' });
-  if (role && u.role !== role) return res.status(403).json({ error: 'role' });
-  req.user = u; next();
+const requireRole = role => async (req, res, next) => {
+  try {
+    const u = await getUser(req);
+    if (!u) return res.status(401).json({ error: 'auth' });
+    if (role && u.role !== role) return res.status(403).json({ error: 'role' });
+    req.user = u; next();
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 };
 
 // ---------------- auth ----------------
-app.post('/api/register', (req, res) => {
-  const b = req.body || {};
-  const role = b.role === 'pro' ? 'pro' : 'customer';
-  const email = String(b.email || '').trim().toLowerCase();
-  if (!email || !b.password || String(b.password).length < 6 || !b.name)
-    return res.status(400).json({ error: 'invalid' });
-  if (store.findUserByEmail(email)) return res.status(409).json({ error: 'exists' });
+app.post('/api/register', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const role = b.role === 'pro' ? 'pro' : 'customer';
+    const email = String(b.email || '').trim().toLowerCase();
+    if (!email || !b.password || String(b.password).length < 6 || !b.name)
+      return res.status(400).json({ error: 'invalid' });
+    if (await store.findUserByEmail(email)) return res.status(409).json({ error: 'exists' });
 
-  const u = {
-    role, name: String(b.name).trim(), email,
-    passHash: A.hashPassword(String(b.password)),
-  };
-  if (role === 'pro') {
-    u.company = String(b.company || '').trim();
-    u.spec = String(b.spec || '').trim();
-    u.city = String(b.city || '').trim();
-    u.nip = String(b.nip || '').trim();
-    u.address = String(b.address || '').trim();
-  }
-  store.addUser(u);
-  A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
-  res.json({ user: publicUser(u) });
+    const u = {
+      role, name: String(b.name).trim(), email,
+      passHash: A.hashPassword(String(b.password)),
+    };
+    if (role === 'pro') {
+      u.company = String(b.company || '').trim();
+      u.spec = String(b.spec || '').trim();
+      u.city = String(b.city || '').trim();
+      u.nip = String(b.nip || '').trim();
+      u.address = String(b.address || '').trim();
+    } else {
+      // Particulier of zakelijk (bedrijf)
+      u.customerType = b.customerType === 'zakelijk' ? 'zakelijk' : 'particulier';
+      if (u.customerType === 'zakelijk') {
+        u.company = String(b.company || '').trim();
+        u.nip = String(b.nip || '').trim();
+      }
+    }
+    await store.addUser(u);
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
-app.post('/api/login', (req, res) => {
-  const b = req.body || {};
-  const u = store.findUserByEmail(String(b.email || ''));
-  if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
-    return res.status(401).json({ error: 'bad_credentials' });
-  A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
-  res.json({ user: publicUser(u) });
+app.post('/api/login', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const u = await store.findUserByEmail(String(b.email || ''));
+    if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
+      return res.status(401).json({ error: 'bad_credentials' });
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 app.post('/api/logout', (req, res) => { A.clearAuthCookie(res); res.json({ ok: true }); });
 
-app.get('/api/me', (req, res) => {
-  const u = getUser(req);
+app.get('/api/me', async (req, res) => {
+  const u = await getUser(req);
   if (!u) return res.status(401).json({ error: 'auth' });
-  res.json({ user: publicUser(u) });
+  res.json({ user: await publicUser(u) });
+});
+
+// ---------------- support (klanten én bedrijven) ----------------
+app.post('/api/support', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!b.message) return res.status(400).json({ error: 'invalid' });
+    const u = await getUser(req);
+    const who = u
+      ? `${esc(u.name)} &lt;${esc(u.email)}&gt; (${u.role}${u.role === 'customer' ? '/' + (u.customerType || 'particulier') : ''}${u.company ? ' — ' + esc(u.company) : ''})`
+      : 'gast';
+    const business = (u && u.customerType === 'zakelijk') || (b.customerType === 'zakelijk');
+    await sendMail(
+      `${business ? '[ZAKELIJK] ' : ''}Support: ${esc(b.subject) || '(geen onderwerp)'}`,
+      `<h2>Supportverzoek${business ? ' — zakelijke klant' : ''}</h2>
+       <p><b>Van:</b> ${who}</p>
+       <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
+       <p><b>Bericht:</b><br>${esc(b.message)}</p>
+       <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>`
+    );
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
 
 // ---------------- customer: requests (gratis) ----------------
@@ -134,67 +176,81 @@ function cleanPhotos(arr) {
     && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d)
     && d.length < 3500000).slice(0, 3);
 }
-app.post('/api/requests', requireRole('customer'), (req, res) => {
-  const b = req.body || {};
-  if (!b.service || !b.description) return res.status(400).json({ error: 'invalid' });
-  const r = store.addRequest({
-    customerId: req.user.id,
-    service: String(b.service).slice(0, 120),
-    zip: String(b.zip || '').slice(0, 80),
-    description: String(b.description).slice(0, 4000),
-    name: req.user.name,
-    phone: String(b.phone || '').slice(0, 40),
-    email: req.user.email,
-    lang: b.lang === 'pl' ? 'pl' : 'nl',
-    photos: cleanPhotos(b.photos),
-  });
-  res.json({ request: r });
+app.post('/api/requests', requireRole('customer'), async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!b.service || !b.description) return res.status(400).json({ error: 'invalid' });
+    const r = await store.addRequest({
+      customerId: req.user.id,
+      customerType: req.user.customerType || 'particulier',
+      company: req.user.company || '',
+      service: String(b.service).slice(0, 120),
+      zip: String(b.zip || '').slice(0, 80),
+      description: String(b.description).slice(0, 4000),
+      name: req.user.name,
+      phone: String(b.phone || '').slice(0, 40),
+      email: req.user.email,
+      lang: b.lang === 'pl' ? 'pl' : 'nl',
+      photos: cleanPhotos(b.photos),
+    });
+    res.json({ request: r });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
-app.get('/api/requests/mine', requireRole('customer'), (req, res) => {
-  const list = store.requestsByCustomer(req.user.id).map(r => ({
-    ...r, claims: store.data().claims.filter(c => c.requestId === r.id).length
-  }));
-  res.json({ requests: list });
+app.get('/api/requests/mine', requireRole('customer'), async (req, res) => {
+  try {
+    const reqs = await store.requestsByCustomer(req.user.id);
+    const list = await Promise.all(reqs.map(async r => ({
+      ...r, claims: await store.claimsCountByRequest(r.id)
+    })));
+    res.json({ requests: list });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 // ---------------- pro: leads + claim + billing ----------------
-function leadView(r, pro) {
-  const claimed = store.claimExists(pro.id, r.id);
+async function leadView(r, pro) {
+  const claimed = await store.claimExists(pro.id, r.id);
   const base = {
     id: r.id, service: r.service, zip: r.zip, description: r.description,
     createdAt: r.createdAt, lang: r.lang, claimed,
+    customerType: r.customerType || 'particulier',
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
   };
-  if (claimed) { base.name = r.name; base.phone = r.phone; base.email = r.email; base.photos = r.photos || []; }
+  if (claimed) { base.name = r.name; base.phone = r.phone; base.email = r.email; base.company = r.company || ''; base.photos = r.photos || []; }
   return base;
 }
 
-app.get('/api/leads', requireRole('pro'), (req, res) => {
-  const pro = req.user;
-  const used = store.claimsByPro(pro.id).length;
-  res.json({
-    leads: store.openRequests().map(r => leadView(r, pro)),
-    creditsLeft: Math.max(0, FREE_LEADS - used),
-    creditsUsed: used,
-    price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
-  });
+app.get('/api/leads', requireRole('pro'), async (req, res) => {
+  try {
+    const pro = req.user;
+    const used = (await store.claimsByPro(pro.id)).length;
+    const open = await store.openRequests();
+    const leads = await Promise.all(open.map(r => leadView(r, pro)));
+    res.json({
+      leads,
+      creditsLeft: Math.max(0, FREE_LEADS - used),
+      creditsUsed: used,
+      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
-app.post('/api/leads/:id/claim', requireRole('pro'), (req, res) => {
-  const pro = req.user;
-  const r = store.findRequest(req.params.id);
-  if (!r) return res.status(404).json({ error: 'not_found' });
-  if (store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: leadView(r, pro) });
+app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
+  try {
+    const pro = req.user;
+    const r = await store.findRequest(req.params.id);
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
 
-  const used = store.claimsByPro(pro.id).length;
-  if (used < FREE_LEADS) {
-    store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
-    return res.json({ ok: true, free: true, lead: leadView(r, pro), creditsLeft: Math.max(0, FREE_LEADS - used - 1) });
-  }
-  // betaling vereist
-  res.json({ ok: false, paymentRequired: true, price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT } });
+    const used = (await store.claimsByPro(pro.id)).length;
+    if (used < FREE_LEADS) {
+      await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
+      return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: Math.max(0, FREE_LEADS - used - 1) });
+    }
+    // betaling vereist
+    res.json({ ok: false, paymentRequired: true, price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT } });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 // Ontgrendelen met betaling. Maakt een Stripe Checkout-sessie (PLN).
@@ -202,19 +258,19 @@ app.post('/api/leads/:id/claim', requireRole('pro'), (req, res) => {
 // De definitieve bevestiging komt via de webhook (checkout.session.completed).
 app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   const pro = req.user;
-  const r = store.findRequest(req.params.id);
+  const r = await store.findRequest(req.params.id);
   if (!r) return res.status(404).json({ error: 'not_found' });
-  if (store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: leadView(r, pro) });
+  if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
 
-  const used = store.claimsByPro(pro.id).length;
+  const used = (await store.claimsByPro(pro.id)).length;
   if (used < FREE_LEADS) { // nog gratis tegoed
-    store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
-    return res.json({ ok: true, free: true, lead: leadView(r, pro) });
+    await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
+    return res.json({ ok: true, free: true, lead: await leadView(r, pro) });
   }
 
   if (!stripe) { // geen Stripe geconfigureerd → demo
-    store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT, invoiceNo: store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
-    return res.json({ ok: true, demo: true, lead: leadView(r, pro) });
+    await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
+    return res.json({ ok: true, demo: true, lead: await leadView(r, pro) });
   }
 
   try {
@@ -242,18 +298,21 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   }
 });
 
-app.get('/api/billing', requireRole('pro'), (req, res) => {
-  const claims = store.claimsByPro(req.user.id).sort((a, b) => b.createdAt - a.createdAt).map(c => ({
-    createdAt: c.createdAt, free: c.free, gross: c.amountGross, net: c.amountNet, vat: c.amountVat,
-    invoiceNo: c.invoiceNo || null, invoiceDate: c.invoiceDate || c.createdAt, method: c.method || 'online',
-    service: (store.findRequest(c.requestId) || {}).service || '',
-  }));
-  const paidTotal = claims.filter(c => !c.free).reduce((s, c) => s + c.gross, 0);
-  res.json({
-    claims, creditsUsed: claims.length, creditsLeft: Math.max(0, FREE_LEADS - claims.length),
-    freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
-    price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
-  });
+app.get('/api/billing', requireRole('pro'), async (req, res) => {
+  try {
+    const raw = (await store.claimsByPro(req.user.id)).sort((a, b) => b.createdAt - a.createdAt);
+    const claims = await Promise.all(raw.map(async c => ({
+      createdAt: c.createdAt, free: c.free, gross: c.amountGross, net: c.amountNet, vat: c.amountVat,
+      invoiceNo: c.invoiceNo || null, invoiceDate: c.invoiceDate || c.createdAt, method: c.method || 'online',
+      service: ((await store.findRequest(c.requestId)) || {}).service || '',
+    })));
+    const paidTotal = claims.filter(c => !c.free).reduce((s, c) => s + c.gross, 0);
+    res.json({
+      claims, creditsUsed: claims.length, creditsLeft: Math.max(0, FREE_LEADS - claims.length),
+      freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
+      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 // ---------------- AI assistant ----------------
@@ -284,7 +343,7 @@ app.post('/api/chat', async (req, res) => {
   try {
     const lang = req.body.lang === 'en' ? 'en' : 'nl';
     const mode = req.body.mode === 'customer' ? 'customer' : 'site';
-    const user = getUser(req);
+    const user = await getUser(req);
     const messages = (Array.isArray(req.body.messages) ? req.body.messages : [])
       .slice(-20)
       .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')

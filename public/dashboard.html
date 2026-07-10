@@ -50,6 +50,7 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .tag{font-size:.72rem;font-weight:700;letter-spacing:.4px;padding:3px 9px;border-radius:50px;border:1px solid var(--line);color:var(--gold-soft)}
 .tag.match{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--gold-bright)}
 .tag.green{background:rgba(63,166,106,.16);border-color:var(--green);color:#bfe6cf}
+.tag.biz{background:rgba(90,140,200,.16);border-color:rgba(90,140,200,.5);color:#bcd0ec}
 .item .desc{color:var(--muted);font-size:.92rem;margin:6px 0 12px}
 .item .meta{font-size:.82rem;color:var(--muted)}
 .contact{background:rgba(201,162,39,.08);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:.9rem;margin-top:8px}
@@ -125,12 +126,13 @@ const T = {
     cDesc:'Job description', cDescPh:'Describe what needs doing, scope, desired timing…',
     cPhotos:'Photos (optional, max 3)', cPhotosHint:'Tap or drag to add photos',
     cPost:'Post for free', cNote:'Your job is live. Tradesmen can now respond.',
+    supTitle:'Support', supIntro:'A question or need help? Send us a message — business customers get priority.', supSubject:'Subject', supMsg:'Message', supSend:'Send message', supNote:'Thanks! We will get back to you soon.', tagBiz:'Business',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
     myReq:'My jobs', myEmpty:'You have not posted any jobs yet.', reaction:'response', reactions:'responses',
     pWelcome:'Welcome', pIntro:'Available jobs near you. Unlock a lead to see the contact details.',
-    kFree:'free jobs left', kUsed:'unlocked total', kPrice:'per lead after 10 free (VAT reverse-charged)',
+    kFree:'free jobs left', kUsed:'unlocked total', kPrice:'per lead after 5 free (VAT reverse-charged)',
     leads:'Available leads', leadsEmpty:'There are no open jobs yet.',
     match:'matches you', unlocked:'unlocked',
     freeUnlock:'Unlock for free', unlock:'Unlock', incl:'reverse charge', over:'left',
@@ -150,12 +152,13 @@ const T = {
     cDesc:'Omschrijving van de klus', cDescPh:'Beschrijf wat er moet gebeuren, omvang, gewenste termijn…',
     cPhotos:'Foto\'s (optioneel, max 3)', cPhotosHint:'Tik of sleep om foto\'s toe te voegen',
     cPost:'Gratis plaatsen', cNote:'Je aanvraag staat live. Vakmensen kunnen nu reageren.',
+    supTitle:'Support', supIntro:'Een vraag of hulp nodig? Stuur ons een bericht — zakelijke klanten krijgen voorrang.', supSubject:'Onderwerp', supMsg:'Bericht', supSend:'Bericht versturen', supNote:'Bedankt! We reageren snel.', tagBiz:'Zakelijk',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
     myReq:'Mijn aanvragen', myEmpty:'Je hebt nog geen aanvragen geplaatst.', reaction:'reactie', reactions:'reacties',
     pWelcome:'Welkom', pIntro:'Beschikbare aanvragen bij jou in de buurt. Ontgrendel een lead om de contactgegevens te zien.',
-    kFree:'gratis aanvragen over', kUsed:'ontgrendeld totaal', kPrice:'per lead na 10 gratis (btw verlegd)',
+    kFree:'gratis aanvragen over', kUsed:'ontgrendeld totaal', kPrice:'per lead na 5 gratis (btw verlegd)',
     leads:'Beschikbare leads', leadsEmpty:'Er staan nog geen open aanvragen.',
     match:'past bij jou', unlocked:'ontgrendeld',
     freeUnlock:'Gratis ontgrendelen', unlock:'Ontgrendelen', incl:'btw verlegd', over:'over',
@@ -199,6 +202,20 @@ const CATS_NL = "Aanbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,B
 const cats = () => LANG==='nl'?CATS_NL:CATS_EN;
 
 /* ============ KLANT / KLIENT ============ */
+function supportCardHtml(){
+  return `<div class="card" style="margin-top:22px"><h2>${t('supTitle')}</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">${t('supIntro')}</p>
+    <label>${t('supSubject')}</label><input class="inp" id="supSubject">
+    <label>${t('supMsg')}</label><textarea class="inp" id="supMsg" rows="4"></textarea>
+    <button class="btn btn-gold" style="width:100%" onclick="sendSupport()">${t('supSend')}</button>
+    <div class="note" id="supNote">${t('supNote')}</div></div>`;
+}
+async function sendSupport(){
+  const subject=$('#supSubject').value.trim(), message=$('#supMsg').value.trim();
+  if(!message){ $('#supMsg').focus(); return; }
+  const r=await api('/api/support',{method:'POST',body:JSON.stringify({subject,message,customerType:(ME&&ME.customerType)||''})});
+  if(r&&r.ok){ $('#supNote').classList.add('show'); $('#supSubject').value=''; $('#supMsg').value=''; }
+}
 function renderCustomer(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('cWelcome')}, ${ME.name}</h1><p>${t('cIntro')}</p></div>
@@ -231,7 +248,8 @@ function renderCustomer(){
         </div>
       </div>
     </div>
-    <div class="card" style="margin-top:22px"><h2>${t('myReq')}</h2><div id="myReqs"></div></div>`;
+    <div class="card" style="margin-top:22px"><h2>${t('myReq')}</h2><div id="myReqs"></div></div>
+    ${supportCardHtml()}`;
   aiHist=[]; aiGreet(); loadMyRequests();
 }
 let DPHOTOS=[];
@@ -299,7 +317,8 @@ async function renderPro(){
     <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1><p>${t('pIntro')}</p></div>
     <div class="kpi" id="kpi"></div>
     <div class="card"><h2>${t('leads')}</h2><div id="leads"></div></div>
-    <div class="card" style="margin-top:22px"><h2>${t('billing')}</h2><div id="billing"></div></div>`;
+    <div class="card" style="margin-top:22px"><h2>${t('billing')}</h2><div id="billing"></div></div>
+    ${supportCardHtml()}`;
   await loadLeads(); loadBilling(); handleReturn();
 }
 function kpiHtml(r){
@@ -316,13 +335,14 @@ async function loadLeads(){
 }
 function leadHtml(l, creditsLeft){
   const contact = l.claimed
-    ? `<div class="contact"><b>${l.name}</b> · ${l.phone||'—'} · ${l.email}</div>`
+    ? `<div class="contact"><b>${l.company?l.company+' · ':''}${l.name}</b> · ${l.phone||'—'} · ${l.email}</div>`
     : (creditsLeft>0
         ? `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('freeUnlock')} (${creditsLeft} ${t('over')})</button>`
         : `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('unlock')} — ${money(PRICE.gross)} ${t('incl')}</button>`);
   return `<div class="item" id="lead-${l.id}">
     <div class="top"><span class="svc">${l.service}</span>
       ${l.matchesSpec?`<span class="tag match">${t('match')}</span>`:''}
+      ${l.customerType==='zakelijk'?`<span class="tag biz">${t('tagBiz')}</span>`:''}
       ${l.claimed?`<span class="tag green">${t('unlocked')}</span>`:''}
       ${(!l.claimed && l.photoCount)?`<span class="tag">${l.photoCount} foto${l.photoCount>1?'s':''}</span>`:''}
       <span class="meta" style="margin-left:auto">${fmtDate(l.createdAt)}</span></div>

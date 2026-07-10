@@ -33,7 +33,7 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Hoe het werkt
 - **Klanten** maken gratis een account aan en plaatsen **gratis** een aanvraag.
 - **Professionals** zien aanvragen; contactgegevens zijn afgeschermd tot ze een lead
-  **ontgrendelen**. Eerste **10 gratis**; daarna **€ 12,50 (btw verlegd)** (40,65 excl. + 9,35 btw).
+  **ontgrendelen**. Eerste **5 gratis**; daarna **€ 12,50 per lead** (btw verlegd / reverse charge).
 - De **AI-assistent** helpt klanten hun klus scherp te omschrijven.
 
 ## Endpoints
@@ -90,3 +90,11 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook   # toont de whsec_
 - **Beveiliging:** inlog-cookies krijgen automatisch de `Secure`-vlag achter HTTPS (Railway), zijn `HttpOnly` en `SameSite=Lax`.
 - **Juridisch:** `voorwaarden.html` en `privacy.html` bevatten je bedrijfsgegevens (KvK/btw-nummer) en zijn opgesteld als degelijke basis — laat ze vóór livegang nog juridisch nakijken.
 - **Facturen:** voor elke betaalde lead wordt automatisch een **factuur** aangemaakt met doorlopende nummering (jaar-volgnummer), verkoper- (KvK/btw-nummer) en kopergegevens (NIP/adres indien ingevuld) en de netto/btw/bruto-opbouw. Professionals downloaden de factuur (afdrukken of opslaan als PDF) vanuit hun facturatie-overzicht. De nummering reset per kalenderjaar.
+
+## Database (PostgreSQL)
+
+De app gebruikt automatisch **PostgreSQL** zodra `DATABASE_URL` is gezet (op Railway: voeg de PostgreSQL-plugin toe). Zonder die variabele valt de app terug op een JSON-bestand (`lib/store.js`) — handig voor lokaal ontwikkelen. Het schema (users, requests, claims, factuurteller) wordt bij het opstarten automatisch aangemaakt.
+
+- Klanten kunnen zich registreren als **particulier** of **zakelijk** (bedrijfsnaam + btw-nummer).
+- Vakmensen betalen via Stripe: eerste 5 leads gratis, daarna per lead.
+- **Support**: klanten en bedrijven kunnen via het dashboard een supportverzoek sturen (zakelijke klanten worden gemarkeerd met prioriteit).
