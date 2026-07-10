@@ -289,7 +289,7 @@ img{max-width:100%}
 .hero>.wrap{position:relative;z-index:1}
 .pride{position:relative;overflow:hidden}
 .pride::before{content:"";position:absolute;inset:0;z-index:0;background-image:linear-gradient(180deg,var(--bg) 0%,rgba(19,17,11,.80) 42%,rgba(19,17,11,.93) 100%),url('https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&w=1500&q=60');background-size:cover;background-position:center}
-.pride .wrap{position:relative;z-index:1}.price-badge{display:flex;align-items:center;gap:10px;background:rgba(232,119,46,.10);border:1px solid rgba(232,119,46,.30);color:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.price-badge svg{width:20px;height:20px;color:var(--orange-bright);flex:none}
+.pride .wrap{position:relative;z-index:1}.price-badge{display:flex;align-items:center;gap:10px;background:rgba(232,119,46,.10);border:1px solid rgba(232,119,46,.30);color:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.price-badge svg{width:20px;height:20px;color:var(--orange-bright);flex:none}.usp-badge{display:flex;align-items:center;gap:10px;background:rgba(63,166,106,.12);border:1px solid rgba(63,166,106,.4);color:#bfe6cf;border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.usp-badge svg{width:20px;height:20px;color:#7fd6a0;flex:none}
 </style>
 </head>
 <body>
@@ -451,6 +451,7 @@ img{max-width:100%}
       <h3 style="font-family:'Marcellus';font-size:1.5rem;margin-bottom:6px" data-i18n="proTitle"></h3>
       <p style="color:var(--muted);margin-bottom:24px;font-size:.95rem" data-i18n="proSub"></p>
       <div class="price-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22 2 12V4l8 0 8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7.2" cy="7.2" r="1.1"/></svg><span data-i18n="proPrice"></span></div>
+      <div class="usp-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11l2 2 4-4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span data-i18n="proUSP"></span></div>
       <form class="pro-form" onsubmit="return proSubmit(event)">
         <div><label data-i18n="lblCompany"></label><input class="inp" name="company" required data-ph="phCompany"></div>
         <div><label data-i18n="lblSpec"></label><select class="inp" id="proCat" name="spec" required></select></div>
@@ -598,6 +599,7 @@ img{max-width:100%}
       <label data-i18n="authCompany"></label><input class="inp" id="aCompany">
       <label data-i18n="authSpec"></label><select class="inp" id="aSpec"></select>
       <label data-i18n="authCity"></label><input class="inp" id="aCity">
+      <label data-i18n="authPhone"></label><input class="inp" id="aPhone">
       <label data-i18n="authNip"></label><input class="inp" id="aNip">
       <label data-i18n="authAddr"></label><input class="inp" id="aAddr">
     </div>
@@ -674,6 +676,7 @@ const T={
   proB4:"Company profile and certificates visible across the Netherlands",
   proTitle:"Create a tradesman profile",proSub:"Free registration — your first leads this week.",
   proPrice:"First 5 leads free — then € 12,50 per lead.",
+  proUSP:"New: pass overflow work to a colleague — completely free. Only on Budomatch.",
   lblCompany:"Company name",phCompany:"e.g. Jansen Construction",lblSpec:"Specialisation",
   lblCity:"City / region",phCity:"e.g. Utrecht",lblEmail:"E-mail",phEmail:"contact@company.nl",
   proBtn:"Join Budomatch",proNote:"Thank you! We will contact you shortly to activate your profile. 🤝",
@@ -703,7 +706,7 @@ const T={
   authEmail:"E-mail",authPass:"Password",authName:"Name",
   authRoleCustomer:"I am a customer",authRolePro:"I am a tradesman",
   authTypePriv:"Private",authTypeBiz:"Business",
-  authCompany:"Company name",authSpec:"Specialisation",authCity:"City / region",authNip:"VAT number (optional)",authAddr:"Address (for invoice, optional)",
+  authCompany:"Company name",authSpec:"Specialisation",authCity:"City / region",authPhone:"Phone (optional)",authNip:"VAT number (optional)",authAddr:"Address (for invoice, optional)",
   authSubmitLogin:"Log in",authSubmitReg:"Create account",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
@@ -743,6 +746,7 @@ const T={
   proB4:"Bedrijfsprofiel en certificaten zichtbaar in heel Nederland",
   proTitle:"Maak een vakman-profiel aan",proSub:"Gratis registratie — je eerste leads nog deze week.",
   proPrice:"Eerste 5 leads gratis — daarna € 12,50 per lead.",
+  proUSP:"Nieuw: werk dat blijft liggen gratis doorgeven aan een collega. Alleen op Budomatch.",
   lblCompany:"Bedrijfsnaam",phCompany:"bijv. Jansen Bouw",lblSpec:"Specialisatie",
   lblCity:"Plaats / provincie",phCity:"bijv. Utrecht",lblEmail:"E-mail",phEmail:"contact@bedrijf.nl",
   proBtn:"Aanmelden bij Budomatch",proNote:"Bedankt! We nemen snel contact met je op om je profiel te activeren. 🤝",
@@ -772,7 +776,7 @@ const T={
   authEmail:"E-mail",authPass:"Wachtwoord",authName:"Naam",
   authRoleCustomer:"Ik ben klant",authRolePro:"Ik ben vakman",
   authTypePriv:"Particulier",authTypeBiz:"Zakelijk",
-  authCompany:"Bedrijfsnaam",authSpec:"Specialisatie",authCity:"Plaats / provincie",authNip:"Btw-nummer (optioneel)",authAddr:"Adres (voor factuur, optioneel)",
+  authCompany:"Bedrijfsnaam",authSpec:"Specialisatie",authCity:"Plaats / provincie",authPhone:"Telefoon (optioneel)",authNip:"Btw-nummer (optioneel)",authAddr:"Adres (voor factuur, optioneel)",
   authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
@@ -1027,7 +1031,7 @@ async function submitAuth(){
   if(authMode==='register'){
     url='/api/register';
     body={role:authRole,name:document.getElementById('aName').value.trim(),email,password};
-    if(authRole==='pro'){body.company=document.getElementById('aCompany').value.trim();body.spec=document.getElementById('aSpec').value;body.city=document.getElementById('aCity').value.trim();body.nip=document.getElementById('aNip').value.trim();body.address=document.getElementById('aAddr').value.trim();}
+    if(authRole==='pro'){body.company=document.getElementById('aCompany').value.trim();body.spec=document.getElementById('aSpec').value;body.city=document.getElementById('aCity').value.trim();body.phone=document.getElementById('aPhone').value.trim();body.nip=document.getElementById('aNip').value.trim();body.address=document.getElementById('aAddr').value.trim();}
     else{body.customerType=custType;if(custType==='zakelijk'){body.company=document.getElementById('aCustCompany').value.trim();body.nip=document.getElementById('aCustNip').value.trim();}}
   }else{url='/api/login';body={email,password};}
   try{

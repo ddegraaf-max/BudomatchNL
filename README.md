@@ -98,3 +98,9 @@ De app gebruikt automatisch **PostgreSQL** zodra `DATABASE_URL` is gezet (op Rai
 - Klanten kunnen zich registreren als **particulier** of **zakelijk** (bedrijfsnaam + btw-nummer).
 - Vakmensen betalen via Stripe: eerste 5 leads gratis, daarna per lead.
 - **Support**: klanten en bedrijven kunnen via het dashboard een supportverzoek sturen (zakelijke klanten worden gemarkeerd met prioriteit).
+
+## Chat & offertes (in-portaal)
+Zodra een vakman een aanvraag ontgrendelt, opent automatisch een gesprek tussen klant en vakman in beide portalen — geen bellen/mailen nodig. In de chat kan de vakman een **offerte** sturen (bedrag + omschrijving) die de klant met één klik kan **accepteren of afwijzen**. Berichten verversen automatisch (polling). Zakelijke klanten worden herkenbaar gelabeld.
+
+## Collega-klussen (vakman → vakman, gratis) — USP
+Vakmensen kunnen werk dat blijft liggen **gratis** doorgeven aan collega-vakmensen: plaats een klus, een andere vakman pakt 'm op, en er opent automatisch een vakman⇆vakman chat (met foto's, afspraak/agenda en bellen). Dit is de USP om vakmensen aan te trekken. Beoordelingen (reviews) sluiten de loop: klanten beoordelen vakmensen na contact.

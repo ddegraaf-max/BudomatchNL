@@ -20,6 +20,17 @@ const LEAD_PRICE_NET = +(LEAD_PRICE_GROSS / (1 + VAT_RATE)).toFixed(2);   // 12.
 const LEAD_PRICE_VAT = +(LEAD_PRICE_GROSS - LEAD_PRICE_NET).toFixed(2);   // 0.00 (verlegd)
 const CURRENCY = 'eur';
 
+// Prijs per lead hangt af van het type aanvraag:
+// - 'opdracht' (echte klus): volle prijs
+// - 'orientatie' (klant oriënteert / wil iets kopen): 50% ontgrendelprijs
+function leadPrice(r) {
+  const factor = (r && r.intent === 'orientatie') ? 0.5 : 1;
+  const gross = +(LEAD_PRICE_GROSS * factor).toFixed(2);
+  const net = +(gross / (1 + VAT_RATE)).toFixed(2);
+  const vat = +(gross - net).toFixed(2);
+  return { gross, net, vat, vatRate: VAT_RATE, orientation: factor !== 1 };
+}
+
 // ----- Stripe (alleen geladen als er een sleutel is) -----
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
@@ -43,9 +54,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       const requestId = s.metadata && s.metadata.requestId;
       // idempotent: alleen claim aanmaken als die nog niet bestaat
       if (proId && requestId && !(await store.claimExists(proId, requestId))) {
+        const r = await store.findRequest(requestId);
+        const p = leadPrice(r);
         await store.addClaim({
           proId, requestId, free: false, paid: true,
-          amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT,
+          amountGross: p.gross, amountNet: p.net, amountVat: p.vat,
           invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online',
           stripeSession: s.id, paymentIntent: s.payment_intent || null,
         });
@@ -78,6 +91,7 @@ async function publicUser(u) {
     const used = (await store.claimsByPro(u.id)).length;
     rest.creditsUsed = used;
     rest.creditsLeft = Math.max(0, FREE_LEADS - used);
+    rest.rating = await proRating(u.id);
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -112,6 +126,7 @@ app.post('/api/register', async (req, res) => {
       u.company = String(b.company || '').trim();
       u.spec = String(b.spec || '').trim();
       u.city = String(b.city || '').trim();
+      u.phone = String(b.phone || '').trim();
       u.nip = String(b.nip || '').trim();
       u.address = String(b.address || '').trim();
     } else {
@@ -184,6 +199,8 @@ app.post('/api/requests', requireRole('customer'), async (req, res) => {
       customerId: req.user.id,
       customerType: req.user.customerType || 'particulier',
       company: req.user.company || '',
+      intent: b.intent === 'orientatie' ? 'orientatie' : 'opdracht',
+      timing: String(b.timing || '').slice(0, 60),
       service: String(b.service).slice(0, 120),
       zip: String(b.zip || '').slice(0, 80),
       description: String(b.description).slice(0, 4000),
@@ -214,6 +231,8 @@ async function leadView(r, pro) {
     id: r.id, service: r.service, zip: r.zip, description: r.description,
     createdAt: r.createdAt, lang: r.lang, claimed,
     customerType: r.customerType || 'particulier',
+    intent: r.intent || 'opdracht', timing: r.timing || '',
+    price: leadPrice(r),
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
   };
@@ -249,7 +268,7 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
       return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: Math.max(0, FREE_LEADS - used - 1) });
     }
     // betaling vereist
-    res.json({ ok: false, paymentRequired: true, price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT } });
+    res.json({ ok: false, paymentRequired: true, price: leadPrice(r) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -269,11 +288,13 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   }
 
   if (!stripe) { // geen Stripe geconfigureerd → demo
-    await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: LEAD_PRICE_GROSS, amountNet: LEAD_PRICE_NET, amountVat: LEAD_PRICE_VAT, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
+    const p = leadPrice(r);
+    await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
     return res.json({ ok: true, demo: true, lead: await leadView(r, pro) });
   }
 
   try {
+    const p = leadPrice(r);
     const proto = (req.headers['x-forwarded-proto'] || req.protocol).split(',')[0];
     const base = process.env.BASE_URL || `${proto}://${req.headers.host}`;
     const session = await stripe.checkout.sessions.create({
@@ -283,8 +304,8 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
         quantity: 1,
         price_data: {
           currency: CURRENCY,
-          unit_amount: Math.round(LEAD_PRICE_GROSS * 100), // grosze, incl. 23% btw
-          product_data: { name: `Budomatch lead: ${r.service}`, description: 'Ontgrendeling aanvraag (btw verlegd / reverse charge)' },
+          unit_amount: Math.round(p.gross * 100),
+          product_data: { name: `Budomatch lead: ${r.service}`, description: (p.orientation ? 'Oriëntatie-lead (50%) — ' : '') + 'ontgrendeling aanvraag (btw verlegd / reverse charge)' },
         },
       }],
       metadata: { proId: pro.id, requestId: r.id },
@@ -312,6 +333,268 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
       freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
       price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
     });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- chat / berichten (klant ⇆ vakman) ----------------
+// Een gesprek (thread) bestaat zodra een vakman een aanvraag heeft ontgrendeld.
+// Toegang: de betrokken vakman en de klant-eigenaar van de aanvraag.
+// Een thread is óf een klant⇆vakman gesprek (over een aanvraag) óf een
+// vakman⇆vakman gesprek (over een collega-klus / projob).
+async function resolveThread(rid, pid) {
+  const r = await store.findRequest(rid);
+  if (r) return { kind: 'request', request: r, service: r.service };
+  const j = await store.findProJob(rid);
+  if (j && pid === j.takenByProId) return { kind: 'projob', job: j, posterProId: j.posterProId, takenByProId: j.takenByProId, service: j.service };
+  return null;
+}
+async function threadAccess(user, requestId, proId) {
+  const ctx = await resolveThread(requestId, proId);
+  if (!ctx) return null;
+  if (ctx.kind === 'request') {
+    if (!(await store.claimExists(proId, requestId))) return null;
+    if (user.role === 'pro' && user.id === proId) return ctx;
+    if (user.role === 'customer' && ctx.request.customerId === user.id) return ctx;
+    return null;
+  }
+  if (user.role === 'pro' && (user.id === ctx.posterProId || user.id === ctx.takenByProId)) return ctx;
+  return null;
+}
+async function proRating(proId) {
+  const rv = await store.reviewsByPro(proId);
+  if (!rv.length) return { avg: 0, count: 0 };
+  const avg = rv.reduce((s, r) => s + (r.rating || 0), 0) / rv.length;
+  return { avg: Math.round(avg * 10) / 10, count: rv.length };
+}
+
+app.get('/api/threads', requireRole(), async (req, res) => {
+  try {
+    const u = req.user, out = [];
+    const build = async (r, proId, withName, customerType, phone) => {
+      const msgs = await store.messagesByThread(r.id, proId);
+      const last = msgs[msgs.length - 1] || null;
+      out.push({
+        requestId: r.id, proId, service: r.service, with: withName, phone: phone || '',
+        customerType: customerType || 'particulier', intent: r.intent || 'opdracht', kind: 'request',
+        rating: await proRating(proId),
+        last: last ? { type: last.type, text: last.text || '', amount: last.amount || null } : null,
+        lastAt: last ? last.createdAt : 0,
+        unread: msgs.filter(m => m.fromId !== u.id && m.fromRole !== 'system' && !(m.readBy || []).includes(u.id)).length,
+      });
+    };
+    if (u.role === 'pro') {
+      for (const c of await store.claimsByPro(u.id)) {
+        const r = await store.findRequest(c.requestId); if (!r) continue;
+        const who = (r.customerType === 'zakelijk' && r.company) ? r.company : r.name;
+        await build(r, u.id, who, r.customerType, r.phone);
+      }
+      for (const j of await store.proJobsForPro(u.id)) {
+        if (j.status !== 'taken' || !j.takenByProId) continue;
+        const otherId = (u.id === j.posterProId) ? j.takenByProId : j.posterProId;
+        const other = await store.findUserById(otherId);
+        const msgs = await store.messagesByThread(j.id, j.takenByProId);
+        const last = msgs[msgs.length - 1] || null;
+        out.push({
+          requestId: j.id, proId: j.takenByProId, service: j.service,
+          with: other ? (other.company || other.name) : 'Vakman', phone: (other && other.phone) || '',
+          kind: 'projob', intent: 'opdracht', rating: await proRating(otherId),
+          last: last ? { type: last.type, text: last.text || '', amount: last.amount || null } : null,
+          lastAt: last ? last.createdAt : j.createdAt,
+          unread: msgs.filter(m => m.fromId !== u.id && m.fromRole !== 'system' && !(m.readBy || []).includes(u.id)).length,
+        });
+      }
+    } else {
+      for (const r of await store.requestsByCustomer(u.id)) {
+        for (const c of await store.claimsByRequest(r.id)) {
+          const pro = await store.findUserById(c.proId);
+          await build(r, c.proId, pro ? (pro.company || pro.name) : 'Vakman', r.customerType, pro && pro.phone);
+        }
+      }
+    }
+    out.sort((a, b) => b.lastAt - a.lastAt);
+    res.json({ threads: out });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+app.get('/api/threads/:rid/:pid/messages', requireRole(), async (req, res) => {
+  try {
+    const u = req.user;
+    const ctx = await threadAccess(u, req.params.rid, req.params.pid);
+    if (!ctx) return res.status(403).json({ error: 'forbidden' });
+    const msgs = await store.messagesByThread(req.params.rid, req.params.pid);
+    for (const m of msgs) if (m.fromId !== u.id && !(m.readBy || []).includes(u.id)) await store.updateMessage(m.id, { readBy: [...(m.readBy || []), u.id] });
+    let phone = '', withName = '', rating = { avg: 0, count: 0 }, reviewed = true;
+    if (ctx.kind === 'request') {
+      const r = ctx.request;
+      if (u.role === 'pro') { phone = r.phone || ''; withName = (r.customerType === 'zakelijk' && r.company) ? r.company : r.name; }
+      else { const pro = await store.findUserById(req.params.pid); phone = (pro && pro.phone) || ''; withName = pro ? (pro.company || pro.name) : 'Vakman'; }
+      rating = await proRating(req.params.pid);
+      reviewed = u.role === 'customer' ? await store.reviewExists(u.id, req.params.pid, req.params.rid) : true;
+    } else {
+      const otherId = (u.id === ctx.posterProId) ? ctx.takenByProId : ctx.posterProId;
+      const other = await store.findUserById(otherId);
+      phone = (other && other.phone) || ''; withName = other ? (other.company || other.name) : 'Vakman';
+      rating = await proRating(otherId);
+    }
+    res.json({ messages: msgs, me: u.role, meId: u.id, kind: ctx.kind, phone, with: withName, rating, reviewed });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+async function notifyMessage(ctx, sender) {
+  let to;
+  if (ctx.kind === 'request') {
+    if (sender.role === 'pro') to = ctx.request.email;
+    else { const pro = await store.findUserById(ctx.takenByProId || sender._pid); to = pro && pro.email; }
+  } else {
+    const otherId = (sender.id === ctx.posterProId) ? ctx.takenByProId : ctx.posterProId;
+    const other = await store.findUserById(otherId);
+    to = other && other.email;
+  }
+  if (!to) return;
+  await sendMail(`Nieuw bericht op Budomatch — ${esc(ctx.service)}`,
+    `<h2>Je hebt een nieuw bericht</h2><p>Er is een nieuw bericht in je gesprek over "<b>${esc(ctx.service)}</b>".</p><p>Log in op je Budomatch-portaal om te reageren.</p>`,
+    null, to);
+}
+
+app.post('/api/threads/:rid/:pid/messages', requireRole(), async (req, res) => {
+  try {
+    const u = req.user;
+    const ctx = await threadAccess(u, req.params.rid, req.params.pid);
+    if (!ctx) return res.status(403).json({ error: 'forbidden' });
+    const b = req.body || {};
+    let type = ['quote', 'image', 'appointment'].includes(b.type) ? b.type : 'text';
+    if (type === 'quote' && (u.role !== 'pro' || ctx.kind !== 'request')) return res.status(403).json({ error: 'pro_only' });
+    const m = {
+      requestId: req.params.rid, proId: req.params.pid,
+      fromRole: u.role, fromId: u.id, fromName: u.company || u.name, type,
+      text: String(b.text || '').slice(0, 4000),
+      readBy: [u.id],
+    };
+    if (type === 'quote') {
+      m.amount = Math.max(0, Math.round(Number(b.amount) * 100) / 100) || 0;
+      m.status = 'sent'; m.text = String(b.text || '').slice(0, 2000);
+    } else if (type === 'appointment') {
+      m.date = String(b.date || '').slice(0, 20);
+      m.time = String(b.time || '').slice(0, 10);
+      if (!m.date) return res.status(400).json({ error: 'invalid' });
+      m.status = 'sent'; m.text = String(b.text || '').slice(0, 500);
+    } else if (type === 'image') {
+      const img = cleanPhotos([b.image])[0];
+      if (!img) return res.status(400).json({ error: 'invalid' });
+      m.image = img; m.text = String(b.text || '').slice(0, 500);
+    } else if (!m.text.trim()) {
+      return res.status(400).json({ error: 'empty' });
+    }
+    await store.addMessage(m);
+    notifyMessage(ctx, u).catch(() => {});
+    res.json({ message: m });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant accepteert of wijst een offerte af
+app.post('/api/messages/:id/quote', requireRole('customer'), async (req, res) => {
+  try {
+    const u = req.user;
+    const m = await store.findMessage(req.params.id);
+    if (!m || m.type !== 'quote') return res.status(404).json({ error: 'not_found' });
+    const r = await store.findRequest(m.requestId);
+    if (!r || r.customerId !== u.id) return res.status(403).json({ error: 'forbidden' });
+    if (m.status !== 'sent') return res.json({ ok: true, status: m.status });
+    const status = (req.body && req.body.action === 'accept') ? 'accepted' : 'declined';
+    await store.updateMessage(m.id, { status });
+    await store.addMessage({
+      requestId: m.requestId, proId: m.proId, fromRole: 'system', fromId: u.id, fromName: u.name,
+      type: 'system', text: status === 'accepted' ? 'quote_accepted' : 'quote_declined', readBy: [u.id],
+    });
+    res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Afspraak bevestigen/afwijzen (door de tegenpartij van wie 'm voorstelde)
+app.post('/api/messages/:id/appointment', requireRole(), async (req, res) => {
+  try {
+    const u = req.user;
+    const m = await store.findMessage(req.params.id);
+    if (!m || m.type !== 'appointment') return res.status(404).json({ error: 'not_found' });
+    if (!(await threadAccess(u, m.requestId, m.proId))) return res.status(403).json({ error: 'forbidden' });
+    if (u.id === m.fromId) return res.status(403).json({ error: 'own' });
+    if (m.status !== 'sent') return res.json({ ok: true, status: m.status });
+    const status = (req.body && req.body.action === 'accept') ? 'accepted' : 'declined';
+    await store.updateMessage(m.id, { status });
+    await store.addMessage({
+      requestId: m.requestId, proId: m.proId, fromRole: 'system', fromId: u.id, fromName: u.name,
+      type: 'system', text: status === 'accepted' ? 'appt_accepted' : 'appt_declined', readBy: [u.id],
+    });
+    res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant laat een beoordeling achter voor een vakman
+app.post('/api/reviews', requireRole('customer'), async (req, res) => {
+  try {
+    const u = req.user, b = req.body || {};
+    const proId = String(b.proId || ''), requestId = String(b.requestId || '');
+    if (!(await threadAccess(u, requestId, proId))) return res.status(403).json({ error: 'forbidden' });
+    if (await store.reviewExists(u.id, proId, requestId)) return res.status(409).json({ error: 'exists' });
+    const rating = Math.min(5, Math.max(1, parseInt(b.rating, 10) || 0));
+    if (!rating) return res.status(400).json({ error: 'invalid' });
+    await store.addReview({ proId, customerId: u.id, requestId, rating, comment: String(b.comment || '').slice(0, 1000), customerName: u.name });
+    await store.addMessage({ requestId, proId, fromRole: 'system', fromId: u.id, fromName: u.name, type: 'system', text: 'review_left', readBy: [u.id] });
+    res.json({ ok: true, rating: await proRating(proId) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- collega-klussen (vakman → vakman, gratis) ----------------
+app.post('/api/projobs', requireRole('pro'), async (req, res) => {
+  try {
+    const u = req.user, b = req.body || {};
+    if (!b.service || !b.description) return res.status(400).json({ error: 'invalid' });
+    const j = await store.addProJob({
+      posterProId: u.id, posterName: u.company || u.name,
+      service: String(b.service).slice(0, 120),
+      description: String(b.description).slice(0, 4000),
+      zip: String(b.zip || '').slice(0, 80),
+      timing: String(b.timing || '').slice(0, 60),
+      note: String(b.note || '').slice(0, 300),
+      photos: cleanPhotos(b.photos),
+    });
+    res.json({ job: j });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Open collega-klussen van ándere vakmensen
+app.get('/api/projobs', requireRole('pro'), async (req, res) => {
+  try {
+    const u = req.user;
+    const open = (await store.openProJobs()).filter(j => j.posterProId !== u.id).map(j => ({
+      id: j.id, service: j.service, description: j.description, zip: j.zip, timing: j.timing,
+      note: j.note || '', posterName: j.posterName, createdAt: j.createdAt,
+      photoCount: Array.isArray(j.photos) ? j.photos.length : 0,
+    }));
+    const mine = (await store.proJobsForPro(u.id)).map(j => ({
+      id: j.id, service: j.service, status: j.status, minefPosted: j.posterProId === u.id,
+      posterName: j.posterName, createdAt: j.createdAt, taken: j.status === 'taken',
+    }));
+    res.json({ jobs: open, mine });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klus oppakken (gratis) → opent vakman⇆vakman gesprek
+app.post('/api/projobs/:id/take', requireRole('pro'), async (req, res) => {
+  try {
+    const u = req.user;
+    const j = await store.findProJob(req.params.id);
+    if (!j) return res.status(404).json({ error: 'not_found' });
+    if (j.posterProId === u.id) return res.status(400).json({ error: 'own' });
+    if (j.status !== 'open') return res.status(409).json({ error: 'taken' });
+    await store.updateProJob(j.id, { status: 'taken', takenByProId: u.id, takenByName: u.company || u.name });
+    // openingsbericht in het gesprek
+    await store.addMessage({
+      requestId: j.id, proId: u.id, fromRole: 'pro', fromId: u.id, fromName: u.company || u.name,
+      type: 'text', text: `Ik pak deze klus graag op: ${j.service}`, readBy: [u.id],
+    });
+    notifyMessage({ kind: 'projob', service: j.service, posterProId: j.posterProId, takenByProId: u.id }, u).catch(() => {});
+    res.json({ ok: true, requestId: j.id, proId: u.id });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -368,9 +651,9 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // ---------------- e-mail (Resend) voor gast-aanvragen / aanmeldingen ----------------
-async function sendMail(subject, html, attachments) {
-  if (!process.env.RESEND_API_KEY) { console.log('[Resend niet ingesteld]', subject, attachments ? `(+${attachments.length} bijlage(n))` : ''); return { skipped: true }; }
-  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: process.env.MAIL_TO || 'info@budomatch.pl', subject, html };
+async function sendMail(subject, html, attachments, to) {
+  if (!process.env.RESEND_API_KEY) { console.log('[Resend niet ingesteld]', subject, to ? '→ ' + to : '', attachments ? `(+${attachments.length} bijlage(n))` : ''); return { skipped: true }; }
+  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: to || process.env.MAIL_TO || 'info@budomatch.pl', subject, html };
   if (attachments && attachments.length) payload.attachments = attachments;
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',

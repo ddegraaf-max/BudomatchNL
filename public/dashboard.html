@@ -90,6 +90,61 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .photo-thumbs .th img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-thumbs a.th{cursor:zoom-in}
 .photo-thumbs .th button{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center}
+
+.conv-list{display:flex;flex-direction:column;gap:2px}
+.conv{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;cursor:pointer;transition:.15s;position:relative}
+.conv:hover{background:rgba(201,162,39,.07)}
+.conv-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#b8901e);color:#20180a;display:grid;place-items:center;font-weight:700;flex:none}
+.conv-main{flex:1;min-width:0}
+.conv-top{display:flex;align-items:center;gap:8px}.conv-top b{color:var(--cream)}
+.conv-svc{font-size:.78rem;color:var(--gold-soft)}
+.conv-last{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.conv-badge{background:var(--green);color:#fff;min-width:20px;height:20px;border-radius:20px;display:grid;place-items:center;font-size:.72rem;font-weight:700;padding:0 6px;flex:none}
+.chat-pane{display:flex;flex-direction:column;height:460px}
+.chat-head{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
+#chatWith{font-weight:700;color:var(--cream)}
+.chat-back{background:none;border:none;color:var(--gold-bright);font-size:1.4rem;cursor:pointer;line-height:1}
+.chat-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px}
+.bubble-row{display:flex}.bubble-row.me{justify-content:flex-end}
+.bubble{max-width:78%;padding:9px 13px;border-radius:14px;font-size:.92rem;line-height:1.4;white-space:pre-wrap;word-break:break-word}
+.bubble-row.them .bubble{background:var(--panel);border:1px solid var(--line);color:var(--cream);border-bottom-left-radius:4px}
+.bubble-row.me .bubble{background:linear-gradient(135deg,var(--gold),#b8901e);color:#20180a;border-bottom-right-radius:4px}
+.chat-sys{align-self:center;font-size:.78rem;color:var(--muted);background:rgba(255,255,255,.05);padding:4px 12px;border-radius:20px}
+.quote-msg{max-width:82%;background:var(--panel);border:1px solid var(--gold);border-radius:14px;padding:14px}
+.qm-h{font-size:.7rem;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-soft)}
+.qm-amt{font-family:'Marcellus',serif;font-size:1.6rem;color:var(--gold-bright);margin:2px 0}
+.qm-desc{font-size:.88rem;color:var(--cream);margin-bottom:6px}
+.qm-status{font-size:.78rem;font-weight:600}
+.qm-status.s-sent{color:var(--muted)}.qm-status.s-accepted{color:#7fd6a0}.qm-status.s-declined{color:#e2708a}
+.qm-act{display:flex;gap:8px;margin-top:8px}
+.chat-compose{display:flex;align-items:center;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.chat-compose input{flex:1;background:var(--bg-2,var(--panel));border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--cream);font:inherit}
+.chat-send{background:linear-gradient(135deg,var(--gold),#b8901e);border:none;color:#20180a;width:40px;height:40px;border-radius:10px;cursor:pointer;flex:none}
+.chat-quote{background:none;border:1px solid var(--gold);color:var(--gold-bright);border-radius:10px;padding:0 12px;height:40px;cursor:pointer;white-space:nowrap;flex:none;font:inherit}
+.quote-form{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.quote-form input{flex:1;min-width:120px;background:var(--bg-2,var(--panel));border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--cream);font:inherit}
+.btn-ghost{background:none;border:1px solid var(--line);color:var(--cream)}
+
+.seg{display:flex;gap:8px;margin-bottom:6px}
+.seg button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:9px;cursor:pointer;font:inherit}
+.seg button.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.1)}
+.hint{font-size:.82rem;color:var(--muted);margin:0 0 8px}
+.tag.job{background:rgba(63,166,106,.14);border-color:var(--green);color:#bfe6cf}
+.tag.orient{background:rgba(232,150,60,.16);border-color:rgba(232,150,60,.55);color:#f2c48a}
+.img-msg{max-width:62%}.img-msg img{width:100%;border-radius:12px;cursor:zoom-in;display:block}.im-cap{font-size:.82rem;color:var(--muted);margin-top:4px}
+.appt-msg{max-width:82%;background:var(--panel);border:1px solid var(--gold);border-radius:14px;padding:14px}
+.ap-when{font-family:'Marcellus',serif;font-size:1.15rem;color:var(--gold-bright);margin:2px 0}
+.chat-call{color:var(--gold-bright);display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:.85rem}
+.chat-ico{background:none;border:1px solid var(--line);color:var(--gold-soft);border-radius:10px;width:40px;height:40px;cursor:pointer;flex:none;display:grid;place-items:center}
+.chat-ico:hover{border-color:var(--gold)}
+
+.stars-view{color:var(--gold-bright);font-size:.88rem;letter-spacing:1px}
+.stars-view small{color:var(--muted);margin-left:4px;letter-spacing:0}
+.rev-btn{background:none;border:1px solid var(--gold);color:var(--gold-bright);border-radius:8px;padding:4px 10px;font-size:.8rem;cursor:pointer}
+.rev-panel{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--panel)}
+.star-input{display:flex;gap:4px;font-size:1.7rem;color:var(--muted);cursor:pointer;margin-bottom:8px}
+.star-input span.on{color:var(--gold-bright)}
+.rev-panel input{width:100%;background:var(--bg-2,var(--panel));border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--cream);margin-bottom:8px;font:inherit}
 </style>
 
 </head>
@@ -127,6 +182,11 @@ const T = {
     cPhotos:'Photos (optional, max 3)', cPhotosHint:'Tap or drag to add photos',
     cPost:'Post for free', cNote:'Your job is live. Tradesmen can now respond.',
     supTitle:'Support', supIntro:'A question or need help? Send us a message — business customers get priority.', supSubject:'Subject', supMsg:'Message', supSend:'Send message', supNote:'Thanks! We will get back to you soon.', tagBiz:'Business',
+    msgTitle:'Messages', msgEmpty:'No conversations yet. They start automatically once a tradesman unlocks a job.', msgNone:'No messages yet', msgPh:'Type a message…', qpNew:'Quote', qpAmount:'Amount (€)', qpDesc:'Short description (optional)', qpSend:'Send quote', qpLabel:'Quote', qs_sent:'Awaiting response', qs_accepted:'Accepted', qs_declined:'Declined', qAccept:'Accept', qDecline:'Decline', sysAccepted:'✓ Quote accepted', sysDeclined:'Quote declined',
+    cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation / buying', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are orienting or planning to buy — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'As soon as possible', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'Later / not sure',
+    tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
+    rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
+    pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -153,6 +213,11 @@ const T = {
     cPhotos:'Foto\'s (optioneel, max 3)', cPhotosHint:'Tik of sleep om foto\'s toe te voegen',
     cPost:'Gratis plaatsen', cNote:'Je aanvraag staat live. Vakmensen kunnen nu reageren.',
     supTitle:'Support', supIntro:'Een vraag of hulp nodig? Stuur ons een bericht — zakelijke klanten krijgen voorrang.', supSubject:'Onderwerp', supMsg:'Bericht', supSend:'Bericht versturen', supNote:'Bedankt! We reageren snel.', tagBiz:'Zakelijk',
+    msgTitle:'Berichten', msgEmpty:'Nog geen gesprekken. Ze starten automatisch zodra een vakman een klus ontgrendelt.', msgNone:'Nog geen berichten', msgPh:'Typ een bericht…', qpNew:'Offerte', qpAmount:'Bedrag (€)', qpDesc:'Korte omschrijving (optioneel)', qpSend:'Offerte sturen', qpLabel:'Offerte', qs_sent:'Wacht op reactie', qs_accepted:'Geaccepteerd', qs_declined:'Afgewezen', qAccept:'Accepteren', qDecline:'Afwijzen', sysAccepted:'✓ Offerte geaccepteerd', sysDeclined:'Offerte afgewezen',
+    cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie / aankoop', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je of wilt iets kopen — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Zo snel mogelijk', tm1:'Binnen 1 maand', tm13:'1-3 maanden', tmLater:'Later / weet ik nog',
+    tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
+    rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
+    pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -202,6 +267,189 @@ const CATS_NL = "Aanbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,B
 const cats = () => LANG==='nl'?CATS_NL:CATS_EN;
 
 /* ============ KLANT / KLIENT ============ */
+function proJobsCardHtml(){
+  return `<div class="card" style="margin-top:22px"><h2>${t('pjTitle')}</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">${t('pjIntro')}</p>
+    <div class="grid two">
+      <div>
+        <h3 style="font-size:1rem;margin:0 0 8px">${t('pjNew')}</h3>
+        <select class="inp" id="pjService">${cats().map(c=>`<option>${c}</option>`).join('')}</select>
+        <input class="inp" id="pjZip" placeholder="${t('cZipPh')}">
+        <select class="inp" id="pjTiming"><option>${t('tmAsap')}</option><option>${t('tm1')}</option><option>${t('tm13')}</option><option>${t('tmLater')}</option></select>
+        <textarea class="inp" id="pjDesc" rows="3" placeholder="${t('cDescPh')}"></textarea>
+        <input class="inp" id="pjNote" placeholder="${t('pjNote')}">
+        <button class="btn btn-gold" style="width:100%" onclick="postProJob()">${t('pjPost')}</button>
+        <div class="note" id="pjPosted">${t('cNote')}</div>
+      </div>
+      <div><h3 style="font-size:1rem;margin:0 0 8px">${t('pjOpen')}</h3><div id="pjList"></div></div>
+    </div></div>`;
+}
+async function loadProJobs(){ const el=document.getElementById('pjList'); if(!el)return;
+  let r; try{ r=await api('/api/projobs'); }catch(e){ return; }
+  if(!r.jobs||!r.jobs.length){ el.innerHTML=`<p class="empty">${t('pjEmpty')}</p>`; return; }
+  el.innerHTML=r.jobs.map(j=>`<div class="item"><div class="top"><span class="svc">${htmlesc(j.service)}</span>${j.photoCount?`<span class="tag">${j.photoCount} foto${j.photoCount>1?'s':''}</span>`:''}<span class="meta" style="margin-left:auto">${fmtDate(j.createdAt)}</span></div>
+    <div class="desc">${htmlesc(j.description)}</div>
+    <div class="meta">${htmlesc(j.zip||'')}${j.timing?` · ${htmlesc(j.timing)}`:''} · ${t('pjBy')} ${htmlesc(j.posterName)}</div>
+    ${j.note?`<div class="meta">“${htmlesc(j.note)}”</div>`:''}
+    <div style="margin-top:10px"><button class="btn btn-gold btn-sm" onclick="takeProJob('${j.id}',this)">${t('pjTake')}</button></div></div>`).join('');
+}
+async function postProJob(){ const body={service:document.getElementById('pjService').value,zip:document.getElementById('pjZip').value,timing:document.getElementById('pjTiming').value,description:document.getElementById('pjDesc').value,note:document.getElementById('pjNote').value};
+  if(!body.description.trim()){document.getElementById('pjDesc').focus();return;}
+  const r=await api('/api/projobs',{method:'POST',body:JSON.stringify(body)});
+  if(r.job){ document.getElementById('pjPosted').classList.add('show'); document.getElementById('pjDesc').value='';document.getElementById('pjZip').value='';document.getElementById('pjNote').value=''; loadProJobs(); }
+}
+async function takeProJob(id,btn){ btn.disabled=true; btn.textContent=t('busy');
+  let r; try{ r=await api('/api/projobs/'+id+'/take',{method:'POST',body:'{}'}); }catch(e){}
+  if(r&&r.ok){ await loadThreads(); openThread(r.requestId,r.proId); loadProJobs(); }
+  else { btn.disabled=false; btn.textContent=t('pjTake'); loadProJobs(); }
+}
+function messagesCardHtml(){
+  return `<div class="card msg-card" style="margin-top:22px"><h2>${t('msgTitle')}</h2>
+    <div id="convList" class="conv-list"></div>
+    <div id="chatPane" class="chat-pane" style="display:none">
+      <div class="chat-head"><button class="chat-back" onclick="closeThread()" aria-label="terug">&#8592;</button><span id="chatWith"></span><span id="chatRating" class="stars-view" style="margin-left:8px"></span><button id="revBtn" class="rev-btn" style="display:none;margin-left:8px" onclick="toggleReview()">${t('rvBtn')}</button><a id="chatCall" class="chat-call" style="display:none;margin-left:auto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg><span>${t('chatCall')}</span></a></div>
+      <div id="revPanel" class="rev-panel" style="display:none">
+        <div class="star-input" id="starInput"></div>
+        <input id="revComment" placeholder="${t('rvComment')}">
+        <button class="btn btn-gold btn-sm" onclick="submitReview()">${t('rvSend')}</button>
+      </div>
+      <div id="chatBody" class="chat-body"></div>
+      <div id="quoteForm" class="quote-form" style="display:none">
+        <input id="qAmount" type="number" min="0" step="0.01" placeholder="${t('qpAmount')}">
+        <input id="qDesc" placeholder="${t('qpDesc')}">
+        <button class="btn btn-gold btn-sm" onclick="sendQuote()">${t('qpSend')}</button>
+      </div>
+      <div id="apptForm" class="quote-form" style="display:none">
+        <input id="apDate" type="date"><input id="apTime" type="time"><input id="apNote" placeholder="${t('apNote')}">
+        <button class="btn btn-gold btn-sm" onclick="sendAppt()">${t('apSend')}</button>
+      </div>
+      <div class="chat-compose">
+        <button id="quoteBtn" class="chat-quote" onclick="toggleQuoteForm()" style="display:none">+ ${t('qpNew')}</button>
+        <button class="chat-ico" onclick="toggleApptForm()" title="${t('apTitle')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>
+        <button class="chat-ico" onclick="document.getElementById('chatFile').click()" title="${t('msgPhoto')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10 18"/></svg></button>
+        <input type="file" id="chatFile" accept="image/*" hidden onchange="sendPhoto(this.files)">
+        <input id="chatInput" placeholder="${t('msgPh')}" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" onclick="sendChat()" aria-label="stuur"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button>
+      </div>
+    </div></div>`;
+}
+let THREADS=[], CT=null, chatTimer=null;
+function htmlesc(x){return String(x==null?'':x).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+async function loadThreads(){ const el=document.getElementById('convList'); if(!el)return;
+  try{ const r=await api('/api/threads'); THREADS=r.threads||[]; }catch(e){ THREADS=[]; }
+  renderConvList();
+}
+function convPreview(th){
+  if(!th.last) return t('msgNone');
+  if(th.last.type==='quote') return t('qpLabel')+' · '+money(th.last.amount);
+  if(th.last.type==='system') return '—';
+  return th.last.text;
+}
+function renderConvList(){
+  const el=document.getElementById('convList'); if(!el)return;
+  if(!THREADS.length){ el.innerHTML=`<p class="empty">${t('msgEmpty')}</p>`; return; }
+  el.innerHTML=THREADS.map(th=>`<div class="conv" onclick="openThread('${th.requestId}','${th.proId}')">
+    <div class="conv-av">${htmlesc((th.with||'?').slice(0,1).toUpperCase())}</div>
+    <div class="conv-main">
+      <div class="conv-top"><b>${htmlesc(th.with)}</b>${th.customerType==='zakelijk'?` <span class="tag biz">${t('tagBiz')}</span>`:''}${th.kind==='projob'?` <span class="tag" style="border-color:var(--gold);color:var(--gold-bright)">${t('tagColleague')}</span>`:''}${(ME.role==='customer'&&th.rating&&th.rating.count)?` <span class="stars-view" style="font-size:.76rem">${starsHtml(th.rating.avg,th.rating.count)}</span>`:''}</div>
+      <div class="conv-svc">${htmlesc(th.service)}</div>
+      <div class="conv-last">${htmlesc(convPreview(th))}</div>
+    </div>
+    ${th.unread?`<span class="conv-badge">${th.unread}</span>`:''}</div>`).join('');
+}
+function openThread(rid,pid){
+  const th=THREADS.find(x=>x.requestId===rid&&x.proId===pid)||{};
+  CT={rid,pid};
+  document.getElementById('convList').style.display='none';
+  document.getElementById('chatPane').style.display='flex';
+  document.getElementById('chatWith').textContent=th.with||'';
+  document.getElementById('quoteBtn').style.display=(ME.role==='pro')?'inline-flex':'none';
+  loadMessages(true); startChatPoll();
+}
+function closeThread(){ CT=null; stopChatPoll();
+  const p=document.getElementById('chatPane'), l=document.getElementById('convList');
+  if(p)p.style.display='none'; if(l)l.style.display='flex'; loadThreads();
+}
+async function loadMessages(scroll){ if(!CT)return;
+  try{ const r=await api(`/api/threads/${CT.rid}/${CT.pid}/messages`);
+    if(r.with){const w=document.getElementById('chatWith');if(w)w.textContent=r.with;}
+    const call=document.getElementById('chatCall');
+    if(call){ if(r.phone){call.href='tel:'+String(r.phone).replace(/\s/g,'');call.style.display='inline-flex';} else call.style.display='none'; }
+    const cr=document.getElementById('chatRating'); if(cr)cr.innerHTML=(r.rating&&r.rating.count)?starsHtml(r.rating.avg,r.rating.count):'';
+    const rb=document.getElementById('revBtn'); if(rb)rb.style.display=(r.me==='customer'&&!r.reviewed)?'inline-block':'none';
+    const qb=document.getElementById('quoteBtn'); if(qb)qb.style.display=(r.me==='pro'&&r.kind==='request')?'inline-flex':'none';
+    renderMessages(r.messages||[], r.me, r.meId, scroll);
+  }catch(e){}
+}
+function sysText(tok){ return ({quote_accepted:t('sysAccepted'),quote_declined:t('sysDeclined'),appt_accepted:t('sysApptAccepted'),appt_declined:t('sysApptDeclined'),review_left:t('sysReview')})[tok]||tok; }
+function apWhen(m){ let s=m.date||''; try{const d=new Date(m.date);if(!isNaN(d))s=d.toLocaleDateString(LANG==='nl'?'nl-NL':LANG==='pl'?'pl-PL':'en-GB',{weekday:'short',day:'numeric',month:'long'});}catch(e){} return s+(m.time?' · '+m.time:''); }
+function renderMessages(msgs, me, meId, scroll){
+  const el=document.getElementById('chatBody'); if(!el)return;
+  el.innerHTML=msgs.map(m=>{
+    if(m.type==='system') return `<div class="chat-sys">${htmlesc(sysText(m.text))}</div>`;
+    const mine=m.fromId===meId;
+    if(m.type==='quote'){
+      const canAct=(me==='customer'&&m.status==='sent');
+      return `<div class="bubble-row ${mine?'me':'them'}"><div class="quote-msg">
+        <div class="qm-h">${t('qpLabel')}</div><div class="qm-amt">${money(m.amount)}</div>
+        ${m.text?`<div class="qm-desc">${htmlesc(m.text)}</div>`:''}
+        <div class="qm-status s-${m.status}">${t('qs_'+m.status)}</div>
+        ${canAct?`<div class="qm-act"><button class="btn btn-gold btn-sm" onclick="quoteAction('${m.id}','accept')">${t('qAccept')}</button><button class="btn btn-ghost btn-sm" onclick="quoteAction('${m.id}','decline')">${t('qDecline')}</button></div>`:''}
+      </div></div>`;
+    }
+    if(m.type==='appointment'){
+      const canAct=(meId!==m.fromId && m.status==='sent');
+      return `<div class="bubble-row ${mine?'me':'them'}"><div class="appt-msg">
+        <div class="qm-h">${t('apLabel')}</div><div class="ap-when">${htmlesc(apWhen(m))}</div>
+        ${m.text?`<div class="qm-desc">${htmlesc(m.text)}</div>`:''}
+        <div class="qm-status s-${m.status}">${t('qs_'+m.status)}</div>
+        ${canAct?`<div class="qm-act"><button class="btn btn-gold btn-sm" onclick="apptAction('${m.id}','accept')">${t('apAccept')}</button><button class="btn btn-ghost btn-sm" onclick="apptAction('${m.id}','decline')">${t('apDecline')}</button></div>`:''}
+      </div></div>`;
+    }
+    if(m.type==='image'){
+      return `<div class="bubble-row ${mine?'me':'them'}"><div class="img-msg"><img src="${m.image}" alt="" onclick="window.open(this.src,'_blank')">${m.text?`<div class="im-cap">${htmlesc(m.text)}</div>`:''}</div></div>`;
+    }
+    return `<div class="bubble-row ${mine?'me':'them'}"><div class="bubble">${htmlesc(m.text)}</div></div>`;
+  }).join('');
+  if(scroll) el.scrollTop=el.scrollHeight;
+}
+async function sendChat(){ const i=document.getElementById('chatInput'); const x=i.value.trim(); if(!x||!CT)return; i.value='';
+  await api(`/api/threads/${CT.rid}/${CT.pid}/messages`,{method:'POST',body:JSON.stringify({type:'text',text:x})}); loadMessages(true);
+}
+function toggleQuoteForm(){ const f=document.getElementById('quoteForm'); if(f)f.style.display=(f.style.display==='none')?'flex':'none'; }
+async function sendQuote(){ if(!CT)return; const amt=parseFloat(document.getElementById('qAmount').value); const desc=document.getElementById('qDesc').value.trim();
+  if(!amt||amt<=0){ document.getElementById('qAmount').focus(); return; }
+  await api(`/api/threads/${CT.rid}/${CT.pid}/messages`,{method:'POST',body:JSON.stringify({type:'quote',amount:amt,text:desc})});
+  document.getElementById('qAmount').value=''; document.getElementById('qDesc').value=''; document.getElementById('quoteForm').style.display='none'; loadMessages(true);
+}
+async function quoteAction(id,action){ await api('/api/messages/'+id+'/quote',{method:'POST',body:JSON.stringify({action})}); loadMessages(true); }
+function toggleApptForm(){ const f=document.getElementById('apptForm'); if(f)f.style.display=(f.style.display==='none')?'flex':'none'; }
+async function sendAppt(){ if(!CT)return; const date=document.getElementById('apDate').value, time=document.getElementById('apTime').value, note=document.getElementById('apNote').value.trim();
+  if(!date){document.getElementById('apDate').focus();return;}
+  await api(`/api/threads/${CT.rid}/${CT.pid}/messages`,{method:'POST',body:JSON.stringify({type:'appointment',date,time,text:note})});
+  document.getElementById('apDate').value='';document.getElementById('apTime').value='';document.getElementById('apNote').value='';document.getElementById('apptForm').style.display='none'; loadMessages(true);
+}
+async function apptAction(id,action){ await api('/api/messages/'+id+'/appointment',{method:'POST',body:JSON.stringify({action})}); loadMessages(true); }
+function sendPhoto(files){ const f=(files||[])[0]; if(!f||!CT)return;
+  const r=new FileReader(); r.onload=()=>{const img=new Image();img.onload=async()=>{
+    const max=1280;let w=img.width,h=img.height; if(w>max||h>max){const sc=Math.min(max/w,max/h);w=Math.round(w*sc);h=Math.round(h*sc);}
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+    const data=c.toDataURL('image/jpeg',0.72);
+    await api(`/api/threads/${CT.rid}/${CT.pid}/messages`,{method:'POST',body:JSON.stringify({type:'image',image:data})}); loadMessages(true);
+  };img.src=r.result;}; r.readAsDataURL(f);
+  const fi=document.getElementById('chatFile'); if(fi)fi.value='';
+}
+function starsHtml(avg,count){ let f=Math.round(avg||0),s=''; for(let i=1;i<=5;i++)s+=(i<=f?'★':'☆'); return count?`${s} <small>${Number(avg).toFixed(1)} (${count})</small>`:s; }
+let revStars=0;
+function toggleReview(){ const p=document.getElementById('revPanel'); if(!p)return; const show=p.style.display==='none'; p.style.display=show?'block':'none'; if(show){revStars=0;renderStarInput();const c=document.getElementById('revComment');if(c)c.value='';} }
+function renderStarInput(){ const el=document.getElementById('starInput'); if(!el)return; let h=''; for(let i=1;i<=5;i++)h+=`<span class="${i<=revStars?'on':''}" onclick="setStars(${i})">★</span>`; el.innerHTML=h; }
+function setStars(n){ revStars=n; renderStarInput(); }
+async function submitReview(){ if(!CT||!revStars)return; const comment=(document.getElementById('revComment').value||'').trim();
+  const r=await api('/api/reviews',{method:'POST',body:JSON.stringify({proId:CT.pid,requestId:CT.rid,rating:revStars,comment})});
+  if(r&&r.ok){ const p=document.getElementById('revPanel'); if(p)p.style.display='none'; const b=document.getElementById('revBtn'); if(b)b.style.display='none'; loadMessages(true); }
+}
+function startChatPoll(){ stopChatPoll(); chatTimer=setInterval(()=>loadMessages(false),4000); }
+function stopChatPoll(){ if(chatTimer)clearInterval(chatTimer); chatTimer=null; }
 function supportCardHtml(){
   return `<div class="card" style="margin-top:22px"><h2>${t('supTitle')}</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">${t('supIntro')}</p>
@@ -224,6 +472,14 @@ function renderCustomer(){
         <h2>${t('cNew')}</h2>
         <label>${t('cService')}</label>
         <select class="inp" id="cService">${cats().map(c=>`<option>${c}</option>`).join('')}</select>
+        <label>${t('cIntent')}</label>
+        <div class="seg" id="cIntentSeg">
+          <button type="button" class="on" onclick="setIntent('opdracht')">${t('cIntentJob')}</button>
+          <button type="button" onclick="setIntent('orientatie')">${t('cIntentOrient')}</button>
+        </div>
+        <p class="hint" id="cIntentHint">${t('cIntentJobHint')}</p>
+        <label>${t('cTiming')}</label>
+        <select class="inp" id="cTiming"><option>${t('tmAsap')}</option><option>${t('tm1')}</option><option>${t('tm13')}</option><option>${t('tmLater')}</option></select>
         <label>${t('cZip')}</label><input class="inp" id="cZip" placeholder="${t('cZipPh')}">
         <label>${t('cPhone')}</label><input class="inp" id="cPhone" placeholder="${t('cPhonePh')}">
         <label>${t('cDesc')}</label>
@@ -249,8 +505,9 @@ function renderCustomer(){
       </div>
     </div>
     <div class="card" style="margin-top:22px"><h2>${t('myReq')}</h2><div id="myReqs"></div></div>
+    ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  aiHist=[]; aiGreet(); loadMyRequests();
+  reqIntent='opdracht'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads();
 }
 let DPHOTOS=[];
 function addDPhotos(files){
@@ -274,8 +531,13 @@ function renderDThumbs(){const el=document.getElementById('cThumbs');if(!el)retu
   const dz=document.getElementById('cDrop');if(dz)dz.style.display=DPHOTOS.length>=3?'none':'flex';
 }
 function rmDPhoto(i){DPHOTOS.splice(i,1);renderDThumbs();}
+let reqIntent='opdracht';
+function setIntent(v){ reqIntent=v;
+  const seg=document.getElementById('cIntentSeg'); if(seg){seg.children[0].classList.toggle('on',v==='opdracht');seg.children[1].classList.toggle('on',v==='orientatie');}
+  const h=document.getElementById('cIntentHint'); if(h)h.textContent=t(v==='orientatie'?'cIntentOrientHint':'cIntentJobHint');
+}
 async function postRequest(){
-  const body = { service:$('#cService').value, zip:$('#cZip').value, phone:$('#cPhone').value, description:$('#cDesc').value, photos:DPHOTOS, lang:LANG };
+  const body = { service:$('#cService').value, intent:reqIntent, timing:$('#cTiming').value, zip:$('#cZip').value, phone:$('#cPhone').value, description:$('#cDesc').value, photos:DPHOTOS, lang:LANG };
   if (!body.description.trim()) { $('#cDesc').focus(); return; }
   const r = await api('/api/requests', { method:'POST', body:JSON.stringify(body) });
   if (r.request){ $('#cNote').classList.add('show'); $('#cDesc').value=''; $('#cZip').value=''; $('#cPhone').value=''; DPHOTOS=[]; renderDThumbs(); loadMyRequests(); }
@@ -318,13 +580,16 @@ async function renderPro(){
     <div class="kpi" id="kpi"></div>
     <div class="card"><h2>${t('leads')}</h2><div id="leads"></div></div>
     <div class="card" style="margin-top:22px"><h2>${t('billing')}</h2><div id="billing"></div></div>
+    ${proJobsCardHtml()}
+    ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  await loadLeads(); loadBilling(); handleReturn();
+  await loadLeads(); loadBilling(); handleReturn(); loadThreads(); loadProJobs();
 }
 function kpiHtml(r){
   return `<div class="k"><div class="n">${r.creditsLeft}</div><div class="l">${t('kFree')}</div></div>
     <div class="k"><div class="n">${r.creditsUsed}</div><div class="l">${t('kUsed')}</div></div>
-    <div class="k"><div class="n">${money(r.price.gross)}</div><div class="l">${t('kPrice')}</div></div>`;
+    <div class="k"><div class="n">${money(r.price.gross)}</div><div class="l">${t('kPrice')}</div></div>
+    <div class="k"><div class="n">${ME.rating&&ME.rating.count?ME.rating.avg.toFixed(1)+'★':'—'}</div><div class="l">${t('kRating')}${ME.rating&&ME.rating.count?` (${ME.rating.count})`:''}</div></div>`;
 }
 async function loadLeads(){
   const r = await api('/api/leads'); PRICE=r.price;
@@ -334,19 +599,22 @@ async function loadLeads(){
   el.innerHTML = r.leads.map(l=>leadHtml(l, r.creditsLeft)).join('');
 }
 function leadHtml(l, creditsLeft){
+  const price = l.price || PRICE;
   const contact = l.claimed
-    ? `<div class="contact"><b>${l.company?l.company+' · ':''}${l.name}</b> · ${l.phone||'—'} · ${l.email}</div>`
+    ? `<div class="contact"><b>${l.company?l.company+' · ':''}${l.name}</b> · <a href="tel:${(l.phone||'').replace(/\s/g,'')}">${l.phone||'—'}</a> · ${l.email}</div>`
     : (creditsLeft>0
         ? `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('freeUnlock')} (${creditsLeft} ${t('over')})</button>`
-        : `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('unlock')} — ${money(PRICE.gross)} ${t('incl')}</button>`);
+        : `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('unlock')} — ${money(price.gross)}${price.orientation?' (50%)':''}</button>`);
   return `<div class="item" id="lead-${l.id}">
     <div class="top"><span class="svc">${l.service}</span>
+      ${l.intent==='orientatie'?`<span class="tag orient">${t('tagOrient')}</span>`:`<span class="tag job">${t('tagJob')}</span>`}
       ${l.matchesSpec?`<span class="tag match">${t('match')}</span>`:''}
       ${l.customerType==='zakelijk'?`<span class="tag biz">${t('tagBiz')}</span>`:''}
       ${l.claimed?`<span class="tag green">${t('unlocked')}</span>`:''}
       ${(!l.claimed && l.photoCount)?`<span class="tag">${l.photoCount} foto${l.photoCount>1?'s':''}</span>`:''}
       <span class="meta" style="margin-left:auto">${fmtDate(l.createdAt)}</span></div>
-    <div class="desc">${l.description}</div><div class="meta">${l.zip||''}</div>
+    <div class="desc">${l.description}</div>
+    <div class="meta">${l.zip||''}${l.timing?` · ${htmlesc(l.timing)}`:''}</div>
     ${(l.claimed && l.photos && l.photos.length)?`<div class="photo-thumbs" style="margin-top:10px">${l.photos.map(d=>`<a class="th" href="${d}" target="_blank" rel="noopener"><img src="${d}" alt=""></a>`).join('')}</div>`:''}
     <div style="margin-top:10px">${contact}</div></div>`;
 }
