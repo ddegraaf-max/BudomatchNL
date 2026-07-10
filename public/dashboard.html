@@ -200,6 +200,13 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .cfg-extras label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:20px;padding:6px 11px;cursor:pointer;font-size:.83rem;color:var(--muted)}
 .cfg-extras label.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.08)}
 .cfg-extras input{display:none}
+
+.koz-list{margin:8px 0}
+.koz-item{display:flex;align-items:center;gap:8px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;padding:7px 10px;margin-bottom:6px;font-size:.85rem;color:var(--cream)}
+.koz-item button{margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.15rem;cursor:pointer;line-height:1}
+.koz-meet{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--gold-soft);margin:2px 0 10px;cursor:pointer}
+.koz-meet input{accent-color:var(--gold);width:16px;height:16px}
+.koz-dim-off{opacity:.4;pointer-events:none}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -233,8 +240,9 @@ const T = {
     toSite:'Site', logout:'Log out', loading:'Loading…',
     roleCust:'Customer', rolePro:'Tradesman',
     cWelcome:'Welcome', cIntro:'Post a job for free — tradesmen will send you no-obligation quotes.',
+    kozAddHint:'Configure a frame and click \u201cAdd frame\u201d. You can add several different frames.', kozMeetBij:'Have it measured at my place for free (no sizes needed)', kozAdd:'+ Add frame', kozNoneYet:'No frames added yet.', kozMeetNote:'measured by tradesman', kozSizesTodo:'sizes to be determined',
     kozProduct:'Product', kozGlas:'Glazing', kozOpening:'Opening direction', kozKleurBuiten:'Colour outside', kozKleurBinnen:'Colour inside', inmeetBtn:'\ud83d\udccf How to measure? (guide + example)', inmeetTitle:'How to measure your frames', inmeetStep1:'Measure the WIDTH at 3 heights (top, middle, bottom) \u2014 note the smallest value.', inmeetStep2:'Measure the HEIGHT at 3 points (left, middle, right) \u2014 note the smallest value.', inmeetStep3:'Measure the clear opening (visible frame), or indicate it is a complete frame.', inmeetTip:'Not sure? One of our tradesmen can measure for free.', kozExample:'Example: PVC tilt & turn window, 1200 \u00d7 1500 mm, HR++ glass, white.', cfgGevel:'Facade finish', cfgFundering:'Foundation', cfgExtras:'Extras', cfgIsolatie:'Insulation', cfgVvw:'Underfloor heating', cfgKozIncl:'Frames/doors incl.', cfgElektra:'Electrics incl.', dakPlaatsing:'Placement', dakVent:'Ventilation grille',
-    cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = a new room added to the house (e.g. side or rear).', cfgUitbouwHint:'Bump-out = enlarging an existing room (e.g. extending the living room).', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', cfgRamen:'Windows',
+    cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = an extension WITHOUT removing the existing facade (built onto the house).', cfgUitbouwHint:'Bump-out = an extension WHERE the existing facade is (partly) removed, making the space one.', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', cfgRamen:'Windows',
     cNew:'Post a new job', cService:'Service', cZip:'City', cZipPh:'e.g. Amsterdam',
     cPhone:'Phone (tradesmen see it only after unlocking)', cPhonePh:'+31 6 12345678',
     cDesc:'Job description', cDescPh:'Describe what needs doing, scope, desired timing…',
@@ -242,7 +250,7 @@ const T = {
     cPost:'Post for free', cNote:'Your job is live. Tradesmen can now respond.',
     supTitle:'Support', supIntro:'A question or need help? Send us a message — business customers get priority.', supSubject:'Subject', supMsg:'Message', supSend:'Send message', supNote:'Thanks! We will get back to you soon.', tagBiz:'Business',
     msgTitle:'Messages', msgEmpty:'No conversations yet. They start automatically once a tradesman unlocks a job.', msgNone:'No messages yet', msgPh:'Type a message…', qpNew:'Quote', qpAmount:'Amount (€)', qpDesc:'Short description (optional)', qpSend:'Send quote', qpLabel:'Quote', qs_sent:'Awaiting response', qs_accepted:'Accepted', qs_declined:'Declined', qAccept:'Accept', qDecline:'Decline', sysAccepted:'✓ Quote accepted', sysDeclined:'Quote declined',
-    cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation / buying', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are orienting or planning to buy — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
+    cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are still orienting — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
     tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
@@ -279,8 +287,9 @@ const T = {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
     roleCust:'Klant', rolePro:'Vakman',
     cWelcome:'Welkom', cIntro:'Plaats gratis een aanvraag — vakmensen sturen je vrijblijvend offertes.',
+    kozAddHint:'Stel een kozijn samen en klik op \u201cKozijn toevoegen\u201d. Je kunt meerdere verschillende kozijnen toevoegen.', kozMeetBij:'Laat gratis bij mij inmeten (ik geef geen maten op)', kozAdd:'+ Kozijn toevoegen', kozNoneYet:'Nog geen kozijnen toegevoegd.', kozMeetNote:'inmeten door vakman', kozSizesTodo:'maten n.n.b.',
     kozProduct:'Product', kozGlas:'Beglazing', kozOpening:'Draairichting', kozKleurBuiten:'Kleur buiten', kozKleurBinnen:'Kleur binnen', inmeetBtn:'\ud83d\udccf Hoe meet ik in? (uitleg + voorbeeld)', inmeetTitle:'Zo meet je je kozijnen in', inmeetStep1:'Meet de BREEDTE op 3 hoogtes (boven, midden, onder) \u2014 noteer de kleinste maat.', inmeetStep2:'Meet de HOOGTE op 3 plekken (links, midden, rechts) \u2014 noteer de kleinste maat.', inmeetStep3:'Meet de dagmaat (de zichtbare opening), of geef aan dat het om een compleet stelkozijn gaat.', inmeetTip:'Twijfel je? Een van onze vakmensen komt gratis inmeten.', kozExample:'Voorbeeld: kunststof draai-kiepraam, 1200 \u00d7 1500 mm, HR++ glas, wit.', cfgGevel:'Gevelafwerking', cfgFundering:'Fundering', cfgExtras:'Extra\u2019s', cfgIsolatie:'Isolatie', cfgVvw:'Vloerverwarming', cfgKozIncl:'Kozijnen/pui incl.', cfgElektra:'Elektra incl.', dakPlaatsing:'Plaatsing', dakVent:'Ventilatierooster',
-    cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = nieuwe ruimte aan het huis (bijv. aan de zij- of achterkant).', cfgUitbouwHint:'Uitbouw = bestaande ruimte vergroten (bijv. de woonkamer naar achteren).', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', cfgRamen:'Aantal ramen',
+    cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = uitbreiding ZONDER de bestaande gevel te verwijderen (los aan de woning gebouwd).', cfgUitbouwHint:'Uitbouw = uitbreiding WAARBIJ de bestaande gevel (deels) wordt verwijderd, zodat de ruimte \u00e9\u00e9n geheel wordt.', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', cfgRamen:'Aantal ramen',
     cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats', cZipPh:'bijv. Amsterdam',
     cPhone:'Telefoon (zien vakmensen pas na ontgrendeling)', cPhonePh:'+31 6 12345678',
     cDesc:'Omschrijving van de klus', cDescPh:'Beschrijf wat er moet gebeuren, omvang, gewenste termijn…',
@@ -288,7 +297,7 @@ const T = {
     cPost:'Gratis plaatsen', cNote:'Je aanvraag staat live. Vakmensen kunnen nu reageren.',
     supTitle:'Support', supIntro:'Een vraag of hulp nodig? Stuur ons een bericht — zakelijke klanten krijgen voorrang.', supSubject:'Onderwerp', supMsg:'Bericht', supSend:'Bericht versturen', supNote:'Bedankt! We reageren snel.', tagBiz:'Zakelijk',
     msgTitle:'Berichten', msgEmpty:'Nog geen gesprekken. Ze starten automatisch zodra een vakman een klus ontgrendelt.', msgNone:'Nog geen berichten', msgPh:'Typ een bericht…', qpNew:'Offerte', qpAmount:'Bedrag (€)', qpDesc:'Korte omschrijving (optioneel)', qpSend:'Offerte sturen', qpLabel:'Offerte', qs_sent:'Wacht op reactie', qs_accepted:'Geaccepteerd', qs_declined:'Afgewezen', qAccept:'Accepteren', qDecline:'Afwijzen', sysAccepted:'✓ Offerte geaccepteerd', sysDeclined:'Offerte afgewezen',
-    cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie / aankoop', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je of wilt iets kopen — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
+    cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je nog — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
     tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
@@ -297,7 +306,7 @@ const T = {
     arTitle:'Kies je werkgebied', arZip:'Postcode (basis)', arRadius:'Straal', arCats:'Welke klussen doe je?',
     acDetails:'Account', acTier:'Jouw niveau', acCredits:'Gratis leads over', logoutBtn:'Uitloggen', helpTitle:'Helpdesk & FAQ', rvNone:'Nog geen reviews',
     hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste 5 gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
-    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 12,50 (oriëntatie/aankoop € 6,25). Collega-klussen plaatsen en chatten is gratis.',
+    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 12,50 (oriëntatie € 6,25). Collega-klussen plaatsen en chatten is gratis.',
     hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore en geeft extra gratis leads per maand: Brons +1, Zilver +2, Goud +3.',
     hq4:'Hoe krijg ik reviews?', ha4:'Na contact kan de klant je beoordelen. Meer en betere reviews verhogen je niveau en zichtbaarheid.',
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
@@ -703,7 +712,7 @@ function setIntent(v){ reqIntent=v;
   const seg=document.getElementById('cIntentSeg'); if(seg){seg.children[0].classList.toggle('on',v==='opdracht');seg.children[1].classList.toggle('on',v==='orientatie');}
   const h=document.getElementById('cIntentHint'); if(h)h.textContent=t(v==='orientatie'?'cIntentOrientHint':'cIntentJobHint');
 }
-let CFG_TYPE=null, __extType='aanbouw';
+let CFG_TYPE=null, __extType='aanbouw', KOZ_LIST=[];
 function configForService(svc){
   if(['Aanbouw','Uitbouw','Opbouw','Extension','Bump-out extension','Storey addition'].includes(svc)) return 'ext';
   if(['Kozijnen','Window frames','Schuifpui','Sliding doors'].includes(svc)) return 'kozijn';
@@ -787,21 +796,24 @@ function drawExtSvg(w,d){
     <text x="${extX+eW+13}" y="${extY+eD/2}" fill="#E3C158" font-size="9" text-anchor="middle" transform="rotate(90 ${extX+eW+13} ${extY+eD/2})">${nl1(d)} m</text>`;
 }
 function kozijnConfigHtml(){
+  KOZ_LIST=[];
   return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 ${LANG==='nl'?'Kozijnen':'Frames'}</div>
+    <p class="hint">${t('kozAddHint')}</p>
     <div class="cfg-row2">
-      <div><label>${t('kozProduct')}</label><select class="inp" id="kozT" onchange="updateKoz()">${['Draai-kiepraam','Draairaam','Vast raam','Schuifpui','Tuindeuren','Voordeur','Achterdeur'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="kozM" onchange="updateKoz()">${['Kunststof','Aluminium','Hout','Kunststof-aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('kozGlas')}</label><select class="inp" id="kozG" onchange="updateKoz()">${['HR++ (dubbel)','Triple (HR+++)','Veiligheidsglas','Geluidswerend glas'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozProduct')}</label><select class="inp" id="kozT">${['Draai-kiepraam','Draairaam','Vast raam','Schuifpui','Tuindeuren','Voordeur','Achterdeur'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="kozM">${['Kunststof','Aluminium','Hout','Kunststof-aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozGlas')}</label><select class="inp" id="kozG">${['HR++ (dubbel)','Triple (HR+++)','Veiligheidsglas','Geluidswerend glas'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
     <div class="cfg-row2">
-      <div><label>${t('kozOpening')}</label><select class="inp" id="kozO" onchange="updateKoz()">${['N.v.t.','Links','Rechts'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('kozKleurBuiten')}</label><select class="inp" id="kozKB" onchange="updateKoz()">${['Wit','Antraciet (RAL 7016)','Zwart','Cr\u00e8me','Houtnerf','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('kozKleurBinnen')}</label><select class="inp" id="kozKI" onchange="updateKoz()">${['Wit','Gelijk aan buiten','Hout','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozOpening')}</label><select class="inp" id="kozO">${['N.v.t.','Links','Rechts'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBuiten')}</label><select class="inp" id="kozKB">${['Wit','Cr\u00e8me','Grijs (RAL 7040)','Antraciet (RAL 7016)','Zwart (RAL 9005)','Golden Oak','Noten','Mahonie','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBinnen')}</label><select class="inp" id="kozKI">${['Wit','Cr\u00e8me','Antraciet','Gelijk aan buiten','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
-    <div class="cfg-row2">
-      <div><label>${t('cfgAantal')}</label><input class="inp" id="kozN" type="number" min="1" value="1" oninput="updateKoz()"></div>
-      <div><label>${LANG==='nl'?'Breedte (mm)':'Width (mm)'}</label><input class="inp" id="kozW" type="number" min="0" placeholder="1200" oninput="updateKoz()"></div>
-      <div><label>${LANG==='nl'?'Hoogte (mm)':'Height (mm)'}</label><input class="inp" id="kozH" type="number" min="0" placeholder="1500" oninput="updateKoz()"></div>
+    <label class="koz-meet"><input type="checkbox" id="kozMeet" onchange="toggleKozMeet()"> ${t('kozMeetBij')}</label>
+    <div class="cfg-row2" id="kozDimRow">
+      <div><label>${t('cfgAantal')}</label><input class="inp" id="kozN" type="number" min="1" value="1"></div>
+      <div id="kozWwrap"><label>${LANG==='nl'?'Breedte (mm)':'Width (mm)'}</label><input class="inp" id="kozW" type="number" min="0" placeholder="1200"></div>
+      <div id="kozHwrap"><label>${LANG==='nl'?'Hoogte (mm)':'Height (mm)'}</label><input class="inp" id="kozH" type="number" min="0" placeholder="1500"></div>
     </div>
     <button type="button" class="cfg-inmeet-btn" onclick="toggleInmeet()">${t('inmeetBtn')}</button>
     <div id="inmeetBox" class="inmeet" style="display:none">
@@ -811,8 +823,33 @@ function kozijnConfigHtml(){
       <div class="tip">\u2713 ${t('inmeetTip')}</div>
       <div class="ex">${t('kozExample')}</div>
     </div>
+    <button type="button" class="btn btn-gold btn-sm" style="width:100%;margin:2px 0 4px" onclick="addKozItem()">${t('kozAdd')}</button>
+    <div class="koz-list" id="kozList"></div>
     <div class="cfg-sum" id="kozSum"></div></div>`;
 }
+function toggleKozMeet(){
+  const on=document.getElementById('kozMeet').checked;
+  ['kozWwrap','kozHwrap'].forEach(id=>{ const e=document.getElementById(id); if(e)e.classList.toggle('koz-dim-off',on); });
+}
+function kozItemText(){
+  const g=id=>((document.getElementById(id)||{}).value)||'';
+  const meet=(document.getElementById('kozMeet')||{}).checked;
+  const tp=g('kozT'),m=g('kozM'),gl=g('kozG'),o=g('kozO'),kb=g('kozKB'),ki=g('kozKI'),n=g('kozN')||'1',w=g('kozW'),h=g('kozH');
+  const opening=(o&&o!=='N.v.t.')?`, draait naar ${o.toLowerCase()}`:'';
+  const binnen=(ki&&ki!=='Gelijk aan buiten')?`, binnen ${ki.toLowerCase()}`:'';
+  const dims=meet?` \u2014 ${t('kozMeetNote')}`:((w&&h)?`, ${w} \u00d7 ${h} mm`:`, ${t('kozSizesTodo')}`);
+  return `${n}\u00d7 ${tp.toLowerCase()}, ${m.toLowerCase()}, ${gl}, buiten ${kb.toLowerCase()}${binnen}${opening}${dims}`;
+}
+function addKozItem(){ KOZ_LIST.push(kozItemText()); renderKozList();
+  const meet=document.getElementById('kozMeet'); if(meet&&meet.checked){meet.checked=false;toggleKozMeet();}
+  ['kozW','kozH'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+}
+function rmKozItem(i){ KOZ_LIST.splice(i,1); renderKozList(); }
+function renderKozList(){
+  const el=document.getElementById('kozList'); if(el) el.innerHTML=KOZ_LIST.map((s,i)=>`<div class="koz-item"><span>${i+1}. ${htmlesc(s)}</span><button type="button" onclick="rmKozItem(${i})" aria-label="verwijder">\u00d7</button></div>`).join('');
+  const sum=document.getElementById('kozSum'); if(sum) sum.textContent = KOZ_LIST.length ? `${KOZ_LIST.length} ${LANG==='nl'?'kozijn(en) toegevoegd':'frame(s) added'}.` : t('kozNoneYet');
+}
+function updateKoz(){ renderKozList(); }
 function toggleInmeet(){ const b=document.getElementById('inmeetBox'); if(b)b.style.display=(b.style.display==='none')?'block':'none'; }
 function inmeetSvg(){
   return `<svg viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg">
@@ -828,14 +865,6 @@ function inmeetSvg(){
     <text x="30" y="113" fill="#E3C158" font-size="11" text-anchor="middle" font-family="sans-serif" transform="rotate(-90 30 113)">${LANG==='nl'?'Hoogte (H)':'Height (H)'}</text>
     <text x="155" y="198" fill="#8a7a4a" font-size="9" text-anchor="middle" font-family="sans-serif">${LANG==='nl'?'meet de dagmaat (zichtbare opening)':'measure the clear opening'}</text>
   </svg>`;
-}
-function updateKoz(){
-  const g=id=>((document.getElementById(id)||{}).value)||'';
-  const tp=g('kozT'),m=g('kozM'),gl=g('kozG'),o=g('kozO'),kb=g('kozKB'),ki=g('kozKI'),n=g('kozN')||'1',w=g('kozW'),h=g('kozH');
-  const dim=(w&&h)?`, ${w} \u00d7 ${h} mm`:'';
-  const opening=(o&&o!=='N.v.t.')?`, draait naar ${o.toLowerCase()}`:'';
-  const binnen=(ki&&ki!=='Gelijk aan buiten')?`, binnen ${ki.toLowerCase()}`:'';
-  const el=document.getElementById('kozSum'); if(el)el.textContent=`${n}\u00d7 ${tp.toLowerCase()}, ${m.toLowerCase()}, ${gl}, kleur ${kb.toLowerCase()}${binnen}${opening}${dim}.`;
 }
 function dakkapelConfigHtml(){
   return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 Dakkapel</div>
@@ -865,7 +894,7 @@ function updateDak(){
 }
 function buildConfigSummary(){
   if(CFG_TYPE==='ext'){ const e=document.getElementById('extSum'); return e?e.textContent:''; }
-  if(CFG_TYPE==='kozijn'){ const e=document.getElementById('kozSum'); return e?e.textContent:''; }
+  if(CFG_TYPE==='kozijn'){ const items=KOZ_LIST.length?KOZ_LIST:[kozItemText()]; return 'Kozijnen: '+items.join('; ')+'.'; }
   if(CFG_TYPE==='dakkapel'){ const e=document.getElementById('dakSum'); return e?e.textContent:''; }
   return '';
 }
