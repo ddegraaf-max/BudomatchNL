@@ -189,6 +189,17 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .cfg-preview svg{width:100%;height:200px;display:block}
 .cfg-sum{background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:8px;padding:9px 12px;color:var(--gold-soft);font-size:.88rem}
 @media(max-width:600px){.cfg-grid{grid-template-columns:1fr}.cfg-row2{grid-template-columns:1fr}}
+
+.cfg-inmeet-btn{background:none;border:1px solid var(--gold);color:var(--gold-bright);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;font-size:.86rem;margin:2px 0 10px}
+.inmeet{background:#141109;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+.inmeet svg{width:100%;max-width:320px;display:block;margin:0 auto 8px}
+.inmeet ol{margin:6px 0 6px 18px;padding:0;color:var(--cream);font-size:.88rem;line-height:1.6}
+.inmeet .tip{color:#7fd6a0;font-size:.85rem;margin-top:6px}
+.inmeet .ex{color:var(--gold-soft);font-size:.85rem;margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.cfg-extras{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.cfg-extras label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:20px;padding:6px 11px;cursor:pointer;font-size:.83rem;color:var(--muted)}
+.cfg-extras label.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.08)}
+.cfg-extras input{display:none}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -222,6 +233,7 @@ const T = {
     toSite:'Site', logout:'Log out', loading:'Loading…',
     roleCust:'Customer', rolePro:'Tradesman',
     cWelcome:'Welcome', cIntro:'Post a job for free — tradesmen will send you no-obligation quotes.',
+    kozProduct:'Product', kozGlas:'Glazing', kozOpening:'Opening direction', kozKleurBuiten:'Colour outside', kozKleurBinnen:'Colour inside', inmeetBtn:'\ud83d\udccf How to measure? (guide + example)', inmeetTitle:'How to measure your frames', inmeetStep1:'Measure the WIDTH at 3 heights (top, middle, bottom) \u2014 note the smallest value.', inmeetStep2:'Measure the HEIGHT at 3 points (left, middle, right) \u2014 note the smallest value.', inmeetStep3:'Measure the clear opening (visible frame), or indicate it is a complete frame.', inmeetTip:'Not sure? One of our tradesmen can measure for free.', kozExample:'Example: PVC tilt & turn window, 1200 \u00d7 1500 mm, HR++ glass, white.', cfgGevel:'Facade finish', cfgFundering:'Foundation', cfgExtras:'Extras', cfgIsolatie:'Insulation', cfgVvw:'Underfloor heating', cfgKozIncl:'Frames/doors incl.', cfgElektra:'Electrics incl.', dakPlaatsing:'Placement', dakVent:'Ventilation grille',
     cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = a new room added to the house (e.g. side or rear).', cfgUitbouwHint:'Bump-out = enlarging an existing room (e.g. extending the living room).', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', cfgRamen:'Windows',
     cNew:'Post a new job', cService:'Service', cZip:'City', cZipPh:'e.g. Amsterdam',
     cPhone:'Phone (tradesmen see it only after unlocking)', cPhonePh:'+31 6 12345678',
@@ -267,6 +279,7 @@ const T = {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
     roleCust:'Klant', rolePro:'Vakman',
     cWelcome:'Welkom', cIntro:'Plaats gratis een aanvraag — vakmensen sturen je vrijblijvend offertes.',
+    kozProduct:'Product', kozGlas:'Beglazing', kozOpening:'Draairichting', kozKleurBuiten:'Kleur buiten', kozKleurBinnen:'Kleur binnen', inmeetBtn:'\ud83d\udccf Hoe meet ik in? (uitleg + voorbeeld)', inmeetTitle:'Zo meet je je kozijnen in', inmeetStep1:'Meet de BREEDTE op 3 hoogtes (boven, midden, onder) \u2014 noteer de kleinste maat.', inmeetStep2:'Meet de HOOGTE op 3 plekken (links, midden, rechts) \u2014 noteer de kleinste maat.', inmeetStep3:'Meet de dagmaat (de zichtbare opening), of geef aan dat het om een compleet stelkozijn gaat.', inmeetTip:'Twijfel je? Een van onze vakmensen komt gratis inmeten.', kozExample:'Voorbeeld: kunststof draai-kiepraam, 1200 \u00d7 1500 mm, HR++ glas, wit.', cfgGevel:'Gevelafwerking', cfgFundering:'Fundering', cfgExtras:'Extra\u2019s', cfgIsolatie:'Isolatie', cfgVvw:'Vloerverwarming', cfgKozIncl:'Kozijnen/pui incl.', cfgElektra:'Elektra incl.', dakPlaatsing:'Plaatsing', dakVent:'Ventilatierooster',
     cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = nieuwe ruimte aan het huis (bijv. aan de zij- of achterkant).', cfgUitbouwHint:'Uitbouw = bestaande ruimte vergroten (bijv. de woonkamer naar achteren).', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', cfgRamen:'Aantal ramen',
     cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats', cZipPh:'bijv. Amsterdam',
     cPhone:'Telefoon (zien vakmensen pas na ontgrendeling)', cPhonePh:'+31 6 12345678',
@@ -720,8 +733,15 @@ function extConfigHtml(){
     <div class="cfg-row2">
       <div><label>${t('cfgFloors')}</label><select class="inp" id="extF" onchange="updateExt()"><option value="1">1</option><option value="2">2</option></select></div>
       <div><label>${t('cfgRoof')}</label><select class="inp" id="extR" onchange="updateExt()"><option>${t('cfgFlat')}</option><option>${t('cfgSloped')}</option></select></div>
-      <div><label>${t('cfgUse')}</label><select class="inp" id="extU" onchange="updateExt()">${['Keuken','Woonkamer','Bijkeuken','Slaapkamer','Kantoor','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgUse')}</label><select class="inp" id="extU" onchange="updateExt()">${['Keuken','Woonkamer','Bijkeuken','Slaapkamer','Kantoor','Badkamer','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgGevel')}</label><select class="inp" id="extG" onchange="updateExt()">${['Gelijk aan woning','Baksteen','Stucwerk','Houten gevel','Keralit'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgFundering')}</label><select class="inp" id="extFun" onchange="updateExt()">${['Nieuwe fundering','Bestaande uitbreiden','Weet ik niet'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div></div>
+    </div>
+    <label style="font-size:.82rem;color:var(--gold-soft)">${t('cfgExtras')}</label>
+    <div class="cfg-extras" id="extExtras">${[['iso',t('cfgIsolatie')],['vvw',t('cfgVvw')],['koz',t('cfgKozIncl')],['ele',t('cfgElektra')]].map(x=>`<label><input type="checkbox" value="${x[1]}" onchange="this.parentNode.classList.toggle('on',this.checked);updateExt()">${x[1]}</label>`).join('')}</div>
     <div class="cfg-preview"><svg id="extSvg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <div class="cfg-sum" id="extSum"></div></div>`;
 }
@@ -735,7 +755,9 @@ function updateExt(){
   const hint=document.getElementById('extHint'); if(hint)hint.textContent=HINT[__extType];
   drawExtSvg(w,d);
   const m2=nl1(w*d);
-  document.getElementById('extSum').textContent=`${LBL[__extType]}: ${nl1(w)} \u00d7 ${nl1(d)} m (${m2} m\u00b2), ${f} ${f==='1'?t('cfgFloor'):t('cfgFloors2')}, ${r.toLowerCase()}, ${u.toLowerCase()}.`;
+  const g=(document.getElementById('extG')||{}).value||'', fun=(document.getElementById('extFun')||{}).value||'';
+  const extras=[...document.querySelectorAll('#extExtras input:checked')].map(i=>i.value);
+  document.getElementById('extSum').textContent=`${LBL[__extType]}: ${nl1(w)} \u00d7 ${nl1(d)} m (${m2} m\u00b2), ${f} ${f==='1'?t('cfgFloor'):t('cfgFloors2')}, ${r.toLowerCase()}, ${u.toLowerCase()}. Gevel: ${g.toLowerCase()}, fundering: ${fun.toLowerCase()}.${extras.length?' Extra\u2019s: '+extras.join(', ').toLowerCase()+'.':''}`;
 }
 function drawExtSvg(w,d){
   const svg=document.getElementById('extSvg'); if(!svg)return;
@@ -765,36 +787,82 @@ function drawExtSvg(w,d){
     <text x="${extX+eW+13}" y="${extY+eD/2}" fill="#E3C158" font-size="9" text-anchor="middle" transform="rotate(90 ${extX+eW+13} ${extY+eD/2})">${nl1(d)} m</text>`;
 }
 function kozijnConfigHtml(){
-  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 ${LANG==='nl'?'Kozijnen':'Frames'}</div>
     <div class="cfg-row2">
-      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="kozM" onchange="updateKoz()">${['Kunststof','Aluminium','Hout'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('cfgType')}</label><select class="inp" id="kozT" onchange="updateKoz()">${['Draai-kiepraam','Vast raam','Schuifpui','Voordeur','Achterdeur'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('cfgAantal')}</label><input class="inp" id="kozN" type="number" min="1" value="1" oninput="updateKoz()"></div>
+      <div><label>${t('kozProduct')}</label><select class="inp" id="kozT" onchange="updateKoz()">${['Draai-kiepraam','Draairaam','Vast raam','Schuifpui','Tuindeuren','Voordeur','Achterdeur'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgMateriaal')}</label><select class="inp" id="kozM" onchange="updateKoz()">${['Kunststof','Aluminium','Hout','Kunststof-aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozGlas')}</label><select class="inp" id="kozG" onchange="updateKoz()">${['HR++ (dubbel)','Triple (HR+++)','Veiligheidsglas','Geluidswerend glas'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
     <div class="cfg-row2">
-      <div><label>${t('cfgKleur')}</label><select class="inp" id="kozK" onchange="updateKoz()">${['Wit','Antraciet','Zwart','Houtnerf','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('cfgWcm')}</label><input class="inp" id="kozW" type="number" min="0" placeholder="cm" oninput="updateKoz()"></div>
-      <div><label>${t('cfgHcm')}</label><input class="inp" id="kozH" type="number" min="0" placeholder="cm" oninput="updateKoz()"></div>
+      <div><label>${t('kozOpening')}</label><select class="inp" id="kozO" onchange="updateKoz()">${['N.v.t.','Links','Rechts'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBuiten')}</label><select class="inp" id="kozKB" onchange="updateKoz()">${['Wit','Antraciet (RAL 7016)','Zwart','Cr\u00e8me','Houtnerf','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBinnen')}</label><select class="inp" id="kozKI" onchange="updateKoz()">${['Wit','Gelijk aan buiten','Hout','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="cfg-row2">
+      <div><label>${t('cfgAantal')}</label><input class="inp" id="kozN" type="number" min="1" value="1" oninput="updateKoz()"></div>
+      <div><label>${LANG==='nl'?'Breedte (mm)':'Width (mm)'}</label><input class="inp" id="kozW" type="number" min="0" placeholder="1200" oninput="updateKoz()"></div>
+      <div><label>${LANG==='nl'?'Hoogte (mm)':'Height (mm)'}</label><input class="inp" id="kozH" type="number" min="0" placeholder="1500" oninput="updateKoz()"></div>
+    </div>
+    <button type="button" class="cfg-inmeet-btn" onclick="toggleInmeet()">${t('inmeetBtn')}</button>
+    <div id="inmeetBox" class="inmeet" style="display:none">
+      <div class="cfg-h" style="font-size:.95rem">${t('inmeetTitle')}</div>
+      ${inmeetSvg()}
+      <ol><li>${t('inmeetStep1')}</li><li>${t('inmeetStep2')}</li><li>${t('inmeetStep3')}</li></ol>
+      <div class="tip">\u2713 ${t('inmeetTip')}</div>
+      <div class="ex">${t('kozExample')}</div>
     </div>
     <div class="cfg-sum" id="kozSum"></div></div>`;
 }
-function updateKoz(){ const m=document.getElementById('kozM').value,tp=document.getElementById('kozT').value,n=document.getElementById('kozN').value||'1',k=document.getElementById('kozK').value,w=document.getElementById('kozW').value,h=document.getElementById('kozH').value;
-  const dim=(w&&h)?`, ca. ${w} \u00d7 ${h} cm`:''; document.getElementById('kozSum').textContent=`${n}\u00d7 ${tp.toLowerCase()}, ${m.toLowerCase()}, kleur ${k.toLowerCase()}${dim}.`; }
+function toggleInmeet(){ const b=document.getElementById('inmeetBox'); if(b)b.style.display=(b.style.display==='none')?'block':'none'; }
+function inmeetSvg(){
+  return `<svg viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg">
+    <rect x="70" y="45" width="170" height="130" fill="#1b180f" stroke="#C9A227" stroke-width="3" rx="2"/>
+    <rect x="80" y="55" width="150" height="110" fill="none" stroke="#8a7a4a" stroke-width="1.4"/>
+    <line x1="155" y1="55" x2="155" y2="165" stroke="#8a7a4a" stroke-width="1.4"/>
+    <line x1="80" y1="110" x2="230" y2="110" stroke="#8a7a4a" stroke-width="1.4"/>
+    <line x1="70" y1="30" x2="240" y2="30" stroke="#E3C158" stroke-width="1.4"/>
+    <polygon points="70,30 78,26 78,34" fill="#E3C158"/><polygon points="240,30 232,26 232,34" fill="#E3C158"/>
+    <text x="155" y="24" fill="#E3C158" font-size="11" text-anchor="middle" font-family="sans-serif">${LANG==='nl'?'Breedte (B)':'Width (B)'}</text>
+    <line x1="52" y1="45" x2="52" y2="175" stroke="#E3C158" stroke-width="1.4"/>
+    <polygon points="52,45 48,53 56,53" fill="#E3C158"/><polygon points="52,175 48,167 56,167" fill="#E3C158"/>
+    <text x="30" y="113" fill="#E3C158" font-size="11" text-anchor="middle" font-family="sans-serif" transform="rotate(-90 30 113)">${LANG==='nl'?'Hoogte (H)':'Height (H)'}</text>
+    <text x="155" y="198" fill="#8a7a4a" font-size="9" text-anchor="middle" font-family="sans-serif">${LANG==='nl'?'meet de dagmaat (zichtbare opening)':'measure the clear opening'}</text>
+  </svg>`;
+}
+function updateKoz(){
+  const g=id=>((document.getElementById(id)||{}).value)||'';
+  const tp=g('kozT'),m=g('kozM'),gl=g('kozG'),o=g('kozO'),kb=g('kozKB'),ki=g('kozKI'),n=g('kozN')||'1',w=g('kozW'),h=g('kozH');
+  const dim=(w&&h)?`, ${w} \u00d7 ${h} mm`:'';
+  const opening=(o&&o!=='N.v.t.')?`, draait naar ${o.toLowerCase()}`:'';
+  const binnen=(ki&&ki!=='Gelijk aan buiten')?`, binnen ${ki.toLowerCase()}`:'';
+  const el=document.getElementById('kozSum'); if(el)el.textContent=`${n}\u00d7 ${tp.toLowerCase()}, ${m.toLowerCase()}, ${gl}, kleur ${kb.toLowerCase()}${binnen}${opening}${dim}.`;
+}
 function dakkapelConfigHtml(){
-  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 Dakkapel</div>
     <div class="cfg-grid">
       <label>${t('cfgBreedteCm')} <b id="dakBv">300</b> cm<input type="range" id="dakB" min="100" max="600" step="10" value="300" oninput="updateDak()"></label>
       <div><label>${t('cfgType')}</label><select class="inp" id="dakT" onchange="updateDak()">${['Nieuwe dakkapel','Bestaande vervangen'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
     <div class="cfg-row2">
       <div><label>${t('cfgMateriaal')}</label><select class="inp" id="dakM" onchange="updateDak()">${['Kunststof','Hout','Keralit','Aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div><label>${t('cfgKleur')}</label><select class="inp" id="dakK" onchange="updateDak()">${['Wit','Antraciet','Zwart','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBuiten')}</label><select class="inp" id="dakKB" onchange="updateDak()">${['Wit','Antraciet','Zwart','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('kozKleurBinnen')}</label><select class="inp" id="dakKI" onchange="updateDak()">${['Wit','Gelijk aan buiten','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="cfg-row2">
       <div><label>${t('cfgRamen')}</label><input class="inp" id="dakN" type="number" min="1" value="2" oninput="updateDak()"></div>
+      <div><label>${t('dakPlaatsing')}</label><select class="inp" id="dakP" onchange="updateDak()">${['Achterdakvlak','Voordakvlak','Zijdakvlak'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('dakVent')}</label><select class="inp" id="dakV" onchange="updateDak()">${['Ja','Nee'].map(x=>`<option>${x}</option>`).join('')}</select></div>
     </div>
     <div class="cfg-sum" id="dakSum"></div></div>`;
 }
-function updateDak(){ const b=document.getElementById('dakB').value,tp=document.getElementById('dakT').value,m=document.getElementById('dakM').value,k=document.getElementById('dakK').value,n=document.getElementById('dakN').value||'1';
-  const bv=document.getElementById('dakBv'); if(bv)bv.textContent=b; document.getElementById('dakSum').textContent=`${tp.toLowerCase()}, ${b} cm breed, ${m.toLowerCase()} ${k.toLowerCase()}, ${n} ${n==='1'?'raam':'ramen'}.`; }
+function updateDak(){
+  const g=id=>((document.getElementById(id)||{}).value)||'';
+  const b=g('dakB'),tp=g('dakT'),m=g('dakM'),kb=g('dakKB'),ki=g('dakKI'),n=g('dakN')||'1',p=g('dakP'),v=g('dakV');
+  const bv=document.getElementById('dakBv'); if(bv)bv.textContent=b;
+  const binnen=(ki&&ki!=='Gelijk aan buiten')?`, binnen ${ki.toLowerCase()}`:'';
+  const vent=(v==='Ja')?', met ventilatierooster':'';
+  const el=document.getElementById('dakSum'); if(el)el.textContent=`${tp.toLowerCase()}, ${b} cm breed, ${p.toLowerCase()}, ${m.toLowerCase()} ${kb.toLowerCase()}${binnen}, ${n} ${n==='1'?'raam':'ramen'}${vent}.`;
+}
 function buildConfigSummary(){
   if(CFG_TYPE==='ext'){ const e=document.getElementById('extSum'); return e?e.textContent:''; }
   if(CFG_TYPE==='kozijn'){ const e=document.getElementById('kozSum'); return e?e.textContent:''; }
