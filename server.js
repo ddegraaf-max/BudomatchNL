@@ -88,10 +88,16 @@ async function publicUser(u) {
   if (!u) return null;
   const { passHash, ...rest } = u;
   if (u.role === 'pro') {
-    const used = (await store.claimsByPro(u.id)).length;
-    rest.creditsUsed = used;
-    rest.creditsLeft = Math.max(0, FREE_LEADS - used);
-    rest.rating = await proRating(u.id);
+    const ci = await creditInfo(u);
+    rest.creditsUsed = ci.usedTotal;
+    rest.creditsLeft = ci.freeAvailable;
+    rest.rating = ci.rating;
+    rest.tier = ci.tier;
+    rest.welcomeLeft = ci.welcomeRemaining;
+    rest.monthlyLeft = ci.monthlyRemaining;
+    rest.bio = u.bio || ''; rest.website = u.website || ''; rest.logo = u.logo || '';
+    rest.photos = u.photos || []; rest.workRadius = u.workRadius || 0; rest.workZip = u.workZip || '';
+    rest.workCategories = u.workCategories || [];
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -185,16 +191,21 @@ app.post('/api/support', async (req, res) => {
 });
 
 // ---------------- customer: requests (gratis) ----------------
-function cleanPhotos(arr) {
+function cleanPhotos(arr, max) {
   if (!Array.isArray(arr)) return [];
   return arr.filter(d => typeof d === 'string'
     && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d)
-    && d.length < 3500000).slice(0, 3);
+    && d.length < 3500000).slice(0, max || 3);
 }
 app.post('/api/requests', requireRole('customer'), async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.service || !b.description) return res.status(400).json({ error: 'invalid' });
+    let targetProId = '', targetProName = '';
+    if (b.targetProId) {
+      const p = await store.findUserById(String(b.targetProId));
+      if (p && p.role === 'pro') { targetProId = p.id; targetProName = p.company || p.name; }
+    }
     const r = await store.addRequest({
       customerId: req.user.id,
       customerType: req.user.customerType || 'particulier',
@@ -209,6 +220,7 @@ app.post('/api/requests', requireRole('customer'), async (req, res) => {
       email: req.user.email,
       lang: b.lang === 'pl' ? 'pl' : 'nl',
       photos: cleanPhotos(b.photos),
+      targetProId, targetProName, direct: !!targetProId,
     });
     res.json({ request: r });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -232,6 +244,7 @@ async function leadView(r, pro) {
     createdAt: r.createdAt, lang: r.lang, claimed,
     customerType: r.customerType || 'particulier',
     intent: r.intent || 'opdracht', timing: r.timing || '',
+    direct: !!r.targetProId,
     price: leadPrice(r),
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
@@ -243,13 +256,15 @@ async function leadView(r, pro) {
 app.get('/api/leads', requireRole('pro'), async (req, res) => {
   try {
     const pro = req.user;
-    const used = (await store.claimsByPro(pro.id)).length;
-    const open = await store.openRequests();
+    const ci = await creditInfo(pro);
+    const open = (await store.openRequests()).filter(r => !r.targetProId || r.targetProId === pro.id);
     const leads = await Promise.all(open.map(r => leadView(r, pro)));
     res.json({
       leads,
-      creditsLeft: Math.max(0, FREE_LEADS - used),
-      creditsUsed: used,
+      creditsLeft: ci.freeAvailable,
+      creditsUsed: ci.usedTotal,
+      welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining,
+      tier: ci.tier, rating: ci.rating,
       price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -262,10 +277,11 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
 
-    const used = (await store.claimsByPro(pro.id)).length;
-    if (used < FREE_LEADS) {
-      await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
-      return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: Math.max(0, FREE_LEADS - used - 1) });
+    const ci = await creditInfo(pro);
+    if (ci.freeAvailable > 0) {
+      const bucket = ci.welcomeRemaining > 0 ? 'welcome' : 'monthly';
+      await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0, bucket });
+      return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: ci.freeAvailable - 1 });
     }
     // betaling vereist
     res.json({ ok: false, paymentRequired: true, price: leadPrice(r) });
@@ -281,9 +297,10 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   if (!r) return res.status(404).json({ error: 'not_found' });
   if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
 
-  const used = (await store.claimsByPro(pro.id)).length;
-  if (used < FREE_LEADS) { // nog gratis tegoed
-    await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0 });
+  const ci = await creditInfo(pro);
+  if (ci.freeAvailable > 0) { // nog gratis tegoed
+    const bucket = ci.welcomeRemaining > 0 ? 'welcome' : 'monthly';
+    await store.addClaim({ proId: pro.id, requestId: r.id, free: true, paid: true, amountGross: 0, amountNet: 0, amountVat: 0, bucket });
     return res.json({ ok: true, free: true, lead: await leadView(r, pro) });
   }
 
@@ -328,11 +345,62 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
       service: ((await store.findRequest(c.requestId)) || {}).service || '',
     })));
     const paidTotal = claims.filter(c => !c.free).reduce((s, c) => s + c.gross, 0);
+    const ci = await creditInfo(req.user);
     res.json({
-      claims, creditsUsed: claims.length, creditsLeft: Math.max(0, FREE_LEADS - claims.length),
+      claims, creditsUsed: ci.usedTotal, creditsLeft: ci.freeAvailable,
+      welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining, tier: ci.tier, rating: ci.rating,
       freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
       price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
     });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Bedrijfsprofiel + werkgebied opslaan (vakman)
+app.post('/api/profile', requireRole('pro'), async (req, res) => {
+  try {
+    const b = req.body || {}, patch = {};
+    if (b.company !== undefined) patch.company = String(b.company).slice(0, 120);
+    if (b.bio !== undefined) patch.bio = String(b.bio).slice(0, 2000);
+    if (b.website !== undefined) patch.website = String(b.website).slice(0, 200);
+    if (b.phone !== undefined) patch.phone = String(b.phone).slice(0, 40);
+    if (b.city !== undefined) patch.city = String(b.city).slice(0, 80);
+    if (b.spec !== undefined) patch.spec = String(b.spec).slice(0, 80);
+    if (b.workZip !== undefined) patch.workZip = String(b.workZip).slice(0, 20);
+    if (b.workRadius !== undefined) patch.workRadius = Math.min(500, Math.max(0, parseInt(b.workRadius, 10) || 0));
+    if (Array.isArray(b.workCategories)) patch.workCategories = b.workCategories.slice(0, 41).map(x => String(x).slice(0, 60));
+    if (Array.isArray(b.photos)) patch.photos = cleanPhotos(b.photos, 6);
+    if (b.logo !== undefined) { const l = cleanPhotos([b.logo], 1)[0]; patch.logo = l || ''; }
+    const u = await store.updateUser(req.user.id, patch);
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- openbare bedrijfsprofielen (voor klanten) ----------------
+async function publicProfile(u) {
+  const rating = await proRating(u.id);
+  return {
+    id: u.id, company: u.company || u.name, spec: u.spec || '', city: u.city || '',
+    bio: u.bio || '', website: u.website || '', logo: u.logo || '', photos: u.photos || [],
+    workCategories: u.workCategories || [], workRadius: u.workRadius || 0,
+    rating, tier: tierInfo(rating), createdAt: u.createdAt || 0,
+  };
+}
+app.get('/api/pros', async (req, res) => {
+  try {
+    const pros = await store.listPros();
+    const list = await Promise.all(pros.filter(p => p.company || p.name).map(publicProfile));
+    list.sort((a, b) => (b.rating.avg - a.rating.avg) || (b.rating.count - a.rating.count) || (b.createdAt - a.createdAt));
+    res.json({ pros: list });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.get('/api/pros/:id', async (req, res) => {
+  try {
+    const u = await store.findUserById(req.params.id);
+    if (!u || u.role !== 'pro') return res.status(404).json({ error: 'not_found' });
+    const rv = (await store.reviewsByPro(u.id)).map(r => ({
+      rating: r.rating, comment: r.comment || '', name: (String(r.customerName || '').split(' ')[0] || 'Klant'), createdAt: r.createdAt,
+    }));
+    res.json({ pro: await publicProfile(u), reviews: rv });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -365,6 +433,31 @@ async function proRating(proId) {
   if (!rv.length) return { avg: 0, count: 0 };
   const avg = rv.reduce((s, r) => s + (r.rating || 0), 0) / rv.length;
   return { avg: Math.round(avg * 10) / 10, count: rv.length };
+}
+// Tier op basis van reviews (score op /10 = gemiddelde × 2). Geeft extra gratis leads per maand.
+function tierInfo(rating) {
+  const score = rating.count ? rating.avg * 2 : 0;
+  let key = 'brons', label = 'Brons', bonus = 1;
+  if (rating.count && score >= 7) { key = 'goud'; label = 'Goud'; bonus = 3; }
+  else if (rating.count && score >= 4) { key = 'zilver'; label = 'Zilver'; bonus = 2; }
+  return { key, label, bonus, score: Math.round(score * 10) / 10 };
+}
+const monthKey = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
+// Credit-overzicht: welkomstbucket (5 eenmalig) + maandbonus op basis van tier.
+async function creditInfo(pro) {
+  const claims = await store.claimsByPro(pro.id);
+  const free = claims.filter(c => c.free);
+  const welcomeUsed = free.filter(c => c.bucket !== 'monthly').length;
+  const welcomeRemaining = Math.max(0, FREE_LEADS - welcomeUsed);
+  const rating = await proRating(pro.id);
+  const tier = tierInfo(rating);
+  const cm = monthKey(Date.now());
+  const monthlyUsed = free.filter(c => c.bucket === 'monthly' && monthKey(c.createdAt) === cm).length;
+  const monthlyRemaining = Math.max(0, tier.bonus - monthlyUsed);
+  return {
+    welcomeRemaining, monthlyRemaining, freeAvailable: welcomeRemaining + monthlyRemaining,
+    tier, rating, paidUsed: claims.filter(c => !c.free).length, usedTotal: claims.length,
+  };
 }
 
 app.get('/api/threads', requireRole(), async (req, res) => {

@@ -145,6 +145,21 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .star-input{display:flex;gap:4px;font-size:1.7rem;color:var(--muted);cursor:pointer;margin-bottom:8px}
 .star-input span.on{color:var(--gold-bright)}
 .rev-panel input{width:100%;background:var(--bg-2,var(--panel));border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--cream);margin-bottom:8px;font:inherit}
+
+.ptabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.ptab{background:none;border:none;color:var(--muted);padding:10px 14px;border-radius:10px 10px 0 0;cursor:pointer;font:inherit;font-weight:600;border-bottom:2px solid transparent}
+.ptab:hover{color:var(--gold-soft)}
+.ptab.on{color:var(--gold-bright);border-bottom-color:var(--gold)}
+.k.tier-brons .n{color:#cd7f4f}.k.tier-zilver .n{color:#cbd3dc}.k.tier-goud .n{color:var(--gold-bright)}
+.faq{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.faq>button{width:100%;text-align:left;background:none;border:none;color:var(--cream);padding:14px 16px;cursor:pointer;font:inherit;font-weight:600;display:flex;justify-content:space-between;gap:10px}
+.faq .a{padding:0 16px 14px;color:var(--muted);font-size:.92rem;display:none}
+.faq.open .a{display:block}
+.cat-pick{display:flex;flex-wrap:wrap;gap:8px}
+.cat-pick label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:.85rem;color:var(--muted)}
+.cat-pick label.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.08)}
+.cat-pick input{display:none}
+.prof-logo{width:96px;height:96px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:var(--panel)}
 </style>
 
 </head>
@@ -183,10 +198,22 @@ const T = {
     cPost:'Post for free', cNote:'Your job is live. Tradesmen can now respond.',
     supTitle:'Support', supIntro:'A question or need help? Send us a message — business customers get priority.', supSubject:'Subject', supMsg:'Message', supSend:'Send message', supNote:'Thanks! We will get back to you soon.', tagBiz:'Business',
     msgTitle:'Messages', msgEmpty:'No conversations yet. They start automatically once a tradesman unlocks a job.', msgNone:'No messages yet', msgPh:'Type a message…', qpNew:'Quote', qpAmount:'Amount (€)', qpDesc:'Short description (optional)', qpSend:'Send quote', qpLabel:'Quote', qs_sent:'Awaiting response', qs_accepted:'Accepted', qs_declined:'Declined', qAccept:'Accept', qDecline:'Decline', sysAccepted:'✓ Quote accepted', sysDeclined:'Quote declined',
-    cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation / buying', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are orienting or planning to buy — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'As soon as possible', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'Later / not sure',
+    cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation / buying', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are orienting or planning to buy — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
+    tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
+    ovRecent:'Most recent requests', kTier:'level', flAvail:'Available', flUnlocked:'Unlocked', flSearch:'Search requests…',
+    save:'Save', saved:'Saved.', prBio:'Company description', prWebsite:'Website', prLogo:'Change logo', prPhotos:'Project photos (max 6)',
+    arTitle:'Choose your work area', arZip:'Base postcode', arRadius:'Radius', arCats:'Which jobs do you do?',
+    acDetails:'Account', acTier:'Your level', acCredits:'Free leads left', logoutBtn:'Log out', helpTitle:'Help & FAQ', rvNone:'No reviews yet',
+    hq1:'How does Budomatch work?', ha1:'Customers post a job for free. You see matching requests, unlock the ones you want (first 5 free, then paid; orientation requests are 50% off) and chat directly with the customer.',
+    hq2:'What does it cost?', ha2:'Unlocking a lead costs € 12,50 (orientation/buying leads € 6,25). Posting colleague jobs and chatting is free.',
+    hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score and gives extra free leads per month: Bronze +1, Silver +2, Gold +3.',
+    hq4:'How do I get reviews?', ha4:'After contact, customers can rate you. More and better reviews raise your level and visibility.',
+    hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
+    hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
+    dirTitle:'Companies', dirIntro:'Browse trusted, highly-rated companies and request a quote from them directly. The company only pays when it unlocks your request.', dirView:'View profile', dirEmpty:'No companies yet.', tagDirect:'Direct request',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -214,10 +241,22 @@ const T = {
     cPost:'Gratis plaatsen', cNote:'Je aanvraag staat live. Vakmensen kunnen nu reageren.',
     supTitle:'Support', supIntro:'Een vraag of hulp nodig? Stuur ons een bericht — zakelijke klanten krijgen voorrang.', supSubject:'Onderwerp', supMsg:'Bericht', supSend:'Bericht versturen', supNote:'Bedankt! We reageren snel.', tagBiz:'Zakelijk',
     msgTitle:'Berichten', msgEmpty:'Nog geen gesprekken. Ze starten automatisch zodra een vakman een klus ontgrendelt.', msgNone:'Nog geen berichten', msgPh:'Typ een bericht…', qpNew:'Offerte', qpAmount:'Bedrag (€)', qpDesc:'Korte omschrijving (optioneel)', qpSend:'Offerte sturen', qpLabel:'Offerte', qs_sent:'Wacht op reactie', qs_accepted:'Geaccepteerd', qs_declined:'Afgewezen', qAccept:'Accepteren', qDecline:'Afwijzen', sysAccepted:'✓ Offerte geaccepteerd', sysDeclined:'Offerte afgewezen',
-    cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie / aankoop', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je of wilt iets kopen — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Zo snel mogelijk', tm1:'Binnen 1 maand', tm13:'1-3 maanden', tmLater:'Later / weet ik nog',
+    cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie / aankoop', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je of wilt iets kopen — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
+    tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
+    ovRecent:'Meest recente aanvragen', kTier:'niveau', flAvail:'Beschikbaar', flUnlocked:'Ontgrendeld', flSearch:'Zoek aanvragen…',
+    save:'Opslaan', saved:'Opgeslagen.', prBio:'Bedrijfsomschrijving', prWebsite:'Website', prLogo:'Logo wijzigen', prPhotos:'Projectfoto\'s (max 6)',
+    arTitle:'Kies je werkgebied', arZip:'Postcode (basis)', arRadius:'Straal', arCats:'Welke klussen doe je?',
+    acDetails:'Account', acTier:'Jouw niveau', acCredits:'Gratis leads over', logoutBtn:'Uitloggen', helpTitle:'Helpdesk & FAQ', rvNone:'Nog geen reviews',
+    hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste 5 gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
+    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 12,50 (oriëntatie/aankoop € 6,25). Collega-klussen plaatsen en chatten is gratis.',
+    hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore en geeft extra gratis leads per maand: Brons +1, Zilver +2, Goud +3.',
+    hq4:'Hoe krijg ik reviews?', ha4:'Na contact kan de klant je beoordelen. Meer en betere reviews verhogen je niveau en zichtbaarheid.',
+    hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
+    hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
+    dirTitle:'Bedrijven', dirIntro:'Bekijk betrouwbare, goed beoordeelde bedrijven en vraag er direct een offerte aan. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', tagDirect:'Direct aan jou',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -439,6 +478,15 @@ function sendPhoto(files){ const f=(files||[])[0]; if(!f||!CT)return;
   };img.src=r.result;}; r.readAsDataURL(f);
   const fi=document.getElementById('chatFile'); if(fi)fi.value='';
 }
+const TIER_G={goud:['#F2DC8C','#D4AF37','#A87D1B'],zilver:['#EDEFF2','#C7CED6','#8B95A1'],brons:['#F0C9A8','#C77F4A','#8A5326']};
+function tierBadge(key,size){ const g=TIER_G[key]||TIER_G.brons, id='bd'+key+Math.random().toString(36).slice(2,6), sz=size||28;
+  return `<svg width="${sz}" height="${Math.round(sz*1.18)}" viewBox="0 0 80 94" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle">
+   <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset=".55" stop-color="${g[1]}"/><stop offset="1" stop-color="${g[2]}"/></linearGradient></defs>
+   <path d="M30 58 L22 92 L34 83 L40 92 L40 58 Z" fill="${g[2]}"/><path d="M50 58 L58 92 L46 83 L40 92 L40 58 Z" fill="${g[1]}"/>
+   <circle cx="40" cy="36" r="32" fill="url(#${id})"/><circle cx="40" cy="36" r="32" fill="none" stroke="${g[2]}" stroke-width="3"/>
+   <circle cx="40" cy="36" r="25" fill="none" stroke="#fff" stroke-width="1.1" opacity=".45"/>
+   <g transform="translate(40,36) scale(.6) translate(-40,-40)" fill="#fff" opacity=".95"><path d="M40 16 L64 40 L54 40 L40 26 L26 40 L16 40 Z"/><path d="M40 33 l8 7.5 -8 7.5 -8 -7.5 Z"/><rect x="24" y="52" width="32" height="5.4" rx="2.7"/></g></svg>`;
+}
 function starsHtml(avg,count){ let f=Math.round(avg||0),s=''; for(let i=1;i<=5;i++)s+=(i<=f?'★':'☆'); return count?`${s} <small>${Number(avg).toFixed(1)} (${count})</small>`:s; }
 let revStars=0;
 function toggleReview(){ const p=document.getElementById('revPanel'); if(!p)return; const show=p.style.display==='none'; p.style.display=show?'block':'none'; if(show){revStars=0;renderStarInput();const c=document.getElementById('revComment');if(c)c.value='';} }
@@ -450,6 +498,23 @@ async function submitReview(){ if(!CT||!revStars)return; const comment=(document
 }
 function startChatPoll(){ stopChatPoll(); chatTimer=setInterval(()=>loadMessages(false),4000); }
 function stopChatPoll(){ if(chatTimer)clearInterval(chatTimer); chatTimer=null; }
+function prosCardHtml(){
+  return `<div class="card" style="margin-top:22px"><h2>${t('dirTitle')}</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">${t('dirIntro')}</p>
+    <div id="prosList"></div></div>`;
+}
+const TIERLBL_={goud:'Goud',zilver:'Zilver',brons:'Brons'};
+async function loadPros(){ const el=document.getElementById('prosList'); if(!el)return;
+  let r; try{ r=await api('/api/pros'); }catch(e){ return; }
+  if(!r.pros||!r.pros.length){ el.innerHTML=`<p class="empty">${t('dirEmpty')}</p>`; return; }
+  el.innerHTML=r.pros.map(p=>`<div class="item"><div class="top">
+      <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span></span>
+      ${p.rating.count?`<span class="stars-view" style="font-size:.8rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:`<span class="meta">${t('rvNone')}</span>`}
+      <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf.html?id=${p.id}">${t('dirView')}</a></div>
+      <div class="meta">${htmlesc(p.spec||'')}${p.city?' · '+htmlesc(p.city):''}</div>
+      ${(p.workCategories&&p.workCategories.length)?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${p.workCategories.slice(0,5).map(c=>`<span class="tag">${htmlesc(c)}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
 function supportCardHtml(){
   return `<div class="card" style="margin-top:22px"><h2>${t('supTitle')}</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">${t('supIntro')}</p>
@@ -505,9 +570,10 @@ function renderCustomer(){
       </div>
     </div>
     <div class="card" style="margin-top:22px"><h2>${t('myReq')}</h2><div id="myReqs"></div></div>
+    ${prosCardHtml()}
     ${messagesCardHtml()}
     ${supportCardHtml()}`;
-  reqIntent='opdracht'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads();
+  reqIntent='opdracht'; aiHist=[]; aiGreet(); loadMyRequests(); loadThreads(); loadPros();
 }
 let DPHOTOS=[];
 function addDPhotos(files){
@@ -574,29 +640,143 @@ async function aiSend(){
 
 /* ============ VAKMAN / FACHOWIEC ============ */
 let PRICE=null;
+let PRO_TAB='nieuw', LEADS=[], LEADS_META={}, LEAD_FILTER='beschikbaar', PROFILE_PHOTOS=[], PROFILE_LOGO='';
 async function renderPro(){
   $('#main').innerHTML = `
-    <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1><p>${t('pIntro')}</p></div>
-    <div class="kpi" id="kpi"></div>
-    <div class="card"><h2>${t('leads')}</h2><div id="leads"></div></div>
-    <div class="card" style="margin-top:22px"><h2>${t('billing')}</h2><div id="billing"></div></div>
-    ${proJobsCardHtml()}
-    ${messagesCardHtml()}
-    ${supportCardHtml()}`;
-  await loadLeads(); loadBilling(); handleReturn(); loadThreads(); loadProJobs();
+    <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1></div>
+    <div class="ptabs">
+      <button class="ptab" data-k="nieuw" onclick="showProTab('nieuw')">${t('tabNew')}</button>
+      <button class="ptab" data-k="leads" onclick="showProTab('leads')">${t('tabLeads')}</button>
+      <button class="ptab" data-k="berichten" onclick="showProTab('berichten')">${t('tabMsg')}</button>
+      <button class="ptab" data-k="collega" onclick="showProTab('collega')">${t('tabColleague2')}</button>
+      <button class="ptab" data-k="profiel" onclick="showProTab('profiel')">${t('tabProfile')}</button>
+      <button class="ptab" data-k="werkgebied" onclick="showProTab('werkgebied')">${t('tabArea')}</button>
+      <button class="ptab" data-k="help" onclick="showProTab('help')">${t('tabHelp')}</button>
+      <button class="ptab" data-k="ai" onclick="showProTab('ai')">${t('tabAI')}</button>
+      <button class="ptab" data-k="account" onclick="showProTab('account')">${t('tabAccount')}</button>
+    </div>
+    <div id="proTab"></div>`;
+  showProTab(PRO_TAB); handleReturn();
 }
-function kpiHtml(r){
-  return `<div class="k"><div class="n">${r.creditsLeft}</div><div class="l">${t('kFree')}</div></div>
-    <div class="k"><div class="n">${r.creditsUsed}</div><div class="l">${t('kUsed')}</div></div>
+function showProTab(k){
+  PRO_TAB=k; stopChatPoll();
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on', b.dataset.k===k));
+  const el=$('#proTab'); if(!el)return;
+  if(k==='nieuw'){ el.innerHTML=`<div class="kpi" id="kpi"></div><div class="card"><h2>${t('ovRecent')}</h2><div id="ovLeads"></div></div>`; loadOverview(); }
+  else if(k==='leads'){ el.innerHTML=leadsTabHtml(); loadLeads(); }
+  else if(k==='berichten'){ el.innerHTML=messagesCardHtml(); loadThreads(); }
+  else if(k==='collega'){ el.innerHTML=proJobsCardHtml(); loadProJobs(); }
+  else if(k==='profiel'){ el.innerHTML=profileHtml(); renderPfThumbs(); }
+  else if(k==='werkgebied'){ el.innerHTML=areaHtml(); }
+  else if(k==='help'){ el.innerHTML=helpHtml(); }
+  else if(k==='ai'){ el.innerHTML=`<div class="card assistant"><h2>${t('tabAI')}</h2><p style="color:var(--muted);font-size:.88rem;margin-bottom:10px">${t('aiIntro')}</p><div class="body" id="aiBody"></div><div class="crow"><input id="aiInput" placeholder="${t('aiPh')}" onkeydown="if(event.key==='Enter')aiSend()"><button onclick="aiSend()" aria-label="Send"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div></div>`; aiHist=[]; aiGreet(); }
+  else if(k==='account'){ el.innerHTML=accountHtml(); loadBilling(); }
+}
+function renderKpi(r){
+  const el=$('#kpi'); if(!el)return;
+  const tier=r.tier||ME.tier||{label:'Brons',bonus:1,key:'brons'};
+  const rating=r.rating||ME.rating||{avg:0,count:0};
+  el.innerHTML=`<div class="k"><div class="n">${r.creditsLeft}</div><div class="l">${t('kFree')}</div></div>
+    <div class="k tier-${tier.key}"><div class="n">${tier.label}</div><div class="l">${t('kTier')} · +${tier.bonus}/mnd</div></div>
     <div class="k"><div class="n">${money(r.price.gross)}</div><div class="l">${t('kPrice')}</div></div>
-    <div class="k"><div class="n">${ME.rating&&ME.rating.count?ME.rating.avg.toFixed(1)+'★':'—'}</div><div class="l">${t('kRating')}${ME.rating&&ME.rating.count?` (${ME.rating.count})`:''}</div></div>`;
+    <div class="k"><div class="n">${rating.count?rating.avg.toFixed(1)+'★':'—'}</div><div class="l">${t('kRating')}${rating.count?` (${rating.count})`:''}</div></div>`;
+}
+async function loadOverview(){
+  let r; try{ r=await api('/api/leads'); }catch(e){ return; }
+  PRICE=r.price; renderKpi(r);
+  const el=$('#ovLeads'); if(!el)return;
+  const recent=(r.leads||[]).filter(l=>!l.claimed).slice(0,5);
+  el.innerHTML=recent.length?recent.map(l=>leadHtml(l,r.creditsLeft)).join(''):`<p class="empty">${t('leadsEmpty')}</p>`;
+}
+function leadsTabHtml(){
+  return `<div class="card">
+    <div class="seg" id="leadSeg" style="max-width:360px"><button class="on" data-f="beschikbaar" onclick="setLeadFilter('beschikbaar')">${t('flAvail')}</button><button data-f="ontgrendeld" onclick="setLeadFilter('ontgrendeld')">${t('flUnlocked')}</button></div>
+    <input class="inp" id="leadSearch" placeholder="${t('flSearch')}" oninput="renderLeadList()">
+    <div class="kpi" id="kpi" style="margin:12px 0"></div>
+    <div id="leads"></div></div>`;
 }
 async function loadLeads(){
-  const r = await api('/api/leads'); PRICE=r.price;
-  $('#kpi').innerHTML = kpiHtml(r);
-  const el=$('#leads');
-  if(!r.leads.length){ el.innerHTML=`<p class="empty">${t('leadsEmpty')}</p>`; return; }
-  el.innerHTML = r.leads.map(l=>leadHtml(l, r.creditsLeft)).join('');
+  let r; try{ r=await api('/api/leads'); }catch(e){ return; }
+  PRICE=r.price; LEADS=r.leads||[]; LEADS_META=r; renderKpi(r); renderLeadList();
+}
+function setLeadFilter(f){ LEAD_FILTER=f; document.querySelectorAll('#leadSeg button').forEach(b=>b.classList.toggle('on',b.dataset.f===f)); renderLeadList(); }
+function renderLeadList(){
+  const el=$('#leads'); if(!el)return;
+  const si=$('#leadSearch'); const q=(si?si.value:'').toLowerCase();
+  let list=LEADS.filter(l=> LEAD_FILTER==='ontgrendeld'?l.claimed:!l.claimed);
+  if(q) list=list.filter(l=>((l.service||'')+' '+(l.description||'')+' '+(l.zip||'')+' '+(l.timing||'')).toLowerCase().includes(q));
+  el.innerHTML=list.length?list.map(l=>leadHtml(l, LEADS_META.creditsLeft)).join(''):`<p class="empty">${t('leadsEmpty')}</p>`;
+}
+/* ---- Bedrijfsprofiel ---- */
+function downscale(f,max,cb){ const r=new FileReader(); r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height; if(w>max||h>max){const sc=Math.min(max/w,max/h);w=Math.round(w*sc);h=Math.round(h*sc);} const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.72));};img.src=r.result;}; r.readAsDataURL(f); }
+function profileHtml(){
+  const u=ME; PROFILE_PHOTOS=(u.photos||[]).slice(); PROFILE_LOGO=u.logo||'';
+  return `<div class="card"><h2>${t('tabProfile')}</h2>
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <img class="prof-logo" id="profLogo" src="${u.logo||''}" alt="" ${u.logo?'':'style="visibility:hidden"'}>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logoFile').click()">${t('prLogo')}</button>
+      <input type="file" id="logoFile" accept="image/*" hidden onchange="setProfileLogo(this.files)">
+      <div style="margin-left:auto" class="stars-view">${ME.rating&&ME.rating.count?starsHtml(ME.rating.avg,ME.rating.count):t('rvNone')}</div>
+    </div>
+    <label>${t('authCompany')}</label><input class="inp" id="pfCompany" value="${htmlesc(u.company||'')}">
+    <label>${t('authSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}">
+    <label>${t('authCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}">
+    <label>${t('authPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}">
+    <label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}">
+    <label>${t('prBio')}</label><textarea class="inp" id="pfBio" rows="4">${htmlesc(u.bio||'')}</textarea>
+    <label>${t('prPhotos')}</label>
+    <div class="photo-up" onclick="document.getElementById('pfFiles').click()"><span>${t('cPhotosHint')}</span></div>
+    <input type="file" id="pfFiles" accept="image/*" multiple hidden onchange="addProfilePhotos(this.files)">
+    <div class="photo-thumbs" id="pfThumbs"></div>
+    <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="saveProfile()">${t('save')}</button>
+    <div class="note" id="pfNote">${t('saved')}</div></div>`;
+}
+function setProfileLogo(files){ const f=(files||[])[0]; if(!f)return; downscale(f,256,d=>{ PROFILE_LOGO=d; const el=$('#profLogo'); if(el){el.src=d;el.style.visibility='visible';} }); }
+function addProfilePhotos(files){ Array.from(files||[]).forEach(f=>{ if(PROFILE_PHOTOS.length>=6)return; if(f.type&&f.type.indexOf('image/')===0) downscale(f,1280,d=>{ if(PROFILE_PHOTOS.length<6){PROFILE_PHOTOS.push(d);renderPfThumbs();} }); }); const fi=$('#pfFiles'); if(fi)fi.value=''; }
+function renderPfThumbs(){ const el=$('#pfThumbs'); if(!el)return; el.innerHTML=PROFILE_PHOTOS.map((d,i)=>`<div class="th"><img src="${d}" alt=""><button type="button" onclick="rmPfPhoto(${i})">×</button></div>`).join(''); }
+function rmPfPhoto(i){ PROFILE_PHOTOS.splice(i,1); renderPfThumbs(); }
+async function saveProfile(){
+  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,website:$('#pfWebsite').value,bio:$('#pfBio').value,photos:PROFILE_PHOTOS,logo:PROFILE_LOGO};
+  const r=await api('/api/profile',{method:'POST',body:JSON.stringify(body)});
+  if(r.user){ ME=r.user; const n=$('#pfNote'); if(n)n.classList.add('show'); applyChrome(); }
+}
+/* ---- Werkgebied ---- */
+function areaHtml(){
+  const u=ME; const sel=new Set(u.workCategories||[]);
+  return `<div class="card"><h2>${t('arTitle')}</h2>
+    <label>${t('arZip')}</label><input class="inp" id="arZip" value="${htmlesc(u.workZip||'')}" placeholder="${t('cZipPh')}">
+    <label>${t('arRadius')}</label><select class="inp" id="arRadius">${[10,20,30,50,100,150].map(km=>`<option value="${km}" ${(u.workRadius||30)==km?'selected':''}>${km} km</option>`).join('')}</select>
+    <label>${t('arCats')}</label>
+    <div class="cat-pick" id="arCats">${cats().map(c=>`<label class="${sel.has(c)?'on':''}"><input type="checkbox" value="${htmlesc(c)}" ${sel.has(c)?'checked':''} onchange="this.parentNode.classList.toggle('on',this.checked)">${htmlesc(c)}</label>`).join('')}</div>
+    <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="saveArea()">${t('save')}</button>
+    <div class="note" id="arNote">${t('saved')}</div></div>`;
+}
+async function saveArea(){
+  const cats=[...document.querySelectorAll('#arCats input:checked')].map(i=>i.value);
+  const r=await api('/api/profile',{method:'POST',body:JSON.stringify({workZip:$('#arZip').value,workRadius:$('#arRadius').value,workCategories:cats})});
+  if(r.user){ ME=r.user; const n=$('#arNote'); if(n)n.classList.add('show'); }
+}
+/* ---- Helpdesk ---- */
+function helpHtml(){
+  const items=[1,2,3,4,5,6].map(i=>({q:t('hq'+i),a:t('ha'+i)}));
+  return `<div class="card"><h2>${t('helpTitle')}</h2>${items.map((it,i)=>`<div class="faq" id="faq${i}"><button onclick="document.getElementById('faq${i}').classList.toggle('open')">${htmlesc(it.q)}<span>+</span></button><div class="a">${htmlesc(it.a)}</div></div>`).join('')}</div>`;
+}
+/* ---- Account ---- */
+function accountHtml(){
+  const u=ME; const tier=u.tier||{label:'Brons',bonus:1,key:'brons'};
+  return `<div class="grid two">
+    <div class="card"><h2>${t('acDetails')}</h2>
+      <p style="margin:0"><b>${htmlesc(u.company||u.name)}</b></p><p class="meta">${htmlesc(u.email)}</p>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:14px">${tierBadge(tier.key,58)}<div><div style="font-family:'Marcellus',serif;font-size:1.2rem;color:var(--gold-bright)">${tier.label}</div><div class="meta">${t('acTier')} · +${tier.bonus} lead/mnd</div></div></div>
+      <div class="kpi" style="margin-top:14px">
+        <div class="k tier-${tier.key}"><div class="n">${tier.label}</div><div class="l">${t('acTier')} · +${tier.bonus}/mnd</div></div>
+        <div class="k"><div class="n">${u.creditsLeft}</div><div class="l">${t('acCredits')}</div></div>
+        <div class="k"><div class="n">${u.rating&&u.rating.count?u.rating.avg.toFixed(1)+'★':'—'}</div><div class="l">${t('kRating')}${u.rating&&u.rating.count?` (${u.rating.count})`:''}</div></div>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:16px" onclick="logout()">${t('logoutBtn')}</button>
+    </div>
+    <div class="card"><h2>${t('billing')}</h2><div id="billing"></div></div>
+  </div>`;
 }
 function leadHtml(l, creditsLeft){
   const price = l.price || PRICE;
@@ -607,6 +787,7 @@ function leadHtml(l, creditsLeft){
         : `<button class="btn btn-gold btn-sm" onclick="claim('${l.id}',this)">${t('unlock')} — ${money(price.gross)}${price.orientation?' (50%)':''}</button>`);
   return `<div class="item" id="lead-${l.id}">
     <div class="top"><span class="svc">${l.service}</span>
+      ${l.direct?`<span class="tag" style="border-color:var(--green);color:#bfe6cf">${t('tagDirect')}</span>`:''}
       ${l.intent==='orientatie'?`<span class="tag orient">${t('tagOrient')}</span>`:`<span class="tag job">${t('tagJob')}</span>`}
       ${l.matchesSpec?`<span class="tag match">${t('match')}</span>`:''}
       ${l.customerType==='zakelijk'?`<span class="tag biz">${t('tagBiz')}</span>`:''}
@@ -633,7 +814,8 @@ async function claim(id, btn){
 function refreshLead(id, lead){ const n=$('#lead-'+id); if(n) n.outerHTML=leadHtml(lead, 0); }
 async function reloadKpi(){ const r=await api('/api/leads'); $('#kpi').innerHTML=kpiHtml(r); }
 async function loadBilling(){
-  const r = await api('/api/billing'); const el=$('#billing');
+  const el=$('#billing'); if(!el) return;
+  const r = await api('/api/billing');
   const rows = r.claims.length ? r.claims.map((c,i)=>`
     <div class="item"><div class="top"><span class="svc">${c.service||'Lead'}</span>
       ${c.free?`<span class="tag green">${t('free')}</span>`:`<span class="tag">${money(c.gross)} ${t('incl')}</span>`}
@@ -705,7 +887,7 @@ function showReceipt(c){
 function toast(msg){ const el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),4500); }
 function handleReturn(){
   const q=new URLSearchParams(location.search);
-  if(q.get('paid')){ toast(t('paidOk')); let n=0; const iv=setInterval(()=>{ loadLeads(); loadBilling(); if(++n>=3)clearInterval(iv); },1500); }
+  if(q.get('paid')){ showProTab('leads'); toast(t('paidOk')); let n=0; const iv=setInterval(()=>{ loadLeads(); if(++n>=3)clearInterval(iv); },1500); }
   else if(q.get('cancel')){ toast(t('payCancel')); }
   if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard.html');
 }

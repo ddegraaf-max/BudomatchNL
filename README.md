@@ -104,3 +104,11 @@ Zodra een vakman een aanvraag ontgrendelt, opent automatisch een gesprek tussen 
 
 ## Collega-klussen (vakman → vakman, gratis) — USP
 Vakmensen kunnen werk dat blijft liggen **gratis** doorgeven aan collega-vakmensen: plaats een klus, een andere vakman pakt 'm op, en er opent automatisch een vakman⇆vakman chat (met foto's, afspraak/agenda en bellen). Dit is de USP om vakmensen aan te trekken. Beoordelingen (reviews) sluiten de loop: klanten beoordelen vakmensen na contact.
+
+## Vakman-portaal (tabbladen) + niveaus
+Het vakman-portaal heeft tabbladen: **Nieuw** (5 recente aanvragen + KPI's), **Offerteaanvragen** (Beschikbaar/Ontgrendeld + zoeken), **Berichten**, **Collega-klussen**, **Bedrijfsprofiel** (logo, omschrijving, projectfoto's, reviews), **Werkgebied** (postcode, straal, categorieën), **Helpdesk** (FAQ), **AI-assistent** en **Account** (niveau, facturatie, uitloggen).
+
+**Niveaus op basis van reviews** (extra gratis leads per maand): **Brons** +1, **Zilver** +2, **Goud** +3. Naast de eenmalige 5 welkomstleads. Het niveau volgt de reviewscore (op /10 = gemiddelde × 2): <4 Brons, 4-6 Zilver, 7-10 Goud.
+
+## Openbare bedrijfsprofielen + directe aanvraag (USP)
+Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf.html?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.

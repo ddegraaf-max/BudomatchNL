@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bedrijfsprofiel — Budomatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#13110B;--bg-2:#1b180f;--panel:#211d12;--line:#3a3324;--cream:#F4EFE3;--muted:#a99e86;--gold:#C9A227;--gold-bright:#E3C158;--gold-soft:#E8D9A8;--green:#3fa66a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--cream);font-family:Manrope,system-ui,sans-serif;line-height:1.55}
+a{color:var(--gold-bright)}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:24px}
+.brand{font-family:Marcellus,serif;font-size:1.5rem;color:var(--gold-bright);letter-spacing:1px;text-decoration:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px}
+h1{font-family:Marcellus,serif;font-weight:400;margin:0 0 4px;font-size:1.9rem}
+h2{font-family:Marcellus,serif;font-weight:400;font-size:1.3rem;margin:0 0 12px}
+.head{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.logo{width:110px;height:110px;border-radius:16px;object-fit:cover;border:1px solid var(--line);background:var(--bg-2)}
+.meta{color:var(--muted);font-size:.92rem}
+.stars{color:var(--gold-bright);letter-spacing:2px;font-size:1.05rem}
+.stars small{color:var(--muted);letter-spacing:0;margin-left:6px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.tag{border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:.82rem;color:var(--gold-soft)}
+.btn{background:linear-gradient(135deg,var(--gold),#b8901e);color:#20180a;border:none;border-radius:12px;padding:13px 20px;font:inherit;font-weight:700;cursor:pointer}
+.btn-ghost{background:none;border:1px solid var(--gold);color:var(--gold-bright)}
+.inp{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--cream);font:inherit;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--gold-soft);margin-bottom:5px}
+.grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.photos img{width:100%;height:130px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
+.rev{border-top:1px solid var(--line);padding:12px 0}
+.rev:first-child{border-top:none}
+.badge-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.badge-label{font-family:Marcellus,serif;font-size:1.05rem}
+.note{color:var(--green);margin-top:10px;display:none}
+.note.show{display:block}
+.empty{color:var(--muted);text-align:center;padding:20px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.photos{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a class="brand" href="/">Budomatch</a><a href="/" class="meta">← Terug</a></div>
+  <div id="content"><p class="empty">Laden…</p></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const money=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const TIER={goud:['#F2DC8C','#D4AF37','#A87D1B'],zilver:['#EDEFF2','#C7CED6','#8B95A1'],brons:['#F0C9A8','#C77F4A','#8A5326']};
+const TIERLBL={goud:'Goud',zilver:'Zilver',brons:'Brons'};
+function tierBadge(key,size){
+  const g=TIER[key]||TIER.goud, id='bd'+key+Math.random().toString(36).slice(2,6), s=size||70;
+  return `<svg width="${s}" height="${Math.round(s*1.18)}" viewBox="0 0 80 94" xmlns="http://www.w3.org/2000/svg" aria-label="${key}">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset=".55" stop-color="${g[1]}"/><stop offset="1" stop-color="${g[2]}"/></linearGradient></defs>
+    <path d="M30 58 L22 92 L34 83 L40 92 L40 58 Z" fill="${g[2]}"/><path d="M50 58 L58 92 L46 83 L40 92 L40 58 Z" fill="${g[1]}"/>
+    <circle cx="40" cy="36" r="32" fill="url(#${id})"/><circle cx="40" cy="36" r="32" fill="none" stroke="${g[2]}" stroke-width="3"/>
+    <circle cx="40" cy="36" r="25" fill="none" stroke="#fff" stroke-width="1.1" opacity=".45"/>
+    <g transform="translate(40,36) scale(.6) translate(-40,-40)" fill="#fff" opacity=".95">
+      <path d="M40 16 L64 40 L54 40 L40 26 L26 40 L16 40 Z"/><path d="M40 33 l8 7.5 -8 7.5 -8 -7.5 Z"/><rect x="24" y="52" width="32" height="5.4" rx="2.7"/>
+    </g></svg>`;
+}
+function stars(avg,count){ let f=Math.round(avg||0),s=''; for(let i=1;i<=5;i++)s+=(i<=f?'★':'☆'); return count?`${s} <small>${Number(avg).toFixed(1)} / 5 · ${count} reviews</small>`:`<small>Nog geen reviews</small>`; }
+function score10(avg){ return (avg*2).toFixed(1); }
+
+let ME=null, PRO=null;
+async function api(u,o){ const r=await fetch(u,o); if(!r.ok) throw r; return r.json(); }
+async function boot(){
+  const id=new URLSearchParams(location.search).get('id');
+  if(!id){ $('#content').innerHTML='<p class="empty">Geen bedrijf opgegeven.</p>'; return; }
+  try{ const m=await api('/api/me'); ME=m.user; }catch(e){ ME=null; }
+  let d; try{ d=await api('/api/pros/'+id); }catch(e){ $('#content').innerHTML='<p class="empty">Bedrijf niet gevonden.</p>'; return; }
+  PRO=d.pro; render(d);
+}
+function render(d){
+  const p=d.pro, tier=p.tier||{key:'brons',label:'Brons'}, rv=d.reviews||[];
+  const cats=(p.workCategories&&p.workCategories.length?p.workCategories:(p.spec?[p.spec]:[]));
+  $('#content').innerHTML=`
+    <div class="card"><div class="head">
+      <img class="logo" src="${p.logo||''}" alt="" ${p.logo?'':'style="visibility:hidden"'}>
+      <div style="flex:1;min-width:220px">
+        <h1>${esc(p.company)}</h1>
+        <div class="meta">${esc(p.spec||'')}${p.city?' · '+esc(p.city):''}</div>
+        <div class="stars" style="margin-top:6px">${stars(p.rating.avg,p.rating.count)}</div>
+        <div class="tags">${cats.slice(0,8).map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>
+      </div>
+      <div class="badge-wrap">${tierBadge(tier.key,76)}<span class="badge-label">${TIERLBL[tier.key]||tier.label}</span>
+        ${p.rating.count?`<span class="meta">${score10(p.rating.avg)}/10</span>`:''}</div>
+    </div></div>
+    <div class="grid">
+      <div>
+        <div class="card"><h2>Over ${esc(p.company)}</h2>
+          <p style="color:var(--muted);white-space:pre-wrap">${esc(p.bio||'Dit bedrijf heeft nog geen omschrijving toegevoegd.')}</p>
+          ${p.website?`<p><a href="${esc(p.website)}" target="_blank" rel="noopener nofollow">${esc(p.website)}</a></p>`:''}
+          ${p.workRadius?`<p class="meta">Werkgebied: ${p.workRadius} km${p.city?' rond '+esc(p.city):''}</p>`:''}
+        </div>
+        ${(p.photos&&p.photos.length)?`<div class="card"><h2>Projectfoto's</h2><div class="photos">${p.photos.map(x=>`<img src="${x}" alt="" onclick="window.open(this.src,'_blank')">`).join('')}</div></div>`:''}
+        <div class="card"><h2>Reviews${p.rating.count?` (${p.rating.count})`:''}</h2>
+          ${rv.length?rv.map(r=>`<div class="rev"><div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)} <small>${esc(r.name)}</small></div>${r.comment?`<div style="color:var(--muted);margin-top:4px">${esc(r.comment)}</div>`:''}</div>`).join(''):'<p class="empty">Nog geen reviews.</p>'}
+        </div>
+      </div>
+      <div>
+        <div class="card" id="ctaCard"></div>
+      </div>
+    </div>`;
+  renderCta();
+}
+function renderCta(){
+  const el=$('#ctaCard'); const p=PRO;
+  const trusted = p.rating.count && p.rating.avg>=4;
+  if(!ME){
+    el.innerHTML=`<h2>Offerte aanvragen</h2><p style="color:var(--muted)">Vraag direct een vrijblijvende offerte aan bij ${esc(p.company)}. Log in of maak gratis een klantaccount.</p><a class="btn" href="/" style="display:inline-block;text-decoration:none">Inloggen / registreren</a>`;
+    return;
+  }
+  if(ME.role!=='customer'){
+    el.innerHTML=`<h2>Offerte aanvragen</h2><p style="color:var(--muted)">Alleen klanten kunnen een offerte aanvragen. Log in met een klantaccount.</p>`;
+    return;
+  }
+  const cats=(p.workCategories&&p.workCategories.length?p.workCategories:(p.spec?[p.spec]:['Algemeen']));
+  el.innerHTML=`<h2>Offerte aanvragen</h2>
+    ${trusted?`<p style="color:var(--green);font-size:.9rem;margin-top:0">✓ Betrouwbaar bedrijf met hoge beoordeling</p>`:''}
+    <p style="color:var(--muted);font-size:.9rem">Stuur je aanvraag direct naar ${esc(p.company)}. Zij nemen contact met je op via het portaal.</p>
+    <label>Dienst</label><select class="inp" id="qService">${cats.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
+    <label>Wanneer?</label><select class="inp" id="qTiming"><option>Spoed</option><option>Binnen 1 maand</option><option>Tussen 1-3 maanden</option><option>Meer dan 3 maanden</option></select>
+    <label>Omschrijving</label><textarea class="inp" id="qDesc" rows="4" placeholder="Beschrijf je klus zo duidelijk mogelijk"></textarea>
+    <label>Postcode</label><input class="inp" id="qZip" placeholder="bijv. 1011 AB">
+    <button class="btn" style="width:100%" onclick="sendRequest()">Verstuur aanvraag</button>
+    <div class="note" id="qNote">✓ Je aanvraag is verstuurd. ${esc(p.company)} reageert via het portaal.</div>`;
+}
+async function sendRequest(){
+  const body={ service:$('#qService').value, timing:$('#qTiming').value, description:$('#qDesc').value, zip:$('#qZip').value, targetProId:PRO.id, lang:'nl' };
+  if(!body.description.trim()){ $('#qDesc').focus(); return; }
+  try{ const r=await api('/api/requests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    if(r.request){ $('#qNote').classList.add('show'); $('#qDesc').value=''; $('#qZip').value=''; } }catch(e){}
+}
+boot();
+</script>
+</body>
+</html>
