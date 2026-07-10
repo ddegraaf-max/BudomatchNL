@@ -207,6 +207,12 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .koz-meet{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--gold-soft);margin:2px 0 10px;cursor:pointer}
 .koz-meet input{accent-color:var(--gold);width:16px;height:16px}
 .koz-dim-off{opacity:.4;pointer-events:none}
+
+.tag.gold{background:linear-gradient(90deg,rgba(227,193,88,.18),rgba(201,162,39,.14));border-color:var(--gold);color:var(--gold-bright)}
+.resp-box{background:rgba(201,162,39,.06);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}
+.resp-h{font-size:.82rem;color:var(--gold-soft);margin-bottom:6px}
+.resp-item{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--cream);padding:5px 0}
+.edit-form label{font-size:.82rem;color:var(--gold-soft);display:block;margin:6px 0 3px}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -242,7 +248,7 @@ const T = {
     cWelcome:'Welcome', cIntro:'Post a job for free — tradesmen will send you no-obligation quotes.',
     kozAddHint:'Configure a frame and click \u201cAdd frame\u201d. You can add several different frames.', kozMeetBij:'Have it measured at my place for free (no sizes needed)', kozAdd:'+ Add frame', kozNoneYet:'No frames added yet.', kozMeetNote:'measured by tradesman', kozSizesTodo:'sizes to be determined',
     kozProduct:'Product', kozGlas:'Glazing', kozOpening:'Opening direction', kozKleurBuiten:'Colour outside', kozKleurBinnen:'Colour inside', inmeetBtn:'\ud83d\udccf How to measure? (guide + example)', inmeetTitle:'How to measure your frames', inmeetStep1:'Measure the WIDTH at 3 heights (top, middle, bottom) \u2014 note the smallest value.', inmeetStep2:'Measure the HEIGHT at 3 points (left, middle, right) \u2014 note the smallest value.', inmeetStep3:'Measure the clear opening (visible frame), or indicate it is a complete frame.', inmeetTip:'Not sure? One of our tradesmen can measure for free.', kozExample:'Example: PVC tilt & turn window, 1200 \u00d7 1500 mm, HR++ glass, white.', cfgGevel:'Facade finish', cfgFundering:'Foundation', cfgExtras:'Extras', cfgIsolatie:'Insulation', cfgVvw:'Underfloor heating', cfgKozIncl:'Frames/doors incl.', cfgElektra:'Electrics incl.', dakPlaatsing:'Placement', dakVent:'Ventilation grille',
-    cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = an extension WITHOUT removing the existing facade (built onto the house).', cfgUitbouwHint:'Bump-out = an extension WHERE the existing facade is (partly) removed, making the space one.', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', cfgRamen:'Windows',
+    cfgTitle:'Configurator', cfgAanbouw:'Add-on', cfgUitbouw:'Bump-out', cfgOpbouw:'Storey addition', cfgOpbouwHint:'Storey addition = an extra floor on top of the existing house.', cfgAanbouwHint:'Add-on = an extension WITHOUT removing the existing facade (built onto the house).', cfgUitbouwHint:'Bump-out = an extension WHERE the existing facade is (partly) removed, making the space one.', cfgWidth:'Width:', cfgDepth:'Depth:', cfgFloors:'Floors', cfgFloor:'floor', cfgFloors2:'floors', cfgRoof:'Roof', cfgFlat:'Flat roof', cfgSloped:'Sloped roof', cfgUse:'Use', cfgMateriaal:'Material', cfgType:'Type', cfgAantal:'Quantity', cfgKleur:'Colour', cfgWcm:'Width (cm)', cfgHcm:'Height (cm)', cfgBreedteCm:'Width:', dakHoogte:'Height:', cfgRamen:'Windows',
     cNew:'Post a new job', cService:'Service', cZip:'City', cZipPh:'e.g. Amsterdam',
     cPhone:'Phone (tradesmen see it only after unlocking)', cPhonePh:'+31 6 12345678',
     cDesc:'Job description', cDescPh:'Describe what needs doing, scope, desired timing…',
@@ -250,6 +256,7 @@ const T = {
     cPost:'Post for free', cNote:'Your job is live. Tradesmen can now respond.',
     supTitle:'Support', supIntro:'A question or need help? Send us a message — business customers get priority.', supSubject:'Subject', supMsg:'Message', supSend:'Send message', supNote:'Thanks! We will get back to you soon.', tagBiz:'Business',
     msgTitle:'Messages', msgEmpty:'No conversations yet. They start automatically once a tradesman unlocks a job.', msgNone:'No messages yet', msgPh:'Type a message…', qpNew:'Quote', qpAmount:'Amount (€)', qpDesc:'Short description (optional)', qpSend:'Send quote', qpLabel:'Quote', qs_sent:'Awaiting response', qs_accepted:'Accepted', qs_declined:'Declined', qAccept:'Accept', qDecline:'Decline', sysAccepted:'✓ Quote accepted', sysDeclined:'Quote declined',
+    stReqOpen:'Active', stReqAssigned:'Tradesman found', stReqCancelled:'Cancelled', reqEdit:'Edit', reqCancel:'Cancel', reqReopen:'Reopen', reqAssign:'Choose this one', reqResponders:'Responses', reqSave:'Save', reqClose:'Close', reqCancelConfirm:'Cancel this request?', reqAssignConfirm:'Assign this request to {name}? Other tradesmen will no longer see it.', reqMax3:'Max. 3 tradesmen can respond.',
     cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are still orienting — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
@@ -289,7 +296,7 @@ const T = {
     cWelcome:'Welkom', cIntro:'Plaats gratis een aanvraag — vakmensen sturen je vrijblijvend offertes.',
     kozAddHint:'Stel een kozijn samen en klik op \u201cKozijn toevoegen\u201d. Je kunt meerdere verschillende kozijnen toevoegen.', kozMeetBij:'Laat gratis bij mij inmeten (ik geef geen maten op)', kozAdd:'+ Kozijn toevoegen', kozNoneYet:'Nog geen kozijnen toegevoegd.', kozMeetNote:'inmeten door vakman', kozSizesTodo:'maten n.n.b.',
     kozProduct:'Product', kozGlas:'Beglazing', kozOpening:'Draairichting', kozKleurBuiten:'Kleur buiten', kozKleurBinnen:'Kleur binnen', inmeetBtn:'\ud83d\udccf Hoe meet ik in? (uitleg + voorbeeld)', inmeetTitle:'Zo meet je je kozijnen in', inmeetStep1:'Meet de BREEDTE op 3 hoogtes (boven, midden, onder) \u2014 noteer de kleinste maat.', inmeetStep2:'Meet de HOOGTE op 3 plekken (links, midden, rechts) \u2014 noteer de kleinste maat.', inmeetStep3:'Meet de dagmaat (de zichtbare opening), of geef aan dat het om een compleet stelkozijn gaat.', inmeetTip:'Twijfel je? Een van onze vakmensen komt gratis inmeten.', kozExample:'Voorbeeld: kunststof draai-kiepraam, 1200 \u00d7 1500 mm, HR++ glas, wit.', cfgGevel:'Gevelafwerking', cfgFundering:'Fundering', cfgExtras:'Extra\u2019s', cfgIsolatie:'Isolatie', cfgVvw:'Vloerverwarming', cfgKozIncl:'Kozijnen/pui incl.', cfgElektra:'Elektra incl.', dakPlaatsing:'Plaatsing', dakVent:'Ventilatierooster',
-    cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = uitbreiding ZONDER de bestaande gevel te verwijderen (los aan de woning gebouwd).', cfgUitbouwHint:'Uitbouw = uitbreiding WAARBIJ de bestaande gevel (deels) wordt verwijderd, zodat de ruimte \u00e9\u00e9n geheel wordt.', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', cfgRamen:'Aantal ramen',
+    cfgTitle:'Configurator', cfgAanbouw:'Aanbouw', cfgUitbouw:'Uitbouw', cfgOpbouw:'Opbouw', cfgOpbouwHint:'Opbouw = een extra verdieping boven op de bestaande woning.', cfgAanbouwHint:'Aanbouw = uitbreiding ZONDER de bestaande gevel te verwijderen (los aan de woning gebouwd).', cfgUitbouwHint:'Uitbouw = uitbreiding WAARBIJ de bestaande gevel (deels) wordt verwijderd, zodat de ruimte \u00e9\u00e9n geheel wordt.', cfgWidth:'Breedte:', cfgDepth:'Diepte:', cfgFloors:'Verdiepingen', cfgFloor:'verdieping', cfgFloors2:'verdiepingen', cfgRoof:'Dak', cfgFlat:'Plat dak', cfgSloped:'Schuin dak', cfgUse:'Gebruik', cfgMateriaal:'Materiaal', cfgType:'Type', cfgAantal:'Aantal', cfgKleur:'Kleur', cfgWcm:'Breedte (cm)', cfgHcm:'Hoogte (cm)', cfgBreedteCm:'Breedte:', dakHoogte:'Hoogte:', cfgRamen:'Aantal ramen',
     cNew:'Nieuwe aanvraag plaatsen', cService:'Dienst', cZip:'Plaats', cZipPh:'bijv. Amsterdam',
     cPhone:'Telefoon (zien vakmensen pas na ontgrendeling)', cPhonePh:'+31 6 12345678',
     cDesc:'Omschrijving van de klus', cDescPh:'Beschrijf wat er moet gebeuren, omvang, gewenste termijn…',
@@ -297,6 +304,7 @@ const T = {
     cPost:'Gratis plaatsen', cNote:'Je aanvraag staat live. Vakmensen kunnen nu reageren.',
     supTitle:'Support', supIntro:'Een vraag of hulp nodig? Stuur ons een bericht — zakelijke klanten krijgen voorrang.', supSubject:'Onderwerp', supMsg:'Bericht', supSend:'Bericht versturen', supNote:'Bedankt! We reageren snel.', tagBiz:'Zakelijk',
     msgTitle:'Berichten', msgEmpty:'Nog geen gesprekken. Ze starten automatisch zodra een vakman een klus ontgrendelt.', msgNone:'Nog geen berichten', msgPh:'Typ een bericht…', qpNew:'Offerte', qpAmount:'Bedrag (€)', qpDesc:'Korte omschrijving (optioneel)', qpSend:'Offerte sturen', qpLabel:'Offerte', qs_sent:'Wacht op reactie', qs_accepted:'Geaccepteerd', qs_declined:'Afgewezen', qAccept:'Accepteren', qDecline:'Afwijzen', sysAccepted:'✓ Offerte geaccepteerd', sysDeclined:'Offerte afgewezen',
+    stReqOpen:'Actueel', stReqAssigned:'Vakman gevonden', stReqCancelled:'Geannuleerd', reqEdit:'Bewerken', reqCancel:'Annuleren', reqReopen:'Heropenen', reqAssign:'Kies deze vakman', reqResponders:'Reacties', reqSave:'Opslaan', reqClose:'Sluiten', reqCancelConfirm:'Deze aanvraag annuleren?', reqAssignConfirm:'Aanvraag toewijzen aan {name}? Andere vakmensen zien de aanvraag dan niet meer.', reqMax3:'Max. 3 vakmensen kunnen reageren.',
     cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je nog — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
@@ -713,10 +721,12 @@ function setIntent(v){ reqIntent=v;
   const h=document.getElementById('cIntentHint'); if(h)h.textContent=t(v==='orientatie'?'cIntentOrientHint':'cIntentJobHint');
 }
 let CFG_TYPE=null, __extType='aanbouw', KOZ_LIST=[];
+const SPEC_ALIAS={'Roof window':'Dakraam','Plastering':'Stucwerk','Underfloor heating':'Vloerverwarming','Bathroom':'Badkamerspecialist','Painting':'Schilderwerk','Solar panels':'Zonnepanelen','Insulation':'Isolatie','Kitchen':'Keukenspecialist'};
 function configForService(svc){
   if(['Aanbouw','Uitbouw','Opbouw','Extension','Bump-out extension','Storey addition'].includes(svc)) return 'ext';
   if(['Kozijnen','Window frames','Schuifpui','Sliding doors'].includes(svc)) return 'kozijn';
   if(['Dakkapel','Dormer'].includes(svc)) return 'dakkapel';
+  if(SPECS[SPEC_ALIAS[svc]||svc]) return 'spec';
   return null;
 }
 function onServiceChange(){
@@ -725,6 +735,7 @@ function onServiceChange(){
   if(CFG_TYPE==='ext'){ __extType=(svc==='Uitbouw'||svc==='Bump-out extension')?'uitbouw':((svc==='Opbouw'||svc==='Storey addition')?'opbouw':'aanbouw'); box.innerHTML=extConfigHtml(); box.style.display='block'; updateExt(); }
   else if(CFG_TYPE==='kozijn'){ box.innerHTML=kozijnConfigHtml(); box.style.display='block'; updateKoz(); }
   else if(CFG_TYPE==='dakkapel'){ box.innerHTML=dakkapelConfigHtml(); box.style.display='block'; updateDak(); }
+  else if(CFG_TYPE==='spec'){ box.innerHTML=specConfigHtml(SPEC_ALIAS[svc]||svc); box.style.display='block'; updateSpec(); }
   else { box.innerHTML=''; box.style.display='none'; }
 }
 function extConfigHtml(){
@@ -870,32 +881,113 @@ function dakkapelConfigHtml(){
   return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 Dakkapel</div>
     <div class="cfg-grid">
       <label>${t('cfgBreedteCm')} <b id="dakBv">300</b> cm<input type="range" id="dakB" min="100" max="600" step="10" value="300" oninput="updateDak()"></label>
-      <div><label>${t('cfgType')}</label><select class="inp" id="dakT" onchange="updateDak()">${['Nieuwe dakkapel','Bestaande vervangen'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <label>${t('dakHoogte')} <b id="dakHv">175</b> cm<input type="range" id="dakH" min="100" max="350" step="5" value="175" oninput="updateDak()"></label>
     </div>
     <div class="cfg-row2">
+      <div><label>${t('cfgType')}</label><select class="inp" id="dakT" onchange="updateDak()">${['Nieuwe dakkapel','Bestaande vervangen'].map(x=>`<option>${x}</option>`).join('')}</select></div>
       <div><label>${t('cfgMateriaal')}</label><select class="inp" id="dakM" onchange="updateDak()">${['Kunststof','Hout','Keralit','Aluminium'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('dakPlaatsing')}</label><select class="inp" id="dakP" onchange="updateDak()">${['Achterdakvlak','Voordakvlak','Zijdakvlak'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="cfg-row2">
       <div><label>${t('kozKleurBuiten')}</label><select class="inp" id="dakKB" onchange="updateDak()">${['Wit','Antraciet','Zwart','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
       <div><label>${t('kozKleurBinnen')}</label><select class="inp" id="dakKI" onchange="updateDak()">${['Wit','Gelijk aan buiten','Anders'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div><label>${t('cfgRamen')}</label><input class="inp" id="dakN" type="number" min="1" value="2" oninput="updateDak()"></div>
     </div>
     <div class="cfg-row2">
-      <div><label>${t('cfgRamen')}</label><input class="inp" id="dakN" type="number" min="1" value="2" oninput="updateDak()"></div>
-      <div><label>${t('dakPlaatsing')}</label><select class="inp" id="dakP" onchange="updateDak()">${['Achterdakvlak','Voordakvlak','Zijdakvlak'].map(x=>`<option>${x}</option>`).join('')}</select></div>
       <div><label>${t('dakVent')}</label><select class="inp" id="dakV" onchange="updateDak()">${['Ja','Nee'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div></div><div></div>
     </div>
     <div class="cfg-sum" id="dakSum"></div></div>`;
 }
 function updateDak(){
   const g=id=>((document.getElementById(id)||{}).value)||'';
-  const b=g('dakB'),tp=g('dakT'),m=g('dakM'),kb=g('dakKB'),ki=g('dakKI'),n=g('dakN')||'1',p=g('dakP'),v=g('dakV');
+  const b=g('dakB'),h=g('dakH'),tp=g('dakT'),m=g('dakM'),kb=g('dakKB'),ki=g('dakKI'),n=g('dakN')||'1',p=g('dakP'),v=g('dakV');
   const bv=document.getElementById('dakBv'); if(bv)bv.textContent=b;
+  const hv=document.getElementById('dakHv'); if(hv)hv.textContent=h;
   const binnen=(ki&&ki!=='Gelijk aan buiten')?`, binnen ${ki.toLowerCase()}`:'';
   const vent=(v==='Ja')?', met ventilatierooster':'';
-  const el=document.getElementById('dakSum'); if(el)el.textContent=`${tp.toLowerCase()}, ${b} cm breed, ${p.toLowerCase()}, ${m.toLowerCase()} ${kb.toLowerCase()}${binnen}, ${n} ${n==='1'?'raam':'ramen'}${vent}.`;
+  const el=document.getElementById('dakSum'); if(el)el.textContent=`${tp.toLowerCase()}, ${b} \u00d7 ${h} cm (b\u00d7h), ${p.toLowerCase()}, ${m.toLowerCase()} ${kb.toLowerCase()}${binnen}, ${n} ${n==='1'?'raam':'ramen'}${vent}.`;
+}
+const SPECS={
+  'Dakraam':{ note:'Het type/model staat meestal op een sticker of plaatje aan de zij- of bovenkant van het dakraam. Fotografeer die en voeg de foto toe \u2014 dan weet de vakman precies welk model je hebt.', photo:'Foto van het typeplaatje toevoegen', fields:[
+    {k:'type',l:'Type',o:['Nieuw dakraam','Bestaand dakraam vervangen','Meer lichtinval / vergroten']},
+    {k:'merk',l:'Merk/model (van sticker)',t:'text',ph:'bijv. VELUX GGL MK06 of Fakro FTP-V 78x118'},
+    {k:'aantal',l:'Aantal',t:'num',v:1},
+    {k:'bediening',l:'Bediening',o:['Handmatig','Elektrisch','Op afstand / zonne-energie']},
+    {k:'zonwering',l:'Zonwering gewenst?',o:['Nee','Rolgordijn','Buitenzonwering']},
+  ]},
+  'Stucwerk':{ fields:[
+    {k:'situatie',l:'Situatie',o:['Renovatie','Nieuwbouw','Herstel/reparatie']},
+    {k:'wanden',l:'Wanden (m\u00b2)',t:'num',ph:'bijv. 60'},
+    {k:'plafond',l:'Plafond (m\u00b2)',t:'num',ph:'bijv. 25'},
+    {k:'afwerking',l:'Afwerking',o:['Glad pleisterwerk','Spachtelputz','Sierpleister','Sausklaar (behangklaar)']},
+    {k:'ondergrond',l:'Ondergrond',o:['Steen/beton','Gipsplaat','Gemengd','Weet ik niet']},
+  ]},
+  'Vloerverwarming':{ note:'Systemen en werkwijze zoals op mijnwarmevloer.nl (frezen, watergedragen of elektrisch).', fields:[
+    {k:'systeem',l:'Systeem',o:['Watergedragen \u2014 infrezen bestaande vloer','Watergedragen \u2014 nieuwe dekvloer','Watergedragen \u2014 droogbouw (renovatie)','Elektrisch \u2014 matten onder tegels','Elektrisch \u2014 foliesysteem onder laminaat','Weet ik nog niet']},
+    {k:'m2',l:'Oppervlakte (m\u00b2)',t:'num',ph:'bijv. 45'},
+    {k:'ruimtes',l:'Aantal ruimtes',t:'num',v:1},
+    {k:'vloer',l:'Huidige vloer',o:['Beton','Hout','Anders']},
+    {k:'bron',l:'Warmtebron',o:['HR-ketel','Warmtepomp','Hybride','Nog geen / weet niet']},
+    {k:'afwerking',l:'Vloerafwerking',o:['Tegels','Laminaat','Houten vloer','Gietvloer','Anders']},
+  ]},
+  'Badkamerspecialist':{ fields:[
+    {k:'situatie',l:'Situatie',o:['Complete renovatie','Gedeeltelijk','Nieuwbouw']},
+    {k:'m2',l:'Oppervlakte (m\u00b2)',t:'num',ph:'bijv. 6'},
+    {k:'niveau',l:'Afwerkingsniveau',o:['Budget','Middenklasse','Luxe']},
+    {k:'items',l:'Gewenst',multi:['Douche','Bad','Toilet','Wastafelmeubel','Tegelwerk','Vloerverwarming','Ventilatie']},
+  ]},
+  'Schilderwerk':{ fields:[
+    {k:'plek',l:'Waar',o:['Binnen','Buiten','Binnen + buiten']},
+    {k:'omvang',l:'Omvang',t:'text',ph:'bijv. 3 slaapkamers + hal, of ca. 80 m\u00b2'},
+    {k:'ondergrond',l:'Ondergrond',o:['Hout','Stuc/muren','Metaal','Gemengd']},
+    {k:'staat',l:'Huidige staat',o:['Goed','Redelijk','Slecht (schuren/plamuren)']},
+  ]},
+  'Zonnepanelen':{ fields:[
+    {k:'aantal',l:'Aantal panelen (schatting)',t:'num',ph:'bijv. 10'},
+    {k:'dak',l:'Daktype',o:['Schuin dak','Plat dak','Beide']},
+    {k:'dakbedekking',l:'Dakbedekking',o:['Dakpannen','Bitumen','Metaal','Anders']},
+    {k:'verbruik',l:'Jaarverbruik (kWh)',t:'text',ph:'bijv. 3500'},
+    {k:'accu',l:'Thuisbatterij gewenst?',o:['Nee','Misschien','Ja']},
+  ]},
+  'Isolatie':{ fields:[
+    {k:'wat',l:'Wat isoleren',multi:['Spouwmuur','Dak','Vloer/bodem','Gevel (binnen)','Gevel (buiten)','Glas/HR++']},
+    {k:'m2',l:'Oppervlakte (m\u00b2, schatting)',t:'text',ph:'bijv. 80'},
+    {k:'bouwjaar',l:'Bouwjaar woning',t:'text',ph:'bijv. 1975'},
+  ]},
+  'Keukenspecialist':{ fields:[
+    {k:'situatie',l:'Situatie',o:['Nieuwe keuken plaatsen','Vervangen','Alleen aansluiten/monteren']},
+    {k:'opstelling',l:'Opstelling',o:['Recht','Hoek','U-vorm','Met eiland']},
+    {k:'lengte',l:'Lengte (m, schatting)',t:'text',ph:'bijv. 3,6'},
+    {k:'werk',l:'Werkzaamheden',multi:['Loodgieterswerk','Elektra','Tegelwerk','Vloer','Afvoer/ventilatie']},
+  ]},
+};
+function specFieldHtml(f){
+  const id='spec_'+f.k;
+  if(f.multi) return `<div style="grid-column:1/-1"><label>${f.l}</label><div class="cfg-extras" id="${id}">${f.multi.map(o=>`<label><input type="checkbox" value="${o}" onchange="this.parentNode.classList.toggle('on',this.checked);updateSpec()">${o}</label>`).join('')}</div></div>`;
+  if(f.t==='text'||f.t==='num') return `<div><label>${f.l}</label><input class="inp" id="${id}" type="${f.t==='num'?'number':'text'}" ${f.t==='num'?'min="0"':''} ${f.v?`value="${f.v}"`:''} placeholder="${f.ph||''}" oninput="updateSpec()"></div>`;
+  return `<div><label>${f.l}</label><select class="inp" id="${id}" onchange="updateSpec()">${f.o.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+}
+function specConfigHtml(svc){
+  const spec=SPECS[svc]; window.__specSvc=svc;
+  const note=spec.note?`<p class="hint">${spec.note}</p>`:'';
+  const photo=spec.photo?`<button type="button" class="cfg-inmeet-btn" onclick="document.getElementById('cFiles').click()">\uD83D\uDCF7 ${spec.photo}</button>`:'';
+  return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')} \u2014 ${svc}</div>${note}<div class="cfg-row2">${spec.fields.map(specFieldHtml).join('')}</div>${photo}<div class="cfg-sum" id="specSum"></div></div>`;
+}
+function updateSpec(){
+  const svc=window.__specSvc, spec=SPECS[svc]; if(!spec)return;
+  const parts=[];
+  spec.fields.forEach(f=>{ const id='spec_'+f.k;
+    if(f.multi){ const v=[...document.querySelectorAll('#'+id+' input:checked')].map(i=>i.value); if(v.length)parts.push(`${f.l.toLowerCase()}: ${v.join(', ').toLowerCase()}`); }
+    else { const e=document.getElementById(id); if(e&&String(e.value).trim())parts.push(`${f.l.toLowerCase()}: ${String(e.value).toLowerCase()}`); }
+  });
+  const el=document.getElementById('specSum'); if(el)el.textContent=`${svc}: `+parts.join('; ')+'.';
 }
 function buildConfigSummary(){
   if(CFG_TYPE==='ext'){ const e=document.getElementById('extSum'); return e?e.textContent:''; }
   if(CFG_TYPE==='kozijn'){ const items=KOZ_LIST.length?KOZ_LIST:[kozItemText()]; return 'Kozijnen: '+items.join('; ')+'.'; }
   if(CFG_TYPE==='dakkapel'){ const e=document.getElementById('dakSum'); return e?e.textContent:''; }
+  if(CFG_TYPE==='spec'){ const e=document.getElementById('specSum'); return e?e.textContent:''; }
   return '';
 }
 async function postRequest(){
@@ -906,15 +998,53 @@ async function postRequest(){
   const r = await api('/api/requests', { method:'POST', body:JSON.stringify(body) });
   if (r.request){ $('#cNote').classList.add('show'); $('#cDesc').value=''; $('#cZip').value=''; $('#cPhone').value=''; DPHOTOS=[]; renderDThumbs(); loadMyRequests(); }
 }
+let MYREQS=[];
 async function loadMyRequests(){
-  const r = await api('/api/requests/mine'); const el = $('#myReqs');
-  if (!r.requests.length){ el.innerHTML = `<p class="empty">${t('myEmpty')}</p>`; return; }
-  el.innerHTML = r.requests.map(q=>`
-    <div class="item"><div class="top"><span class="svc">${q.service}</span>
-      <span class="tag green">${q.claims} ${q.claims===1?t('reaction'):t('reactions')}</span>
-      <span class="meta" style="margin-left:auto">${fmtDate(q.createdAt)}</span></div>
-      <div class="desc">${q.description}</div><div class="meta">${q.zip||''}</div></div>`).join('');
+  const r = await api('/api/requests/mine'); MYREQS=r.requests||[]; const el=$('#myReqs');
+  if(!MYREQS.length){ el.innerHTML=`<p class="empty">${t('myEmpty')}</p>`; return; }
+  el.innerHTML=MYREQS.map(q=>reqCardHtml(q)).join('');
 }
+function reqStatus(q){
+  if(q.status==='cancelled') return ['red', t('stReqCancelled')];
+  if(q.status==='assigned') return ['gold', t('stReqAssigned')+(q.assignedProName?': '+htmlesc(q.assignedProName):'')];
+  return ['green', t('stReqOpen')];
+}
+function reqCardHtml(q){
+  const st=reqStatus(q);
+  const responders=(q.status==='open'&&q.responders&&q.responders.length)?`
+    <div class="resp-box"><div class="resp-h">${t('reqResponders')} (${q.responders.length}/3)</div>
+    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span>${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><button class="btn btn-gold btn-sm" style="margin-left:auto" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
+  return `<div class="item" id="req-${q.id}"><div class="top"><span class="svc">${htmlesc(q.service)}</span>
+    <span class="tag ${st[0]}">${st[1]}</span>
+    <span class="tag">${q.claims} ${q.claims===1?t('reaction'):t('reactions')}</span>
+    <span class="meta" style="margin-left:auto">${fmtDate(q.createdAt)}</span></div>
+    <div class="desc">${htmlesc(q.description)}</div><div class="meta">${htmlesc(q.zip||'')}</div>
+    ${responders}
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${q.status!=='cancelled'?`<button class="btn btn-ghost btn-sm" onclick="editReq('${q.id}')">${t('reqEdit')}</button>`:''}
+      ${q.status==='cancelled'?`<button class="btn btn-ghost btn-sm" onclick="reopenReq('${q.id}')">${t('reqReopen')}</button>`:`<button class="btn btn-ghost btn-sm" onclick="cancelReq('${q.id}')">${t('reqCancel')}</button>`}
+    </div></div>`;
+}
+function editReq(id){
+  const q=MYREQS.find(x=>x.id===id); if(!q)return;
+  const el=document.getElementById('req-'+id); if(!el)return;
+  el.innerHTML=`<div class="edit-form">
+    <label>${t('cService')}</label><select class="inp" id="eSvc-${id}">${cats().map(c=>`<option ${c===q.service?'selected':''}>${c}</option>`).join('')}</select>
+    <label>${t('cTiming')}</label><select class="inp" id="eTim-${id}">${[t('tmAsap'),t('tm1'),t('tm13'),t('tmLater')].map(x=>`<option ${x===q.timing?'selected':''}>${x}</option>`).join('')}</select>
+    <label>${t('cZip')}</label><input class="inp" id="eZip-${id}" value="${htmlesc(q.zip||'')}">
+    <label>${t('cPhone')}</label><input class="inp" id="ePho-${id}" value="${htmlesc(q.phone||'')}">
+    <label>${t('cDesc')}</label><textarea class="inp" id="eDsc-${id}" rows="4">${htmlesc(q.description||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-gold btn-sm" onclick="saveReq('${id}')">${t('reqSave')}</button><button class="btn btn-ghost btn-sm" onclick="loadMyRequests()">${t('reqClose')}</button></div>
+  </div>`;
+}
+async function saveReq(id){
+  const g=x=>document.getElementById(x+'-'+id).value;
+  await api('/api/requests/'+id,{method:'POST',body:JSON.stringify({service:g('eSvc'),timing:g('eTim'),zip:g('eZip'),phone:g('ePho'),description:g('eDsc')})});
+  loadMyRequests();
+}
+async function cancelReq(id){ if(!confirm(t('reqCancelConfirm')))return; await api('/api/requests/'+id+'/cancel',{method:'POST',body:'{}'}); loadMyRequests(); }
+async function reopenReq(id){ await api('/api/requests/'+id+'/reopen',{method:'POST',body:'{}'}); loadMyRequests(); }
+async function assignReq(id,proId){ const q=MYREQS.find(x=>x.id===id); const p=q&&q.responders.find(r=>r.id===proId); const name=p?p.company:''; if(!confirm(t('reqAssignConfirm').replace('{name}',name)))return; await api('/api/requests/'+id+'/assign',{method:'POST',body:JSON.stringify({proId})}); loadMyRequests(); }
 let aiHist = [];
 let AI_MODE='customer';
 function aiMsg(role,text){

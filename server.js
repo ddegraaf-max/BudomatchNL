@@ -242,10 +242,69 @@ app.post('/api/requests', requireRole('customer'), async (req, res) => {
 app.get('/api/requests/mine', requireRole('customer'), async (req, res) => {
   try {
     const reqs = await store.requestsByCustomer(req.user.id);
-    const list = await Promise.all(reqs.map(async r => ({
-      ...r, claims: await store.claimsCountByRequest(r.id)
-    })));
+    const list = await Promise.all(reqs.map(async r => {
+      const claims = await store.claimsByRequest(r.id);
+      const responders = [];
+      for (const c of claims) {
+        const p = await store.findUserById(c.proId);
+        if (!p) continue;
+        const rating = await proRating(p.id);
+        responders.push({ id: p.id, company: p.company || p.name, city: p.city || '', tier: tierInfo(rating), rating, kvkVerified: !!(p.kvk && p.verifiedKvk && p.kvk === p.verifiedKvk) });
+      }
+      return { ...r, claims: claims.length, status: r.status || 'open', assignedProId: r.assignedProId || '', assignedProName: r.assignedProName || '', responders };
+    }));
     res.json({ requests: list });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant: bestaande aanvraag bewerken
+app.post('/api/requests/:id', requireRole('customer'), async (req, res) => {
+  try {
+    const r = await store.findRequest(req.params.id);
+    if (!r || r.customerId !== req.user.id) return res.status(404).json({ error: 'not_found' });
+    if ((r.status || 'open') === 'cancelled') return res.status(409).json({ error: 'cancelled' });
+    const b = req.body || {};
+    const patch = {};
+    if (b.service !== undefined) patch.service = String(b.service).slice(0, 120);
+    if (b.description !== undefined) patch.description = String(b.description).slice(0, 4000);
+    if (b.timing !== undefined) patch.timing = String(b.timing).slice(0, 60);
+    if (b.zip !== undefined) patch.zip = String(b.zip).slice(0, 80);
+    if (b.phone !== undefined) patch.phone = String(b.phone).slice(0, 40);
+    if (b.intent !== undefined) patch.intent = b.intent === 'orientatie' ? 'orientatie' : 'opdracht';
+    const u = await store.updateRequest(r.id, patch);
+    res.json({ request: { ...u, claims: await store.claimsCountByRequest(u.id) } });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant: annuleren / heropenen
+app.post('/api/requests/:id/cancel', requireRole('customer'), async (req, res) => {
+  try {
+    const r = await store.findRequest(req.params.id);
+    if (!r || r.customerId !== req.user.id) return res.status(404).json({ error: 'not_found' });
+    await store.updateRequest(r.id, { status: 'cancelled' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/requests/:id/reopen', requireRole('customer'), async (req, res) => {
+  try {
+    const r = await store.findRequest(req.params.id);
+    if (!r || r.customerId !== req.user.id) return res.status(404).json({ error: 'not_found' });
+    await store.updateRequest(r.id, { status: 'open', assignedProId: '', assignedProName: '' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Klant: aanvraag toewijzen aan 1 vakman (uit de reageerders)
+app.post('/api/requests/:id/assign', requireRole('customer'), async (req, res) => {
+  try {
+    const r = await store.findRequest(req.params.id);
+    if (!r || r.customerId !== req.user.id) return res.status(404).json({ error: 'not_found' });
+    const proId = String((req.body || {}).proId || '');
+    const claims = await store.claimsByRequest(r.id);
+    if (!claims.some(c => c.proId === proId)) return res.status(400).json({ error: 'not_a_responder' });
+    const p = await store.findUserById(proId);
+    await store.updateRequest(r.id, { status: 'assigned', assignedProId: proId, assignedProName: p ? (p.company || p.name) : '' });
+    res.json({ ok: true, assignedProName: p ? (p.company || p.name) : '' });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -270,8 +329,16 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
   try {
     const pro = req.user;
     const ci = await creditInfo(pro);
-    const open = (await store.openRequests()).filter(r => !r.targetProId || r.targetProId === pro.id);
-    const leads = await Promise.all(open.map(r => leadView(r, pro)));
+    const openAll = (await store.openRequests()).filter(r => !r.targetProId || r.targetProId === pro.id);
+    const leads = [];
+    for (const r of openAll) {
+      const claimed = await store.claimExists(pro.id, r.id);
+      const cnt = await store.claimsCountByRequest(r.id);
+      if (!claimed && cnt >= 3) continue; // vol (max 3 reacties)
+      const lv = await leadView(r, pro);
+      lv.spotsLeft = Math.max(0, 3 - cnt);
+      leads.push(lv);
+    }
     res.json({
       leads,
       creditsLeft: ci.freeAvailable,
@@ -289,6 +356,8 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
     const r = await store.findRequest(req.params.id);
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
+    if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
+    if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
 
     const ci = await creditInfo(pro);
     if (ci.freeAvailable > 0) {
@@ -309,6 +378,8 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   const r = await store.findRequest(req.params.id);
   if (!r) return res.status(404).json({ error: 'not_found' });
   if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
+  if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
+  if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
 
   const ci = await creditInfo(pro);
   if (ci.freeAvailable > 0) { // nog gratis tegoed
