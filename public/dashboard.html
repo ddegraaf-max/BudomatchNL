@@ -242,6 +242,7 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
   .set-box{padding:18px}
   .fab{right:14px;bottom:14px;height:46px;padding:0 14px;font-size:.9rem}
 }
+.kvk-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(227,193,88,.1);border:1px solid var(--gold);border-radius:12px;padding:12px 16px;margin-bottom:18px;color:var(--gold-soft);font-size:.9rem}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -397,7 +398,7 @@ const T = {
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
     dirTitle:'Companies', dirIntro:'Choose the type of work and your city — you only see tradesmen who do that work AND whose service radius covers you. The company only pays when it unlocks your request.', dirCat:'Type of work', dirCity:'Your city', dirSearch2:'Find matching tradesmen', dirPrompt:'Choose the type of work and your city to see matching tradesmen.', dirNone:'No matching tradesmen in your area yet.', dirView:'View profile', dirEmpty:'No companies yet.', pjPhotos:'Add photos (max 3)', pjMine:'My posted jobs', pjMineEmpty:'You have not posted any jobs yet.', stActueel:'Active', stOpgelost:'Resolved', stOpgepakt:'Taken', pjResolve:'Mark resolved', pjReopen:'Reopen', pjDelete:'Delete', pjDelConfirm:'Delete this job? This cannot be undone.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
-    prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.',
+    prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.', kvkInactive:'Your profile is not active yet. Verify your Chamber of Commerce (KvK) number to become visible and receive requests.', kvkActivate:'Verify KvK', kvkDuplicate:'This company (KvK number) is already registered on Budomatch.', kvkRequiredClaim:'Verify your KvK number first (Company profile) to respond to requests.',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
@@ -446,7 +447,7 @@ const T = {
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
     dirTitle:'Bedrijven', dirIntro:'Kies soort werk en je plaats — je ziet alleen vakmensen die dat werk doen én binnen wiens straal je valt. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirCat:'Soort werk', dirCity:'Jouw plaats', dirSearch2:'Zoek passende vakmensen', dirPrompt:'Kies soort werk en je plaats om passende vakmensen te zien.', dirNone:'Nog geen passende vakmensen in jouw omgeving.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', pjPhotos:'Foto toevoegen (max 3)', pjMine:'Mijn geplaatste klussen', pjMineEmpty:'Je hebt nog geen klussen geplaatst.', stActueel:'Actueel', stOpgelost:'Opgelost', stOpgepakt:'Opgepakt', pjResolve:'Markeer opgelost', pjReopen:'Heropenen', pjDelete:'Verwijderen', pjDelConfirm:'Deze klus verwijderen? Dit kan niet ongedaan worden gemaakt.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
-    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.',
+    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.', kvkInactive:'Je profiel is nog niet actief. Verifieer je KvK-nummer om zichtbaar te worden en aanvragen te ontvangen.', kvkActivate:'KvK verifi\u00ebren', kvkDuplicate:'Dit bedrijf (KvK-nummer) is al geregistreerd op Budomatch.', kvkRequiredClaim:'Verifieer eerst je KvK-nummer (Bedrijfsprofiel) om op aanvragen te reageren.',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
@@ -1217,9 +1218,13 @@ async function aiSend(){
 /* ============ VAKMAN / FACHOWIEC ============ */
 let PRICE=null;
 let PRO_TAB='nieuw', LEADS=[], LEADS_META={}, LEAD_FILTER='beschikbaar', PROFILE_PHOTOS=[], PROFILE_LOGO='';
+function proBannerHtml(){
+  return `<div class="kvk-banner" id="proBanner"><span>\u26A0 ${t('kvkInactive')}</span><button class="btn btn-gold btn-sm" style="margin-left:auto" onclick="showProTab('profiel')">${t('kvkActivate')}</button></div>`;
+}
 async function renderPro(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1></div>
+    ${ME.kvkVerified?'':proBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showProTab('nieuw')">${t('tabNew')}</button>
       <button class="ptab" data-k="leads" onclick="showProTab('leads')">${t('tabLeads')}</button>
@@ -1328,8 +1333,9 @@ async function checkKvk(){
   if(r.ok){ st.innerHTML='✓ '+t('kvkVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
     if(r.name && !document.getElementById('pfCompany').value) document.getElementById('pfCompany').value=r.name;
     if(r.city && !document.getElementById('pfCity').value) document.getElementById('pfCity').value=r.city;
-    if(ME) ME.kvkVerified=true;
+    if(ME) ME.kvkVerified=true; const bn=document.getElementById('proBanner'); if(bn)bn.remove();
   } else if(r.configured===false){ st.textContent=t('kvkNotSet'); st.style.color='var(--muted)'; }
+  else if(r.error==='duplicate'){ st.textContent=t('kvkDuplicate'); st.style.color='#e2708a'; }
   else { st.textContent=t('kvkNotFound'); st.style.color='#e2708a'; }
 }
 function setProfileLogo(files){ const f=(files||[])[0]; if(!f)return; downscale(f,256,d=>{ PROFILE_LOGO=d; const el=$('#profLogo'); if(el){el.src=d;el.style.visibility='visible';} }); }
@@ -1435,10 +1441,12 @@ function leadHtml(l, creditsLeft){
 async function claim(id, btn){
   btn.disabled=true; btn.textContent=t('busy');
   const r = await api('/api/leads/'+id+'/claim', { method:'POST', body:'{}' });
+  if (r.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
   if (r.ok){ refreshLead(id, r.lead); loadBilling(); reloadKpi(); return; }
   if (r.paymentRequired){
     btn.textContent=t('redirect');
     const c = await api('/api/leads/'+id+'/checkout', { method:'POST', body:'{}' });
+    if (c.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
     if (c.url){ location.href = c.url; return; }
     if (c.ok){ refreshLead(id, c.lead); loadBilling(); reloadKpi(); return; }
     btn.disabled=false; btn.textContent=t('retry');

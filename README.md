@@ -121,3 +121,6 @@ Het bedrijfsprofiel is heringedeeld (logo, reviews, tweekoloms velden). Vakmense
 
 ## AI-assistent voor de vakman
 De AI-assistent in het vakman-portaal draait nu in **vakman-modus**: hij helpt opdrachten binnenhalen en afhandelen — een professionele **reactie of offertetekst aan de klant** opstellen, bedenken welke vragen je moet stellen, en tips geven. In elk klantgesprek (Berichten) staat een knop **"Reactie voorstellen (AI)"** die op basis van de klus en het gesprek een kant-en-klare reactie in het invoerveld zet, die de vakman kan aanpassen en versturen. (Vereist `ANTHROPIC_API_KEY`.) De klant-assistent blijft de klant helpen met een heldere klusomschrijving.
+
+## Profiel pas actief na KvK-controle + geen dubbele bedrijven
+Een vakman-profiel is **pas actief na KvK-verificatie**: ongeverifieerde vakmensen zijn niet zichtbaar in de match/bedrijvenlijst, hebben geen openbare bedrijfspagina en kunnen niet op aanvragen reageren. In het portaal verschijnt een banner met een knop om te verifieren. Een **KvK-nummer kan maar bij één bedrijf horen** — verifieren met een al gebruikt nummer wordt geweigerd (geen dubbele bedrijven). **Let op:** hiervoor is `KVK_API_KEY` nodig; zonder die sleutel kunnen vakmensen niet activeren. De demo-vakman (SEED_DEMO) is vooraf geverifieerd zodat testen blijft werken.

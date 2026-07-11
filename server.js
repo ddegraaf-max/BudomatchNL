@@ -121,6 +121,7 @@ async function publicUser(u) {
   return rest;
 }
 const esc = s => String(s || '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+const isVerifiedPro = u => !!(u && u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk);
 const requireRole = role => async (req, res, next) => {
   try {
     const u = await getUser(req);
@@ -466,6 +467,7 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
 app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
   try {
     const pro = req.user;
+    if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
     const r = await store.findRequest(req.params.id);
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
@@ -488,6 +490,7 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
 // De definitieve bevestiging komt via de webhook (checkout.session.completed).
 app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   const pro = req.user;
+  if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
   const r = await store.findRequest(req.params.id);
   if (!r) return res.status(404).json({ error: 'not_found' });
   if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
@@ -598,6 +601,8 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
     if (!item) return res.json({ ok: false, error: 'not_found' });
     const name = item.naam || '';
     const city = item.plaats || (item.adres && item.adres.binnenlandsAdres && item.adres.binnenlandsAdres.plaats) || '';
+    const dup = (await store.listPros()).find(p => p.id !== req.user.id && p.verifiedKvk === num);
+    if (dup) return res.json({ ok: false, error: 'duplicate' });
     await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name });
     res.json({ ok: true, kvk: num, name, city, type: item.type || '' });
   } catch (e) { console.error('KvK-fout:', e.message); res.json({ ok: false, error: 'server' }); }
@@ -614,6 +619,7 @@ app.get('/api/pros/:id', async (req, res) => {
   try {
     const u = await store.findUserById(req.params.id);
     if (!u || u.role !== 'pro') return res.status(404).json({ error: 'not_found' });
+    if (!isVerifiedPro(u)) return res.status(404).json({ error: 'inactive' });
     const rv = (await store.reviewsByPro(u.id)).map(r => ({
       rating: r.rating, comment: r.comment || '', name: (String(r.customerName || '').split(' ')[0] || 'Klant'), createdAt: r.createdAt,
     }));
@@ -634,6 +640,7 @@ app.get('/api/match', requireRole('customer'), async (req, res) => {
     for (const p of pros) {
       const cats = (p.workCategories || []).map(c => String(c).toLowerCase());
       if (!cats.includes(category)) continue;
+      if (!isVerifiedPro(p)) continue; // profiel pas actief na KvK-controle
       if (p.lat == null || p.lng == null) continue;
       const distance = haversineKm(cust, { lat: p.lat, lng: p.lng });
       if (distance > (p.workRadius || 30)) continue;
@@ -1190,7 +1197,7 @@ async function seedDemo() {
     }
     const v = await store.findUserByEmail('vakman@budomatch.nl');
     if (!v) {
-      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'] });
+      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV' });
       const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
     }
     console.log('[seed] demo-accounts gereed — klant@budomatch.nl / vakman@budomatch.nl (wachtwoord: demo1234)');
