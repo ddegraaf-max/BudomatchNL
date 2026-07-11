@@ -1199,6 +1199,14 @@ async function seedDemo() {
     if (!v) {
       const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV' });
       const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
+    } else if (!(v.kvk && v.verifiedKvk && v.kvk === v.verifiedKvk)) {
+      // bestaande demo-vakman alsnog verifieren + coordinaten zetten
+      const g = await geocodeNL(v.city || 'Amsterdam');
+      const patch = { kvk: '12345678', verifiedKvk: '12345678', kvkName: v.company || 'Demo Bouw BV' };
+      if (!(v.workCategories && v.workCategories.length)) patch.workCategories = ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'];
+      if (!v.workRadius) patch.workRadius = 30;
+      if (g) { patch.lat = g.lat; patch.lng = g.lng; }
+      await store.updateUser(v.id, patch);
     }
     console.log('[seed] demo-accounts gereed — klant@budomatch.nl / vakman@budomatch.nl (wachtwoord: demo1234)');
   } catch (e) { console.error('[seed] mislukt:', e.message); }

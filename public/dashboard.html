@@ -246,101 +246,7 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js">
-let FB_ADMIN_ME=false;
-function openSettings(tab){
-  document.getElementById('setOverlay').style.display='flex';
-  document.getElementById('setTabFbT').textContent=t('setFeedback');
-  document.getElementById('setTabSecT').textContent=t('setSecurity');
-  document.getElementById('setTabFb').classList.toggle('on',tab!=='security');
-  document.getElementById('setTabSec').classList.toggle('on',tab==='security');
-  if(tab==='security') renderSecurityTab(); else renderFeedbackTab();
-}
-function closeSettings(){ const o=document.getElementById('setOverlay'); if(o)o.style.display='none'; }
-function renderFeedbackTab(){
-  document.getElementById('setBody').innerHTML=`<h3 style="margin-top:0">${t('setFeedback')}</h3><p style="color:var(--muted);font-size:.88rem">${t('fbIntro')}</p>
-    <div class="cfg-row2"><div><label>${t('fbType')}</label><select class="inp" id="fbType"><option value="idee">${t('fbTypeIdea')}</option><option value="verbetering">${t('fbTypeImprove')}</option><option value="probleem">${t('fbTypeProblem')}</option></select></div>
-    <div style="grid-column:span 2"><label>${t('fbTitle')}</label><input class="inp" id="fbTitle" maxlength="120"></div></div>
-    <label>${t('fbMessage')}</label><textarea class="inp" id="fbMsg" rows="2" maxlength="2000"></textarea>
-    <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="submitFeedback()">${t('fbSubmit')}</button>
-    <div id="fbList" style="margin-top:16px"></div>`;
-  loadFeedback();
-}
-async function loadFeedback(){
-  let r; try{ r=await api('/api/feedback'); }catch(e){ return; }
-  FB_ADMIN_ME=!!r.admin; const el=document.getElementById('fbList'); if(!el)return;
-  if(!r.items||!r.items.length){ el.innerHTML=`<p class="empty">${t('fbEmpty')}</p>`; return; }
-  const statuses=['nieuw','gepland','bezig','afgerond','afgewezen'];
-  const stKey=s=>'stat'+s.charAt(0).toUpperCase()+s.slice(1);
-  el.innerHTML=r.items.map(f=>`<div class="fb-item">
-    <button class="fb-vote ${f.voted?'on':''}" onclick="voteFb('${f.id}')"><span>\u25B2</span><b>${f.votes}</b></button>
-    <div style="flex:1"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${htmlesc(f.title)}</b><span class="fb-status ${f.status}">${t(stKey(f.status))}</span><span class="tag">${htmlesc(f.type)}</span></div>
-      ${f.message?`<div class="meta" style="margin-top:4px">${htmlesc(f.message)}</div>`:''}
-      <div class="meta" style="margin-top:4px">${htmlesc(f.name)} \u00b7 ${f.role==='pro'?'vakman':'klant'}</div>
-      ${FB_ADMIN_ME?`<select class="inp" style="margin-top:6px;max-width:190px" onchange="setFbStatus('${f.id}',this.value)">${statuses.map(x=>`<option value="${x}" ${x===f.status?'selected':''}>${t(stKey(x))}</option>`).join('')}</select>`:''}
-    </div></div>`).join('');
-}
-async function submitFeedback(){
-  const title=document.getElementById('fbTitle').value.trim(); if(!title){document.getElementById('fbTitle').focus();return;}
-  await api('/api/feedback',{method:'POST',body:JSON.stringify({type:document.getElementById('fbType').value,title,message:document.getElementById('fbMsg').value})});
-  document.getElementById('fbTitle').value=''; document.getElementById('fbMsg').value=''; loadFeedback();
-}
-async function voteFb(id){ try{ await api('/api/feedback/'+id+'/vote',{method:'POST',body:'{}'}); }catch(e){} loadFeedback(); }
-async function setFbStatus(id,status){ try{ await api('/api/feedback/'+id+'/status',{method:'POST',body:JSON.stringify({status})}); }catch(e){} loadFeedback(); }
-function renderSecurityTab(){
-  const b=document.getElementById('setBody');
-  if(ME && ME.twofaEnabled){
-    b.innerHTML=`<h3 style="margin-top:0">${t('setSecurity')}</h3><p style="color:#7fd6a0">\u2713 ${t('secOn')}</p>
-      <p class="meta">${(ME.twofaRecoveryLeft||0)} ${t('secRecoveryLeft')}</p>
-      <button class="btn btn-ghost btn-sm" onclick="regen2fa()">${t('secRegen')}</button><div id="regenBox" style="margin-top:8px"></div>
-      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
-      <label>${t('secDisablePrompt')}</label><input class="inp" id="secDisInput" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022">
-      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="disable2fa()">${t('secDisable')}</button><div class="note" id="secNote"></div>`;
-  } else {
-    b.innerHTML=`<h3 style="margin-top:0">${t('setSecurity')}</h3><p style="color:var(--muted)">${t('secOff')}</p>
-      <button class="btn btn-gold btn-sm" onclick="setup2fa()">${t('secEnable')}</button><div id="secSetup" style="margin-top:12px"></div>`;
-  }
-}
-async function setup2fa(){
-  let r; try{ r=await api('/api/2fa/setup',{method:'POST',body:'{}'}); }catch(e){ return; }
-  document.getElementById('secSetup').innerHTML=`<p>${t('secStep1')}</p>
-    <div class="qr-box">${r.qr?`<img src="${r.qr}" alt="QR">`:''}</div>
-    <p class="meta">${t('secManual')}</p><div class="secret-code">${r.secret}</div>
-    <p style="margin-top:10px">${t('secStep2')}</p>
-    <input class="inp" id="sec2faCode" inputmode="numeric" maxlength="6" placeholder="123456">
-    <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="enable2fa()">${t('secConfirm')}</button><div class="note" id="secNote"></div>`;
-}
-function recoveryHtml(codes){
-  const joined=(codes||[]).join('\n');
-  return `<div style="margin-top:12px"><div class="cfg-h" style="font-size:.95rem">${t('secRecoveryTitle')}</div>
-    <p class="meta">${t('secRecoveryIntro')}</p>
-    <div class="secret-code" style="text-align:left;line-height:1.9;letter-spacing:1px">${(codes||[]).map(c=>htmlesc(c)).join('<br>')}</div>
-    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.c)" data-c="${htmlesc(joined)}">${t('secCopy')}</button></div>`;
-}
-async function enable2fa(){
-  const code=document.getElementById('sec2faCode').value.trim();
-  try{ const r=await fetch('/api/2fa/enable',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})}); const d=await r.json();
-    if(d.ok){ if(ME){ME.twofaEnabled=true;ME.twofaRecoveryLeft=(d.recovery||[]).length;}
-      document.getElementById('secSetup').innerHTML=`<p style="color:#7fd6a0">\u2713 ${t('secOn')}</p>`+recoveryHtml(d.recovery||[])+`<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="renderSecurityTab()">${t('secDone')}</button>`;
-    } else { const n=document.getElementById('secNote'); if(n){n.textContent=t('secBadCode');n.classList.add('show');} }
-  }catch(e){}
-}
-function regen2fa(){ document.getElementById('regenBox').innerHTML=`<label>${t('secRegenPrompt')}</label><input class="inp" id="regenInput" type="password"><button class="btn btn-gold btn-sm" style="margin-top:6px" onclick="doRegen()">${t('secRegen')}</button><div id="regenCodes"></div>`; }
-async function doRegen(){ const v=document.getElementById('regenInput').value.trim();
-  try{ const r=await fetch('/api/2fa/recovery',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code:v,password:v})}); const d=await r.json();
-    if(d.ok){ if(ME)ME.twofaRecoveryLeft=(d.recovery||[]).length; document.getElementById('regenCodes').innerHTML=recoveryHtml(d.recovery||[]); }
-    else { document.getElementById('regenCodes').innerHTML=`<p class="meta" style="color:#e2a0aa">${t('secBadCode')}</p>`; }
-  }catch(e){}
-}
-async function disable2fa(){
-  const v=document.getElementById('secDisInput').value.trim();
-  try{ const r=await fetch('/api/2fa/disable',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:v,code:v})}); const d=await r.json();
-    if(d.ok){ if(ME)ME.twofaEnabled=false; renderSecurityTab(); } else { const n=document.getElementById('secNote'); if(n){n.textContent=t('secBadCode');n.classList.add('show');} }
-  }catch(e){}
-}
-function initFab(){ const f=document.getElementById('fabT'); if(f)f.textContent='Feedback'; }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <header><div class="wrap nav">
@@ -1533,6 +1439,100 @@ function handleReturn(){
   else if(q.get('cancel')){ toast(t('payCancel')); }
   if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard.html');
 }
+
+let FB_ADMIN_ME=false;
+function openSettings(tab){
+  document.getElementById('setOverlay').style.display='flex';
+  document.getElementById('setTabFbT').textContent=t('setFeedback');
+  document.getElementById('setTabSecT').textContent=t('setSecurity');
+  document.getElementById('setTabFb').classList.toggle('on',tab!=='security');
+  document.getElementById('setTabSec').classList.toggle('on',tab==='security');
+  if(tab==='security') renderSecurityTab(); else renderFeedbackTab();
+}
+function closeSettings(){ const o=document.getElementById('setOverlay'); if(o)o.style.display='none'; }
+function renderFeedbackTab(){
+  document.getElementById('setBody').innerHTML=`<h3 style="margin-top:0">${t('setFeedback')}</h3><p style="color:var(--muted);font-size:.88rem">${t('fbIntro')}</p>
+    <div class="cfg-row2"><div><label>${t('fbType')}</label><select class="inp" id="fbType"><option value="idee">${t('fbTypeIdea')}</option><option value="verbetering">${t('fbTypeImprove')}</option><option value="probleem">${t('fbTypeProblem')}</option></select></div>
+    <div style="grid-column:span 2"><label>${t('fbTitle')}</label><input class="inp" id="fbTitle" maxlength="120"></div></div>
+    <label>${t('fbMessage')}</label><textarea class="inp" id="fbMsg" rows="2" maxlength="2000"></textarea>
+    <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="submitFeedback()">${t('fbSubmit')}</button>
+    <div id="fbList" style="margin-top:16px"></div>`;
+  loadFeedback();
+}
+async function loadFeedback(){
+  let r; try{ r=await api('/api/feedback'); }catch(e){ return; }
+  FB_ADMIN_ME=!!r.admin; const el=document.getElementById('fbList'); if(!el)return;
+  if(!r.items||!r.items.length){ el.innerHTML=`<p class="empty">${t('fbEmpty')}</p>`; return; }
+  const statuses=['nieuw','gepland','bezig','afgerond','afgewezen'];
+  const stKey=s=>'stat'+s.charAt(0).toUpperCase()+s.slice(1);
+  el.innerHTML=r.items.map(f=>`<div class="fb-item">
+    <button class="fb-vote ${f.voted?'on':''}" onclick="voteFb('${f.id}')"><span>\u25B2</span><b>${f.votes}</b></button>
+    <div style="flex:1"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${htmlesc(f.title)}</b><span class="fb-status ${f.status}">${t(stKey(f.status))}</span><span class="tag">${htmlesc(f.type)}</span></div>
+      ${f.message?`<div class="meta" style="margin-top:4px">${htmlesc(f.message)}</div>`:''}
+      <div class="meta" style="margin-top:4px">${htmlesc(f.name)} \u00b7 ${f.role==='pro'?'vakman':'klant'}</div>
+      ${FB_ADMIN_ME?`<select class="inp" style="margin-top:6px;max-width:190px" onchange="setFbStatus('${f.id}',this.value)">${statuses.map(x=>`<option value="${x}" ${x===f.status?'selected':''}>${t(stKey(x))}</option>`).join('')}</select>`:''}
+    </div></div>`).join('');
+}
+async function submitFeedback(){
+  const title=document.getElementById('fbTitle').value.trim(); if(!title){document.getElementById('fbTitle').focus();return;}
+  await api('/api/feedback',{method:'POST',body:JSON.stringify({type:document.getElementById('fbType').value,title,message:document.getElementById('fbMsg').value})});
+  document.getElementById('fbTitle').value=''; document.getElementById('fbMsg').value=''; loadFeedback();
+}
+async function voteFb(id){ try{ await api('/api/feedback/'+id+'/vote',{method:'POST',body:'{}'}); }catch(e){} loadFeedback(); }
+async function setFbStatus(id,status){ try{ await api('/api/feedback/'+id+'/status',{method:'POST',body:JSON.stringify({status})}); }catch(e){} loadFeedback(); }
+function renderSecurityTab(){
+  const b=document.getElementById('setBody');
+  if(ME && ME.twofaEnabled){
+    b.innerHTML=`<h3 style="margin-top:0">${t('setSecurity')}</h3><p style="color:#7fd6a0">\u2713 ${t('secOn')}</p>
+      <p class="meta">${(ME.twofaRecoveryLeft||0)} ${t('secRecoveryLeft')}</p>
+      <button class="btn btn-ghost btn-sm" onclick="regen2fa()">${t('secRegen')}</button><div id="regenBox" style="margin-top:8px"></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <label>${t('secDisablePrompt')}</label><input class="inp" id="secDisInput" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022">
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="disable2fa()">${t('secDisable')}</button><div class="note" id="secNote"></div>`;
+  } else {
+    b.innerHTML=`<h3 style="margin-top:0">${t('setSecurity')}</h3><p style="color:var(--muted)">${t('secOff')}</p>
+      <button class="btn btn-gold btn-sm" onclick="setup2fa()">${t('secEnable')}</button><div id="secSetup" style="margin-top:12px"></div>`;
+  }
+}
+async function setup2fa(){
+  let r; try{ r=await api('/api/2fa/setup',{method:'POST',body:'{}'}); }catch(e){ return; }
+  document.getElementById('secSetup').innerHTML=`<p>${t('secStep1')}</p>
+    <div class="qr-box">${r.qr?`<img src="${r.qr}" alt="QR">`:''}</div>
+    <p class="meta">${t('secManual')}</p><div class="secret-code">${r.secret}</div>
+    <p style="margin-top:10px">${t('secStep2')}</p>
+    <input class="inp" id="sec2faCode" inputmode="numeric" maxlength="6" placeholder="123456">
+    <button class="btn btn-gold btn-sm" style="margin-top:8px" onclick="enable2fa()">${t('secConfirm')}</button><div class="note" id="secNote"></div>`;
+}
+function recoveryHtml(codes){
+  const joined=(codes||[]).join('\n');
+  return `<div style="margin-top:12px"><div class="cfg-h" style="font-size:.95rem">${t('secRecoveryTitle')}</div>
+    <p class="meta">${t('secRecoveryIntro')}</p>
+    <div class="secret-code" style="text-align:left;line-height:1.9;letter-spacing:1px">${(codes||[]).map(c=>htmlesc(c)).join('<br>')}</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.c)" data-c="${htmlesc(joined)}">${t('secCopy')}</button></div>`;
+}
+async function enable2fa(){
+  const code=document.getElementById('sec2faCode').value.trim();
+  try{ const r=await fetch('/api/2fa/enable',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})}); const d=await r.json();
+    if(d.ok){ if(ME){ME.twofaEnabled=true;ME.twofaRecoveryLeft=(d.recovery||[]).length;}
+      document.getElementById('secSetup').innerHTML=`<p style="color:#7fd6a0">\u2713 ${t('secOn')}</p>`+recoveryHtml(d.recovery||[])+`<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="renderSecurityTab()">${t('secDone')}</button>`;
+    } else { const n=document.getElementById('secNote'); if(n){n.textContent=t('secBadCode');n.classList.add('show');} }
+  }catch(e){}
+}
+function regen2fa(){ document.getElementById('regenBox').innerHTML=`<label>${t('secRegenPrompt')}</label><input class="inp" id="regenInput" type="password"><button class="btn btn-gold btn-sm" style="margin-top:6px" onclick="doRegen()">${t('secRegen')}</button><div id="regenCodes"></div>`; }
+async function doRegen(){ const v=document.getElementById('regenInput').value.trim();
+  try{ const r=await fetch('/api/2fa/recovery',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code:v,password:v})}); const d=await r.json();
+    if(d.ok){ if(ME)ME.twofaRecoveryLeft=(d.recovery||[]).length; document.getElementById('regenCodes').innerHTML=recoveryHtml(d.recovery||[]); }
+    else { document.getElementById('regenCodes').innerHTML=`<p class="meta" style="color:#e2a0aa">${t('secBadCode')}</p>`; }
+  }catch(e){}
+}
+async function disable2fa(){
+  const v=document.getElementById('secDisInput').value.trim();
+  try{ const r=await fetch('/api/2fa/disable',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:v,code:v})}); const d=await r.json();
+    if(d.ok){ if(ME)ME.twofaEnabled=false; renderSecurityTab(); } else { const n=document.getElementById('secNote'); if(n){n.textContent=t('secBadCode');n.classList.add('show');} }
+  }catch(e){}
+}
+function initFab(){ const f=document.getElementById('fabT'); if(f)f.textContent='Feedback'; }
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
 </script>
 <div id="setOverlay" class="set-overlay" style="display:none">
   <div class="set-box">
