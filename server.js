@@ -111,6 +111,7 @@ async function publicUser(u) {
     rest.welcomeLeft = ci.welcomeRemaining;
     rest.monthlyLeft = ci.monthlyRemaining;
     rest.bio = u.bio || ''; rest.website = u.website || ''; rest.logo = u.logo || '';
+    rest.websitePreview = u.websitePreview || null;
     rest.photos = u.photos || []; rest.workRadius = u.workRadius || 0; rest.workZip = u.workZip || '';
     rest.workCategories = u.workCategories || [];
     rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
@@ -573,17 +574,41 @@ app.post('/api/profile', requireRole('pro'), async (req, res) => {
     if (Array.isArray(b.photos)) patch.photos = cleanPhotos(b.photos, 6);
     if (b.logo !== undefined) { const l = cleanPhotos([b.logo], 1)[0]; patch.logo = l || ''; }
     if (patch.city) { const g = await geocodeNL(patch.city); if (g) { patch.lat = g.lat; patch.lng = g.lng; } }
+    if (b.website !== undefined) { patch.websitePreview = patch.website ? (await fetchSitePreview(patch.website)) : null; }
     const u = await store.updateUser(req.user.id, patch);
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 // ---------------- openbare bedrijfsprofielen (voor klanten) ----------------
+// Haalt een linkvoorbeeld (Open Graph) op van de bedrijfswebsite
+async function fetchSitePreview(url) {
+  try {
+    let u = String(url).trim(); if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Budomatch/1.0)' }, signal: ctrl.signal });
+    clearTimeout(to);
+    if (!r.ok) return { url: u };
+    const html = (await r.text()).slice(0, 250000);
+    const meta = prop => {
+      let m = html.match(new RegExp('<meta[^>]+(?:property|name)=["\\\']' + prop + '["\\\'][^>]*content=["\\\']([^"\\\']+)', 'i'));
+      if (!m) m = html.match(new RegExp('<meta[^>]+content=["\\\']([^"\\\']+)["\\\'][^>]*(?:property|name)=["\\\']' + prop + '["\\\']', 'i'));
+      return m ? m[1] : '';
+    };
+    let title = meta('og:title') || ((html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || '');
+    let desc = meta('og:description') || meta('description') || '';
+    let img = meta('og:image') || meta('og:image:url') || '';
+    try { if (img && !/^https?:\/\//i.test(img)) img = new URL(img, u).href; } catch (e) {}
+    const dec = s => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    return { url: u, title: dec(title).slice(0, 140), description: dec(desc).slice(0, 240), image: img.slice(0, 500) };
+  } catch (e) { return { url: String(url) }; }
+}
 async function publicProfile(u) {
   const rating = await proRating(u.id);
   return {
     id: u.id, company: u.company || u.name, spec: u.spec || '', city: u.city || '',
     bio: u.bio || '', website: u.website || '', logo: u.logo || '', photos: u.photos || [],
+    websitePreview: u.websitePreview || null,
     workCategories: u.workCategories || [], workRadius: u.workRadius || 0,
     kvk: u.kvk || '', kvkVerified: !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk), kvkName: u.kvkName || '',
     rating, tier: tierInfo(rating), createdAt: u.createdAt || 0,
