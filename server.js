@@ -342,6 +342,9 @@ app.post('/api/requests', requireRole('customer'), async (req, res) => {
       timing: String(b.timing || '').slice(0, 60),
       service: String(b.service).slice(0, 120),
       zip: String(b.zip || '').slice(0, 80),
+      street: String(b.street || '').slice(0, 120),
+      houseNumber: String(b.houseNumber || '').slice(0, 20),
+      houseAdd: String(b.houseAdd || '').slice(0, 20),
       description: String(b.description).slice(0, 4000),
       name: req.user.name,
       phone: String(b.phone || '').slice(0, 40),
@@ -437,7 +440,7 @@ async function leadView(r, pro) {
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
   };
-  if (claimed) { base.name = r.name; base.phone = r.phone; base.email = r.email; base.company = r.company || ''; base.photos = r.photos || []; }
+  if (claimed) { base.name = r.name; base.phone = r.phone; base.email = r.email; base.company = r.company || ''; base.photos = r.photos || []; base.street = r.street || ''; base.houseNumber = r.houseNumber || ''; base.houseAdd = r.houseAdd || ''; }
   return base;
 }
 
@@ -558,6 +561,21 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
 });
 
 // Bedrijfsprofiel + werkgebied opslaan (vakman)
+app.post('/api/account', requireRole(), async (req, res) => {
+  try {
+    const b = req.body || {}, patch = {};
+    if (b.name !== undefined) patch.name = String(b.name).slice(0, 80);
+    if (b.phone !== undefined) patch.phone = String(b.phone).slice(0, 40);
+    if (b.street !== undefined) patch.street = String(b.street).slice(0, 120);
+    if (b.houseNumber !== undefined) patch.houseNumber = String(b.houseNumber).slice(0, 20);
+    if (b.houseAdd !== undefined) patch.houseAdd = String(b.houseAdd).slice(0, 20);
+    if (b.postcode !== undefined) patch.postcode = String(b.postcode).slice(0, 12);
+    if (b.city !== undefined) patch.city = String(b.city).slice(0, 80);
+    const u = await store.updateUser(req.user.id, patch);
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
 app.post('/api/profile', requireRole('pro'), async (req, res) => {
   try {
     const b = req.body || {}, patch = {};
@@ -1238,7 +1256,7 @@ app.post('/api/quote', async (req, res) => {
   try { const b = req.body || {};
     const atts = photoAttachments(b.photos);
     await sendMail(`Offerteaanvraag (gast) — ${esc(b.service) || '-'}`,
-      `<h2>Offerteaanvraag</h2><p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`,
+      `<h2>Offerteaanvraag</h2><p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`,
       atts);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });

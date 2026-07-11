@@ -503,6 +503,11 @@ img{max-width:100%}
           <div class="fg"><label data-i18n="qLblService"></label><select class="inp" id="qCat" name="service" required></select></div>
           <div class="fg"><label data-i18n="qLblZip"></label><input class="inp" name="zip" required data-ph="qPhZip"></div>
         </div>
+        <div class="grid2">
+          <div class="fg"><label data-i18n="qLblStreet"></label><input class="inp" name="street" data-ph="qPhStreet"></div>
+          <div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label data-i18n="qLblNr"></label><input class="inp" name="houseNumber"></div><div><label data-i18n="qLblAdd"></label><input class="inp" name="houseAdd"></div></div>
+        </div>
+        <p data-i18n="qAddrHint" style="margin:-4px 0 6px;font-size:.82rem;color:var(--muted)"></p>
         <div class="fg"><label data-i18n="qLblDesc"></label><textarea class="inp" name="description" rows="4" required data-ph="qPhDesc"></textarea></div>
         <div class="fg">
           <label data-i18n="qLblPhotos"></label>
@@ -693,12 +698,12 @@ const T={
   ebReviews:"Just launched",h2Reviews:"A new platform, built on trust",
   pReviews:"We have just launched — so no inflated numbers. Instead, a platform built from day one on reliable, vetted tradesmen.",
   badgeVetted:"With invoice & warranty",
-  r1:"Vetted providers",r1m:"We check every tradesman's registration, insurance and craftsmanship before they join.",
+  r1:"Vetted providers",r1m:"We verify every tradesperson's Chamber of Commerce (KvK) registration before they join.",
   r2:"You compare and choose",r2m:"Receive several no-obligation quotes and decide for yourself who to trust with your job.",
   r3:"Transparent, with guarantee",r3m:"Clear prices, a proper invoice and a guarantee on the work delivered.",
   ebQuote:"Free and without obligation",h2Quote:"Request a quote",
   pQuote:"Describe your project — matching tradesmen near you will get in touch with a quote.",
-  qLblService:"Which service do you need?",qLblZip:"City",qPhZip:"e.g. Amsterdam",
+  qLblService:"Which service do you need?",qLblZip:"City",qPhZip:"e.g. Amsterdam",qLblStreet:"Street",qPhStreet:"e.g. Dorpsstraat",qLblNr:"No.",qLblAdd:"Addition",qAddrHint:"Exact address helps tradespeople quote accurately (sometimes required).",
   qLblDesc:"Describe your job",qPhDesc:"E.g. Bathroom renovation 6 m², replace tiles and taps, start in 2 weeks…",
   qLblName:"Name",qPhName:"Jan Jansen",qLblPhone:"Phone",qPhPhone:"+31 6 12345678",
   qLblEmail:"E-mail",qPhEmail:"jan@example.nl",qBtn:"Send and receive quotes",
@@ -764,12 +769,12 @@ const T={
   ebReviews:"Net gelanceerd",h2Reviews:"Een nieuw platform, gebouwd op vertrouwen",
   pReviews:"We zijn net gelanceerd — dus geen opgepoetste cijfers. Wél een platform dat vanaf dag één draait op betrouwbare, gecontroleerde vakmensen.",
   badgeVetted:"Met factuur & garantie",
-  r1:"Gecontroleerde aanbieders",r1m:"We controleren elke vakman op inschrijving, verzekering en vakmanschap voordat hij meedoet.",
+  r1:"Gecontroleerde aanbieders",r1m:"We controleren elke vakman op KvK-inschrijving voordat hij meedoet.",
   r2:"Jij vergelijkt en kiest",r2m:"Ontvang meerdere vrijblijvende offertes en bepaal zelf wie je je klus toevertrouwt.",
   r3:"Transparant, met garantie",r3m:"Heldere prijzen, een nette factuur en garantie op het uitgevoerde werk.",
   ebQuote:"Gratis en vrijblijvend",h2Quote:"Vraag een offerte aan",
   pQuote:"Beschrijf je project — passende vakmensen bij jou in de buurt nemen contact op met een offerte.",
-  qLblService:"Welke dienst zoek je?",qLblZip:"Plaats",qPhZip:"bijv. Amsterdam",
+  qLblService:"Welke dienst zoek je?",qLblZip:"Plaats",qPhZip:"bijv. Amsterdam",qLblStreet:"Straatnaam",qPhStreet:"bijv. Dorpsstraat",qLblNr:"Huisnr.",qLblAdd:"Toevoeging",qAddrHint:"Exact adres helpt vakmensen nauwkeurig te offreren (soms verplicht).",
   qLblDesc:"Beschrijf je klus",qPhDesc:"Bijv. Badkamerrenovatie 6 m², tegels en kraanwerk vervangen, start over 2 weken…",
   qLblName:"Naam",qPhName:"Jan Jansen",qLblPhone:"Telefoon",qPhPhone:"+31 6 12345678",
   qLblEmail:"E-mail",qPhEmail:"jan@voorbeeld.nl",qBtn:"Versturen en offertes ontvangen",
@@ -901,7 +906,7 @@ function rmPhoto(i){QPHOTOS.splice(i,1);renderThumbs();}
 function quoteSubmit(e){e.preventDefault();const f=e.target;
   const sel=document.getElementById('qCat');
   const service=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
-  const payload={service,zip:f.zip.value,description:f.description.value,name:f.name.value,phone:f.phone.value,email:f.email.value,photos:QPHOTOS,lang:LANG};
+  const payload={service,zip:f.zip.value,street:f.street.value,houseNumber:f.houseNumber.value,houseAdd:f.houseAdd.value,description:f.description.value,name:f.name.value,phone:f.phone.value,email:f.email.value,photos:QPHOTOS,lang:LANG};
   const url=(__me&&__me.role==='customer')?'/api/requests':'/api/quote';
   fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
   document.getElementById('qNote').classList.add('show');
