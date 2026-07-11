@@ -114,6 +114,7 @@ async function publicUser(u) {
     rest.photos = u.photos || []; rest.workRadius = u.workRadius || 0; rest.workZip = u.workZip || '';
     rest.workCategories = u.workCategories || [];
     rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
+    rest.kvkAddress = u.kvkAddress || null;
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -601,10 +602,17 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
     if (!item) return res.json({ ok: false, error: 'not_found' });
     const name = item.naam || '';
     const city = item.plaats || (item.adres && item.adres.binnenlandsAdres && item.adres.binnenlandsAdres.plaats) || '';
+    const adr = (item.adres && item.adres.binnenlandsAdres) || {};
+    const kvkAddress = {
+      street: adr.straatnaam || '',
+      houseNumber: [adr.huisnummer, adr.huisletter].filter(Boolean).join(''),
+      postcode: adr.postcode || '',
+      city: adr.plaats || city,
+    };
     const dup = (await store.listPros()).find(p => p.id !== req.user.id && p.verifiedKvk === num);
     if (dup) return res.json({ ok: false, error: 'duplicate' });
-    await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name });
-    res.json({ ok: true, kvk: num, name, city, type: item.type || '' });
+    await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name, kvkAddress });
+    res.json({ ok: true, kvk: num, name, city, type: item.type || '', address: kvkAddress });
   } catch (e) { console.error('KvK-fout:', e.message); res.json({ ok: false, error: 'server' }); }
 });
 app.get('/api/pros', async (req, res) => {
@@ -685,11 +693,15 @@ app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {
       .text(`NIP: ${SELLER.nip}   REGON: ${SELLER.regon}`, 50, y + 59)
       .text(SELLER.email, 50, y + 73);
     doc.fontSize(11).fillColor('#111').text('Nabywca / Afnemer', 320, y);
+    const ka = b.kvkAddress || {};
+    const buyerName = b.kvkName || b.company || b.name;
+    const buyerAddr = ((ka.street ? (ka.street + ' ' + (ka.houseNumber || '')).trim() : '') || b.address || '');
+    const buyerZipCity = ([ka.postcode, ka.city].filter(Boolean).join(' ') || [b.zip, b.city].filter(Boolean).join(' '));
     doc.fontSize(9.5).fillColor('#333')
-      .text(b.company || b.name, 320, y + 17, { width: 225 })
-      .text(b.address || '', 320, y + 31, { width: 225 })
-      .text([b.zip, b.city].filter(Boolean).join(' '), 320, y + 45)
-      .text(b.nip ? `BTW/NIP: ${b.nip}` : '', 320, y + 59)
+      .text(buyerName, 320, y + 17, { width: 225 })
+      .text(buyerAddr, 320, y + 31, { width: 225 })
+      .text(buyerZipCity, 320, y + 45)
+      .text(b.kvk ? `KvK: ${b.kvk}${b.nip ? '  BTW: ' + b.nip : ''}` : (b.nip ? `BTW/NIP: ${b.nip}` : ''), 320, y + 59, { width: 225 })
       .text(b.email || '', 320, y + 73);
 
     let ty = y + 110;
@@ -1016,6 +1028,7 @@ app.get('/api/projobs', requireRole('pro'), async (req, res) => {
     }));
     const mine = (await store.proJobsForPro(u.id)).filter(j => j.posterProId === u.id).map(j => ({
       id: j.id, service: j.service, status: j.status, createdAt: j.createdAt,
+      description: j.description || '', zip: j.zip || '', timing: j.timing || '', note: j.note || '',
       taken: j.status === 'taken', photoCount: Array.isArray(j.photos) ? j.photos.length : 0,
     }));
     res.json({ jobs: open, mine });
@@ -1042,6 +1055,33 @@ app.post('/api/projobs/:id/delete', requireRole('pro'), async (req, res) => {
     if (j.posterProId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
     await store.deleteProJob(j.id);
     res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Bewerken — alleen de plaatser
+app.post('/api/projobs/:id/edit', requireRole('pro'), async (req, res) => {
+  try {
+    const j = await store.findProJob(req.params.id);
+    if (!j) return res.status(404).json({ error: 'not_found' });
+    if (j.posterProId !== req.user.id) return res.status(403).json({ error: 'forbidden' });
+    const b = req.body || {}; const patch = {};
+    if (b.service !== undefined) patch.service = String(b.service).slice(0, 120);
+    if (b.description !== undefined) patch.description = String(b.description).slice(0, 2000);
+    if (b.zip !== undefined) patch.zip = String(b.zip).slice(0, 80);
+    if (b.timing !== undefined) patch.timing = String(b.timing).slice(0, 60);
+    if (b.note !== undefined) patch.note = String(b.note).slice(0, 300);
+    await store.updateProJob(j.id, patch);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// Eigen reviews (vakman)
+app.get('/api/reviews/mine', requireRole('pro'), async (req, res) => {
+  try {
+    const rv = (await store.reviewsByPro(req.user.id)).map(r => ({
+      rating: r.rating, comment: r.comment || '', name: (String(r.customerName || '').split(' ')[0] || 'Klant'), createdAt: r.createdAt,
+    }));
+    res.json({ reviews: rv, rating: await proRating(req.user.id) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
