@@ -27,7 +27,7 @@ const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
 
 // ----- Pricing -----
 const FREE_LEADS = 5;
-const LEAD_PRICE_GROSS = 12.50;         // euro incl. btw
+const LEAD_PRICE_GROSS = 18.15;         // euro (btw verlegd)
 const VAT_RATE = 0;                      // 0% — btw verlegd (reverse charge, B2B NL)
 const LEAD_PRICE_NET = +(LEAD_PRICE_GROSS / (1 + VAT_RATE)).toFixed(2);   // 12.50 (btw verlegd)
 const LEAD_PRICE_VAT = +(LEAD_PRICE_GROSS - LEAD_PRICE_NET).toFixed(2);   // 0.00 (verlegd)

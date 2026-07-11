@@ -248,6 +248,11 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .subtab{background:var(--bg-2);border:1px solid var(--line);border-radius:20px;padding:6px 14px;color:var(--muted);cursor:pointer;font:inherit;font-size:.86rem}
 .subtab.on{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,.08)}
 @media(max-width:640px){.subtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.subtabs::-webkit-scrollbar{display:none}.subtab{white-space:nowrap}}
+
+.golden-box{background:rgba(227,193,88,.08);border:1px solid var(--gold);border-radius:12px;padding:12px;margin:6px 0 14px}
+.golden-h{display:flex;align-items:center;gap:8px;font-family:'Marcellus',serif;color:var(--gold-bright);margin-bottom:2px}
+.golden-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-top:6px;cursor:pointer;font-size:.88rem;color:var(--cream)}
+.golden-item.on{border-color:var(--gold);background:rgba(201,162,39,.14);color:var(--gold-bright)}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -294,7 +299,7 @@ const T = {
     stReqOpen:'Active', stReqAssigned:'Tradesman found', stReqCancelled:'Cancelled', reqEdit:'Edit', reqCancel:'Cancel', reqReopen:'Reopen', reqAssign:'Choose this one', reqResponders:'Responses', reqSave:'Save', reqClose:'Close', reqCancelConfirm:'Cancel this request?', reqAssignConfirm:'Assign this request to {name}? Other tradesmen will no longer see it.', reqMax3:'Max. 3 tradesmen can respond.',
     setFeedback:'Ideas & feedback', setSecurity:'Security (2FA)', fbIntro:'Share an idea or issue and vote on others. What is most wanted goes into the next update.', fbType:'Type', fbTypeIdea:'Idea', fbTypeImprove:'Improvement', fbTypeProblem:'Problem', fbTitle:'Title', fbMessage:'Details (optional)', fbSubmit:'Submit', fbEmpty:'No ideas yet \u2014 be the first!', statNieuw:'New', statGepland:'Planned', statBezig:'In progress', statAfgerond:'Done', statAfgewezen:'Declined', secOn:'Two-step verification is ON.', secOff:'Protect your account with an authenticator app (Google/Microsoft Authenticator, 1Password).', secEnable:'Enable 2FA', secDisable:'Disable 2FA', secStep1:'1. Scan this QR code with your authenticator app.', secStep2:'2. Enter the 6-digit code to confirm:', secManual:'Can\u2019t scan? Enter this key manually:', secConfirm:'Confirm & enable', secDisablePrompt:'Enter your password or a current code to disable:', secBadCode:'Incorrect code, try again.', settingsTitle:'Settings', secRecoveryTitle:'Recovery codes', secRecoveryIntro:'Save these codes somewhere safe. Each works once if you lose access to your app.', secRecoveryLeft:'recovery codes left', secRegen:'Generate new recovery codes', secRegenPrompt:'Enter a current code or your password:', secCopy:'Copy', secDone:'Done, I saved them',
     cTabNew:'New request', cTabFind:'Find a pro',
-    msgAll:'All', msgClients:'Clients', msgColleagues:'Colleagues', msgUnread:'Unread', pjSubPost:'Post a job', pjSubAvail:'Available', pjSubMine:'My jobs', pfSubInfo:'Details', pfSubKvk:'KvK verification', pfSubPhotos:'Photos & logo', pfSubReviews:'Reviews', kvkVerifiedData:'Verified company details', kvkInvoiceNote:'These verified details are used on invoices to your customers.', pjEdit:'Edit', reviewsEmpty:'No reviews yet.', acSubOverview:'Overview', acSubBilling:'Invoicing', acSubSecurity:'Security', cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are still orienting — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
+    goldenTitle:'Golden pros near you', goldenIntro:'Top-rated Gold companies — pick one to send your request directly, or leave open for everyone.', goldenNone:'No preference — open to all', msgAll:'All', msgClients:'Clients', msgColleagues:'Colleagues', msgUnread:'Unread', pjSubPost:'Post a job', pjSubAvail:'Available', pjSubMine:'My jobs', pfSubInfo:'Details', pfSubKvk:'KvK verification', pfSubPhotos:'Photos & logo', pfSubReviews:'Reviews', kvkVerifiedData:'Verified company details', kvkInvoiceNote:'These verified details are used on invoices to your customers.', pjEdit:'Edit', reviewsEmpty:'No reviews yet.', acSubOverview:'Overview', acSubBilling:'Invoicing', acSubSecurity:'Security', cIntent:'What do you need?', cIntentJob:'A job', cIntentOrient:'Orientation', cIntentJobHint:'You want this actually carried out.', cIntentOrientHint:'You are still orienting — tradesmen pay 50% less to contact you.', cTiming:'When should it start?', tmAsap:'Urgent', tm1:'Within 1 month', tm13:'1-3 months', tmLater:'More than 3 months',
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
     tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
@@ -303,7 +308,7 @@ const T = {
     arTitle:'Choose your work area', arZip:'Base postcode', arRadius:'Radius', arCats:'Which jobs do you do?',
     acDetails:'Account', acTier:'Your level', acCredits:'Free leads left', logoutBtn:'Log out', helpTitle:'Help & FAQ', rvNone:'No reviews yet',
     hq1:'How does Budomatch work?', ha1:'Customers post a job for free. You see matching requests, unlock the ones you want (first 5 free, then paid; orientation requests are 50% off) and chat directly with the customer.',
-    hq2:'What does it cost?', ha2:'Unlocking a lead costs € 12,50 (orientation/buying leads € 6,25). Posting colleague jobs and chatting is free.',
+    hq2:'What does it cost?', ha2:'Unlocking a lead costs € 18,15 (orientation leads only € 9,08 — 50% off). Posting colleague jobs and chatting is free.',
     hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score and gives extra free leads per month: Bronze +1, Silver +2, Gold +3.',
     hq4:'How do I get reviews?', ha4:'After contact, customers can rate you. More and better reviews raise your level and visibility.',
     hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
@@ -344,7 +349,7 @@ const T = {
     stReqOpen:'Actueel', stReqAssigned:'Vakman gevonden', stReqCancelled:'Geannuleerd', reqEdit:'Bewerken', reqCancel:'Annuleren', reqReopen:'Heropenen', reqAssign:'Kies deze vakman', reqResponders:'Reacties', reqSave:'Opslaan', reqClose:'Sluiten', reqCancelConfirm:'Deze aanvraag annuleren?', reqAssignConfirm:'Aanvraag toewijzen aan {name}? Andere vakmensen zien de aanvraag dan niet meer.', reqMax3:'Max. 3 vakmensen kunnen reageren.',
     setFeedback:'Idee\u00ebn & feedback', setSecurity:'Beveiliging (2FA)', fbIntro:'Deel een idee of probleem en stem op anderen. Wat het meest gevraagd wordt, komt in de volgende update.', fbType:'Type', fbTypeIdea:'Idee', fbTypeImprove:'Verbetering', fbTypeProblem:'Probleem', fbTitle:'Titel', fbMessage:'Toelichting (optioneel)', fbSubmit:'Insturen', fbEmpty:'Nog geen idee\u00ebn \u2014 wees de eerste!', statNieuw:'Nieuw', statGepland:'Gepland', statBezig:'Bezig', statAfgerond:'Afgerond', statAfgewezen:'Afgewezen', secOn:'Twee-stapsverificatie staat AAN.', secOff:'Beveilig je account met een authenticator-app (Google/Microsoft Authenticator, 1Password).', secEnable:'2FA inschakelen', secDisable:'2FA uitschakelen', secStep1:'1. Scan deze QR-code met je authenticator-app.', secStep2:'2. Voer de 6-cijferige code in ter bevestiging:', secManual:'Kun je niet scannen? Voer deze sleutel handmatig in:', secConfirm:'Bevestigen & inschakelen', secDisablePrompt:'Voer je wachtwoord of een huidige code in om uit te schakelen:', secBadCode:'Onjuiste code, probeer opnieuw.', settingsTitle:'Instellingen', secRecoveryTitle:'Herstelcodes', secRecoveryIntro:'Bewaar deze codes veilig. Elke code werkt \u00e9\u00e9n keer als je geen toegang meer hebt tot je app.', secRecoveryLeft:'herstelcodes over', secRegen:'Nieuwe herstelcodes genereren', secRegenPrompt:'Voer een huidige code of je wachtwoord in:', secCopy:'Kopi\u00ebren', secDone:'Klaar, ik heb ze opgeslagen',
     cTabNew:'Nieuwe aanvraag', cTabFind:'Vakman zoeken',
-    msgAll:'Alle', msgClients:'Klanten', msgColleagues:'Collega’s', msgUnread:'Ongelezen', pjSubPost:'Klus plaatsen', pjSubAvail:'Beschikbaar', pjSubMine:'Mijn klussen', pfSubInfo:'Gegevens', pfSubKvk:'KvK-controle', pfSubPhotos:'Foto’s & logo', pfSubReviews:'Reviews', kvkVerifiedData:'Geverifieerde bedrijfsgegevens', kvkInvoiceNote:'Deze geverifieerde gegevens worden gebruikt op de factuur aan je klanten.', pjEdit:'Bewerken', reviewsEmpty:'Nog geen reviews.', acSubOverview:'Overzicht', acSubBilling:'Facturatie', acSubSecurity:'Beveiliging', cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je nog — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
+    goldenTitle:'Golden vakmensen bij jou in de buurt', goldenIntro:'Best beoordeelde Goud-bedrijven — kies er één om je aanvraag direct te sturen, of laat open voor iedereen.', goldenNone:'Geen voorkeur — open voor iedereen', msgAll:'Alle', msgClients:'Klanten', msgColleagues:'Collega’s', msgUnread:'Ongelezen', pjSubPost:'Klus plaatsen', pjSubAvail:'Beschikbaar', pjSubMine:'Mijn klussen', pfSubInfo:'Gegevens', pfSubKvk:'KvK-controle', pfSubPhotos:'Foto’s & logo', pfSubReviews:'Reviews', kvkVerifiedData:'Geverifieerde bedrijfsgegevens', kvkInvoiceNote:'Deze geverifieerde gegevens worden gebruikt op de factuur aan je klanten.', pjEdit:'Bewerken', reviewsEmpty:'Nog geen reviews.', acSubOverview:'Overzicht', acSubBilling:'Facturatie', acSubSecurity:'Beveiliging', cIntent:'Wat heb je nodig?', cIntentJob:'Een opdracht', cIntentOrient:'Oriëntatie', cIntentJobHint:'Je wilt dit daadwerkelijk laten uitvoeren.', cIntentOrientHint:'Je oriënteert je nog — vakmensen betalen 50% minder voor contact.', cTiming:'Wanneer moet het beginnen?', tmAsap:'Spoed', tm1:'Binnen 1 maand', tm13:'Tussen 1-3 maanden', tmLater:'Meer dan 3 maanden',
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
     tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
@@ -353,7 +358,7 @@ const T = {
     arTitle:'Kies je werkgebied', arZip:'Postcode (basis)', arRadius:'Straal', arCats:'Welke klussen doe je?',
     acDetails:'Account', acTier:'Jouw niveau', acCredits:'Gratis leads over', logoutBtn:'Uitloggen', helpTitle:'Helpdesk & FAQ', rvNone:'Nog geen reviews',
     hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste 5 gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
-    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 12,50 (oriëntatie € 6,25). Collega-klussen plaatsen en chatten is gratis.',
+    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 18,15 (oriëntatie slechts € 9,08 — 50% korting). Collega-klussen plaatsen en chatten is gratis.',
     hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore en geeft extra gratis leads per maand: Brons +1, Zilver +2, Goud +3.',
     hq4:'Hoe krijg ik reviews?', ha4:'Na contact kan de klant je beoordelen. Meer en betere reviews verhogen je niveau en zichtbaarheid.',
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
@@ -751,6 +756,7 @@ function custNewHtml(){
         <label>${t('cService')}</label>
         <select class="inp" id="cService" onchange="onServiceChange()">${cats().map(c=>`<option>${c}</option>`).join('')}</select>
         <div id="configBox" style="display:none"></div>
+        <div id="goldenBox" style="display:none"></div>
         <label>${t('cIntent')}</label>
         <div class="seg" id="cIntentSeg">
           <button type="button" class="on" onclick="setIntent('opdracht')">${t('cIntentJob')}</button>
@@ -759,7 +765,7 @@ function custNewHtml(){
         <p class="hint" id="cIntentHint">${t('cIntentJobHint')}</p>
         <label>${t('cTiming')}</label>
         <select class="inp" id="cTiming"><option>${t('tmAsap')}</option><option>${t('tm1')}</option><option>${t('tm13')}</option><option>${t('tmLater')}</option></select>
-        <label>${t('cZip')}</label><input class="inp" id="cZip" placeholder="${t('cZipPh')}">
+        <label>${t('cZip')}</label><input class="inp" id="cZip" placeholder="${t('cZipPh')}" onchange="loadGolden()">
         <label>${t('cPhone')}</label><input class="inp" id="cPhone" placeholder="${t('cPhonePh')}">
         <label>${t('cDesc')}</label>
         <textarea class="inp" id="cDesc" rows="5" placeholder="${t('cDescPh')}"></textarea>
@@ -805,7 +811,7 @@ function showCustTab(k){
   CUST_TAB=k; stopChatPoll();
   document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on', b.dataset.k===k));
   const el=$('#custTab'); if(!el)return;
-  if(k==='nieuw'){ el.innerHTML=custNewHtml(); reqIntent='opdracht'; DPHOTOS=[]; if(typeof renderDThumbs==='function')renderDThumbs(); onServiceChange(); AI_MODE='customer'; aiHist=[]; aiGreet(); }
+  if(k==='nieuw'){ el.innerHTML=custNewHtml(); reqIntent='opdracht'; DPHOTOS=[]; GOLDEN_TARGET=''; GOLDEN_LIST=[]; if(typeof renderDThumbs==='function')renderDThumbs(); onServiceChange(); AI_MODE='customer'; aiHist=[]; aiGreet(); }
   else if(k==='aanvragen'){ el.innerHTML=`<div class="card"><h2>${t('myReq')}</h2><div id="myReqs"></div></div>`; loadMyRequests(); }
   else if(k==='berichten'){ el.innerHTML=messagesCardHtml(); loadThreads(); }
   else if(k==='zoeken'){ el.innerHTML=prosCardHtml(); }
@@ -856,6 +862,7 @@ function onServiceChange(){
   else if(CFG_TYPE==='dakkapel'){ box.innerHTML=dakkapelConfigHtml(); box.style.display='block'; updateDak(); }
   else if(CFG_TYPE==='spec'){ box.innerHTML=specConfigHtml(SPEC_ALIAS[svc]||svc); box.style.display='block'; updateSpec(); }
   else { box.innerHTML=''; box.style.display='none'; }
+  if(document.getElementById('goldenBox')) loadGolden();
 }
 function extConfigHtml(){
   return `<div class="cfg"><div class="cfg-h">${t('cfgTitle')}</div>
@@ -1102,6 +1109,24 @@ function updateSpec(){
   });
   const el=document.getElementById('specSum'); if(el)el.textContent=`${svc}: `+parts.join('; ')+'.';
 }
+async function loadGolden(){
+  const box=document.getElementById('goldenBox'); if(!box)return;
+  const svc=(document.getElementById('cService')||{}).value||''; const city=((document.getElementById('cZip')||{}).value||'').trim();
+  if(!svc||!city){ box.style.display='none'; box.innerHTML=''; GOLDEN_LIST=[]; return; }
+  let r; try{ r=await api(`/api/match?category=${encodeURIComponent(svc)}&city=${encodeURIComponent(city)}`); }catch(e){ box.style.display='none'; return; }
+  GOLDEN_LIST=(r.pros||[]).filter(p=>p.tier&&p.tier.key==='goud');
+  renderGolden();
+}
+function renderGolden(){
+  const box=document.getElementById('goldenBox'); if(!box)return;
+  if(!GOLDEN_LIST.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML=`<div class="golden-box"><div class="golden-h">${tierBadge('goud',22)} ${t('goldenTitle')}</div>
+    <p class="hint">${t('goldenIntro')}</p>
+    ${GOLDEN_LIST.map(p=>`<div class="golden-item ${GOLDEN_TARGET===p.id?'on':''}" onclick="selectGolden('${p.id}')"><span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span>${p.rating&&p.rating.count?`<span class="stars-view" style="font-size:.78rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:''}<a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank" onclick="event.stopPropagation()">${t('dirView')}</a></div>`).join('')}
+    <div class="golden-item ${!GOLDEN_TARGET?'on':''}" onclick="selectGolden('')">${t('goldenNone')}</div></div>`;
+}
+function selectGolden(id){ GOLDEN_TARGET=(GOLDEN_TARGET===id?'':id); renderGolden(); }
 function buildConfigSummary(){
   if(CFG_TYPE==='ext'){ const e=document.getElementById('extSum'); return e?e.textContent:''; }
   if(CFG_TYPE==='kozijn'){ const items=KOZ_LIST.length?KOZ_LIST:[kozItemText()]; return 'Kozijnen: '+items.join('; ')+'.'; }
@@ -1113,9 +1138,10 @@ async function postRequest(){
   const cfg=buildConfigSummary(); const desc=$('#cDesc').value.trim();
   const full=(cfg?('['+t('cfgTitle')+'] '+cfg):'')+((cfg&&desc)?'\n\n':'')+desc;
   const body = { service:$('#cService').value, intent:reqIntent, timing:$('#cTiming').value, zip:$('#cZip').value, phone:$('#cPhone').value, description:full, photos:DPHOTOS, lang:LANG };
+  if(GOLDEN_TARGET) body.targetProId=GOLDEN_TARGET;
   if (!full.trim()) { $('#cDesc').focus(); return; }
   const r = await api('/api/requests', { method:'POST', body:JSON.stringify(body) });
-  if (r.request){ $('#cNote').classList.add('show'); $('#cDesc').value=''; $('#cZip').value=''; $('#cPhone').value=''; DPHOTOS=[]; renderDThumbs(); loadMyRequests(); }
+  if (r.request){ $('#cNote').classList.add('show'); $('#cDesc').value=''; $('#cZip').value=''; $('#cPhone').value=''; DPHOTOS=[]; renderDThumbs(); GOLDEN_TARGET=''; GOLDEN_LIST=[]; renderGolden(); loadMyRequests(); }
 }
 let MYREQS=[];
 async function loadMyRequests(){
@@ -1132,7 +1158,7 @@ function reqCardHtml(q){
   const st=reqStatus(q);
   const responders=(q.status==='open'&&q.responders&&q.responders.length)?`
     <div class="resp-box"><div class="resp-h">${t('reqResponders')} (${q.responders.length}/3)</div>
-    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span>${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><button class="btn btn-gold btn-sm" style="margin-left:auto" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
+    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank">${t('dirView')}</a><button class="btn btn-gold btn-sm" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
   return `<div class="item" id="req-${q.id}"><div class="top"><span class="svc">${htmlesc(q.service)}</span>
     <span class="tag ${st[0]}">${st[1]}</span>
     <span class="tag">${q.claims} ${q.claims===1?t('reaction'):t('reactions')}</span>
@@ -1167,6 +1193,7 @@ async function assignReq(id,proId){ const q=MYREQS.find(x=>x.id===id); const p=q
 let aiHist = [];
 let AI_MODE='customer';
 let MSG_FILTER='all', PJ_SUB='plaatsen', PF_SUB='info', AC_SUB='overzicht', SEC_TARGET='setBody';
+let GOLDEN_TARGET='', GOLDEN_LIST=[];
 function aiMsg(role,text){
   const d=document.createElement('div'); d.className='msg '+(role==='me'?'me':'bot'); d.textContent=text;
   const wrap=document.createElement('div'); wrap.appendChild(d);
