@@ -590,6 +590,7 @@ img{max-width:100%}
     <h3 id="authTitle"></h3>
     <p class="sub" id="authSub"></p>
     <div class="err" id="authErr" data-i18n="authErr"></div>
+    <div id="authNormal">
     <div class="role-tabs" id="roleTabs" style="display:none">
       <button id="roleCust" class="on" onclick="setRole('customer')" data-i18n="authRoleCustomer"></button>
       <button id="rolePro" onclick="setRole('pro')" data-i18n="authRolePro"></button>
@@ -617,6 +618,12 @@ img{max-width:100%}
     </div>
     <button class="btn btn-gold" style="width:100%;margin-top:6px" id="authSubmit" onclick="submitAuth()"></button>
     <div class="swap"><a id="authSwap" onclick="toggleAuthMode()"></a></div>
+    </div>
+    <div id="twofaStep" style="display:none">
+      <p class="sub" id="twofaMsg"></p>
+      <input class="inp" id="a2faCode" inputmode="text" maxlength="14" placeholder="123456 of herstelcode" onkeydown="if(event.key==='Enter')submit2fa()">
+      <button class="btn btn-gold" style="width:100%;margin-top:6px" id="twofaBtn" onclick="submit2fa()"></button>
+    </div>
   </div>
 </div>
 
@@ -710,7 +717,7 @@ const T={
   authRoleCustomer:"I am a customer",authRolePro:"I am a tradesman",
   authTypePriv:"Private",authTypeBiz:"Business",
   authCompany:"Company name",authSpec:"Specialisation",authCity:"City",authPhone:"Phone (optional)",authNip:"VAT number (optional)",authAddr:"Address (for invoice, optional)",
-  authSubmitLogin:"Log in",authSubmitReg:"Create account",
+  authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
   ebProjects:"Popular",h2Projects:"Projects on Budomatch",pProjects:"A selection of jobs carried out through Budomatch.",
@@ -781,7 +788,7 @@ const T={
   authRoleCustomer:"Ik ben klant",authRolePro:"Ik ben vakman",
   authTypePriv:"Particulier",authTypeBiz:"Zakelijk",
   authCompany:"Bedrijfsnaam",authSpec:"Specialisatie",authCity:"Plaats",authPhone:"Telefoon (optioneel)",authNip:"Btw-nummer (optioneel)",authAddr:"Adres (voor factuur, optioneel)",
-  authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",
+  authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
   ebProjects:"Populair",h2Projects:"Projecten op Budomatch",pProjects:"Een greep uit klussen die via Budomatch worden uitgevoerd.",
@@ -1040,6 +1047,28 @@ async function submitAuth(){
   }else{url='/api/login';body={email,password};}
   try{
     const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d && d.twofaRequired){ show2fa(d.challenge); return; }
+    if(!r.ok||!d.user){err.classList.add('show');return;}
+    __me=d.user;closeAuth();location.href='/dashboard.html';
+  }catch(e){err.classList.add('show');}
+}
+let __twofaChallenge='';
+function show2fa(ch){
+  __twofaChallenge=ch;
+  document.getElementById('authNormal').style.display='none';
+  document.getElementById('twofaStep').style.display='block';
+  document.getElementById('authTitle').textContent=(LANG==='nl'?'Verificatie':'Verification');
+  document.getElementById('authSub').textContent='';
+  document.getElementById('twofaMsg').textContent=T[LANG].twofaMsg;
+  document.getElementById('twofaBtn').textContent=T[LANG].twofaBtn;
+  setTimeout(()=>document.getElementById('a2faCode').focus(),50);
+}
+async function submit2fa(){
+  const err=document.getElementById('authErr');err.classList.remove('show');
+  const code=document.getElementById('a2faCode').value.trim();
+  try{
+    const r=await fetch('/api/login/2fa',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({challenge:__twofaChallenge,code})});
     const d=await r.json();
     if(!r.ok||!d.user){err.classList.add('show');return;}
     __me=d.user;closeAuth();location.href='/dashboard.html';

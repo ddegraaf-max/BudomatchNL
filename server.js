@@ -9,6 +9,7 @@ const store = process.env.DATABASE_URL ? require('./lib/db') : require('./lib/st
 console.log('[store]', store._pg ? 'PostgreSQL (DATABASE_URL)' : 'JSON-bestand (lib/store)');
 const A = require('./lib/auth');
 const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
 const INVOICE_FONT = path.join(__dirname, 'assets', 'DejaVuSans.ttf');
 // Verkoper = de Poolse onderneming Budomatch (factuur zonder btw / reverse charge)
 const SELLER = {
@@ -98,7 +99,9 @@ async function getUser(req) {
 }
 async function publicUser(u) {
   if (!u) return null;
-  const { passHash, ...rest } = u;
+  const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, ...rest } = u;
+  rest.twofaEnabled = !!u.twofaEnabled;
+  rest.twofaRecoveryLeft = (u.twofaRecovery || []).length;
   if (u.role === 'pro') {
     const ci = await creditInfo(u);
     rest.creditsUsed = ci.usedTotal;
@@ -126,6 +129,112 @@ const requireRole = role => async (req, res, next) => {
     req.user = u; next();
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 };
+
+// ---------------- 2FA (TOTP) ----------------
+app.post('/api/login/2fa', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const p = A.verify(String(b.challenge || ''));
+    if (!p || p.t !== '2fa') return res.status(401).json({ error: 'challenge' });
+    const u = await store.findUserById(p.uid);
+    if (!u || !u.twofaEnabled) return res.status(401).json({ error: 'auth' });
+    let ok = A.verifyTotp(u.twofaSecret, b.code);
+    if (!ok) {
+      const list = u.twofaRecovery || [];
+      const idx = list.indexOf(A.hashRecovery(b.code));
+      if (idx >= 0) { list.splice(idx, 1); await store.updateUser(u.id, { twofaRecovery: list }); ok = true; }
+    }
+    if (!ok) return res.status(401).json({ error: 'bad_code' });
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/2fa/setup', requireRole(), async (req, res) => {
+  try {
+    const secret = A.genTotpSecret();
+    await store.updateUser(req.user.id, { twofaTempSecret: secret });
+    const url = A.otpauthUrl(secret, req.user.email);
+    let qr = ''; try { qr = await QRCode.toDataURL(url, { margin: 1, width: 220 }); } catch (e) {}
+    res.json({ secret, otpauth: url, qr });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/2fa/enable', requireRole(), async (req, res) => {
+  try {
+    const u = req.user;
+    if (!u.twofaTempSecret) return res.status(400).json({ error: 'no_setup' });
+    if (!A.verifyTotp(u.twofaTempSecret, (req.body || {}).code)) return res.status(400).json({ error: 'bad_code' });
+    const recovery = A.genRecoveryCodes(8);
+    await store.updateUser(u.id, { twofaSecret: u.twofaTempSecret, twofaEnabled: true, twofaTempSecret: '', twofaRecovery: recovery.map(A.hashRecovery) });
+    res.json({ ok: true, recovery });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/2fa/recovery', requireRole(), async (req, res) => {
+  try {
+    const u = req.user;
+    if (!u.twofaEnabled) return res.status(400).json({ error: 'not_enabled' });
+    const b = req.body || {};
+    if (!(A.verifyTotp(u.twofaSecret, b.code) || A.verifyPassword(String(b.password || ''), u.passHash)))
+      return res.status(400).json({ error: 'verify' });
+    const recovery = A.genRecoveryCodes(8);
+    await store.updateUser(u.id, { twofaRecovery: recovery.map(A.hashRecovery) });
+    res.json({ ok: true, recovery });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/2fa/disable', requireRole(), async (req, res) => {
+  try {
+    const u = req.user; const b = req.body || {};
+    const ok = A.verifyPassword(String(b.password || ''), u.passHash) || A.verifyTotp(u.twofaSecret, b.code);
+    if (!ok) return res.status(400).json({ error: 'verify' });
+    await store.updateUser(u.id, { twofaEnabled: false, twofaSecret: '', twofaTempSecret: '' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- feedback / ideeën ----------------
+const FB_ADMIN = (process.env.ADMIN_EMAIL || '').toLowerCase();
+app.post('/api/feedback', requireRole(), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const title = String(b.title || '').trim().slice(0, 120);
+    const message = String(b.message || '').trim().slice(0, 2000);
+    if (!title) return res.status(400).json({ error: 'invalid' });
+    const type = ['idee', 'probleem', 'verbetering'].includes(b.type) ? b.type : 'idee';
+    const f = await store.addFeedback({ userId: req.user.id, role: req.user.role, name: req.user.company || req.user.name, type, title, message });
+    sendMail(`Nieuwe feedback (${type}) — ${title}`,
+      `<p><b>${esc(title)}</b> — <i>${type}</i></p><p>${esc(message) || '(geen toelichting)'}</p><p style="color:#888">Van ${esc(f.name)} · ${req.user.role === 'pro' ? 'vakman' : 'klant'} · ${esc(req.user.email)}</p>`,
+      null, FB_ADMIN || undefined).catch(() => {});
+    res.json({ feedback: f });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.get('/api/feedback', requireRole(), async (req, res) => {
+  try {
+    const items = (await store.listFeedback()).map(f => ({
+      id: f.id, type: f.type, title: f.title, message: f.message, name: f.name, role: f.role,
+      status: f.status || 'nieuw', votes: (f.votes || []).length, voted: (f.votes || []).includes(req.user.id),
+      mine: f.userId === req.user.id, createdAt: f.createdAt,
+    }));
+    res.json({ items, admin: !!(FB_ADMIN && req.user.email.toLowerCase() === FB_ADMIN) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/feedback/:id/vote', requireRole(), async (req, res) => {
+  try {
+    const f = await store.findFeedback(req.params.id);
+    if (!f) return res.status(404).json({ error: 'not_found' });
+    const votes = f.votes || []; const i = votes.indexOf(req.user.id);
+    if (i >= 0) votes.splice(i, 1); else votes.push(req.user.id);
+    await store.updateFeedback(f.id, { votes });
+    res.json({ ok: true, votes: votes.length, voted: i < 0 });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/feedback/:id/status', requireRole(), async (req, res) => {
+  try {
+    if (!FB_ADMIN || req.user.email.toLowerCase() !== FB_ADMIN) return res.status(403).json({ error: 'forbidden' });
+    const status = ['nieuw', 'gepland', 'bezig', 'afgerond', 'afgewezen'].includes((req.body || {}).status) ? req.body.status : 'nieuw';
+    const f = await store.updateFeedback(req.params.id, { status });
+    if (!f) return res.status(404).json({ error: 'not_found' });
+    res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
 
 // ---------------- auth ----------------
 app.post('/api/register', async (req, res) => {
@@ -168,6 +277,9 @@ app.post('/api/login', async (req, res) => {
     const u = await store.findUserByEmail(String(b.email || ''));
     if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
       return res.status(401).json({ error: 'bad_credentials' });
+    if (u.twofaEnabled) {
+      return res.json({ twofaRequired: true, challenge: A.sign({ t: '2fa', uid: u.id }, 0.02) });
+    }
     A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -236,6 +348,7 @@ app.post('/api/requests', requireRole('customer'), async (req, res) => {
       targetProId, targetProName, direct: !!targetProId,
     });
     res.json({ request: r });
+    notifyNewRequest(r, req.user).catch(() => {});
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -1008,6 +1121,36 @@ async function sendMail(subject, html, attachments, to) {
   });
   if (!r.ok) throw new Error('Resend ' + r.status);
   return r.json();
+}
+// Mail bij nieuwe opdracht: bevestiging aan klant + melding aan passende vakmensen
+async function notifyNewRequest(r, customer) {
+  try {
+    if (customer && customer.email) {
+      await sendMail(`Je aanvraag staat online — ${esc(r.service)}`,
+        `<p>Hoi ${esc(customer.name)},</p><p>Je aanvraag <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} staat op Budomatch. Passende vakmensen kunnen nu reageren — je krijgt bericht zodra er reacties zijn.</p><p style="color:#555">${esc(r.description).slice(0, 600).replace(/\n/g, '<br>')}</p>`,
+        null, customer.email).catch(() => {});
+    }
+    let pros = [];
+    if (r.targetProId) {
+      const p = await store.findUserById(r.targetProId); if (p) pros = [p];
+    } else {
+      const cust = await geocodeNL(r.zip || '');
+      const cat = String(r.service || '').toLowerCase();
+      for (const p of await store.listPros()) {
+        const cats = (p.workCategories || []).map(c => String(c).toLowerCase());
+        if (!cats.includes(cat)) continue;
+        if (!cust || p.lat == null || p.lng == null) continue;
+        if (haversineKm(cust, { lat: p.lat, lng: p.lng }) > (p.workRadius || 30)) continue;
+        pros.push(p);
+      }
+    }
+    for (const p of pros.slice(0, 30)) {
+      if (!p.email) continue;
+      await sendMail(`Nieuwe aanvraag in jouw regio — ${esc(r.service)}`,
+        `<p>Hoi ${esc(p.company || p.name)},</p><p>Er staat een nieuwe aanvraag voor <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} die past bij jouw werkgebied. Log in op Budomatch om te reageren — wees er snel bij (max. 3 vakmensen per aanvraag).</p>`,
+        null, p.email).catch(() => {});
+    }
+  } catch (e) { console.error('notifyNewRequest:', e.message); }
 }
 // data-URL -> Resend-bijlage (max 3 foto's, alleen afbeeldingen)
 function photoAttachments(photos) {
