@@ -15,7 +15,7 @@ body{margin:0;background:var(--bg);color:var(--cream);font-family:Manrope,system
 a{color:var(--gold-bright)}
 .wrap{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:24px}
-.brand{font-family:Marcellus,serif;font-size:1.5rem;color:var(--gold-bright);letter-spacing:1px;text-decoration:none}
+.brand{font-family:Marcellus,serif;font-size:1.5rem;color:var(--gold-bright);letter-spacing:1px;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px}
 h1{font-family:Marcellus,serif;font-weight:400;margin:0 0 4px;font-size:1.9rem}
 h2{font-family:Marcellus,serif;font-weight:400;font-size:1.3rem;margin:0 0 12px}
@@ -53,7 +53,7 @@ label{display:block;font-size:.85rem;color:var(--gold-soft);margin-bottom:5px}
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><a class="brand" href="/">Budomatch</a><a href="/" class="meta">← Terug</a></div>
+  <div class="top"><a class="brand" href="/"><svg viewBox="0 0 48 48" width="30" height="30"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2DC8C"/><stop offset=".55" stop-color="#D4AF37"/><stop offset="1" stop-color="#A87D1B"/></linearGradient></defs><circle cx="24" cy="24" r="22" fill="none" stroke="url(#bg)" stroke-width="1.6" opacity=".55"/><path d="M24 9 L39 24 L33 24 L24 15 L15 24 L9 24 Z" fill="url(#bg)"/><path d="M24 19.5 l5 4.5 -5 4.5 -5 -4.5 Z" fill="url(#bg)"/><rect x="14" y="32.5" width="20" height="3.4" rx="1.7" fill="url(#bg)"/></svg><span>Budomatch</span></a><a href="/dashboard.html" class="meta">← Terug naar dashboard</a></div>
   <div id="content"><p class="empty">Laden…</p></div>
 </div>
 <script>
@@ -127,15 +127,15 @@ function renderCta(){
   const el=$('#ctaCard'); const p=PRO;
   const trusted = p.rating.count && p.rating.avg>=4;
   if(!ME){
-    el.innerHTML=`<h2>Offerte aanvragen</h2><p style="color:var(--muted)">Vraag direct een vrijblijvende offerte aan bij ${esc(p.company)}. Log in of maak gratis een klantaccount.</p><a class="btn" href="/" style="display:inline-block;text-decoration:none">Inloggen / registreren</a>`;
+    el.innerHTML=`<h2>Direct aanvragen bij dit bedrijf</h2><p style="color:var(--muted)">Stuur je aanvraag rechtstreeks naar ${esc(p.company)}. Log in of maak gratis een klantaccount.</p><a class="btn" href="/" style="display:inline-block;text-decoration:none">Inloggen / registreren</a>`;
     return;
   }
   if(ME.role!=='customer'){
-    el.innerHTML=`<h2>Offerte aanvragen</h2><p style="color:var(--muted)">Alleen klanten kunnen een offerte aanvragen. Log in met een klantaccount.</p>`;
+    el.innerHTML=`<h2>Direct aanvragen bij dit bedrijf</h2><p style="color:var(--muted)">Alleen klanten kunnen direct een aanvraag sturen. Log in met een klantaccount.</p>`;
     return;
   }
   const cats=(p.workCategories&&p.workCategories.length?p.workCategories:(p.spec?[p.spec]:['Algemeen']));
-  el.innerHTML=`<h2>Offerte aanvragen</h2>
+  el.innerHTML=`<h2>Direct aanvragen bij dit bedrijf</h2>
     ${trusted?`<p style="color:var(--green);font-size:.9rem;margin-top:0">✓ Betrouwbaar bedrijf met hoge beoordeling</p>`:''}
     <p style="color:var(--muted);font-size:.9rem">Stuur je aanvraag direct naar ${esc(p.company)}. Zij nemen contact met je op via het portaal.</p>
     <label>Dienst</label><select class="inp" id="qService">${cats.map(c=>`<option>${esc(c)}</option>`).join('')}</select>
