@@ -1523,17 +1523,6 @@ function showReceipt(c){
     <p><b>Voldaan: ${money(c.gross)}</b> — Te betalen: ${money(0)}</p>
   </div>
   <p style="margin-top:26px"><button onclick="window.print()" style="background:#C9A227;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:bold">${t('rcPrint')}</button></p>
-  <div id="setOverlay" class="set-overlay" style="display:none">
-  <div class="set-box">
-    <button class="set-x" onclick="closeSettings()" aria-label="Sluiten">&times;</button>
-    <div class="set-tabs">
-      <button id="setTabFb" class="on" onclick="openSettings('feedback')">\uD83D\uDCA1 <span id="setTabFbT"></span></button>
-      <button id="setTabSec" onclick="openSettings('security')">\uD83D\uDD12 <span id="setTabSecT"></span></button>
-    </div>
-    <div id="setBody"></div>
-  </div>
-</div>
-<button class="fab" onclick="openSettings('feedback')" id="fabBtn">\uD83D\uDCA1 <span id="fabT"></span></button>
 </body></html>`);
   w.document.close();
 }
@@ -1545,5 +1534,16 @@ function handleReturn(){
   if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard.html');
 }
 </script>
+<div id="setOverlay" class="set-overlay" style="display:none">
+  <div class="set-box">
+    <button class="set-x" onclick="closeSettings()" aria-label="Sluiten">&times;</button>
+    <div class="set-tabs">
+      <button id="setTabFb" class="on" onclick="openSettings('feedback')">💡 <span id="setTabFbT"></span></button>
+      <button id="setTabSec" onclick="openSettings('security')">🔒 <span id="setTabSecT"></span></button>
+    </div>
+    <div id="setBody"></div>
+  </div>
+</div>
+<button class="fab" onclick="openSettings('feedback')" id="fabBtn">💡 <span id="fabT"></span></button>
 </body>
 </html>
