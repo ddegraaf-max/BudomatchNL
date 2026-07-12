@@ -84,12 +84,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (proId && requestId && !(await store.claimExists(proId, requestId))) {
         const r = await store.findRequest(requestId);
         const p = leadPrice(r);
-        await store.addClaim({
+        const claim = await store.addClaim({
           proId, requestId, free: false, paid: true,
           amountGross: p.gross, amountNet: p.net, amountVat: p.vat,
           invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online',
           stripeSession: s.id, paymentIntent: s.payment_intent || null,
         });
+        // factuur ook in Faktura XL (+ KSeF) zetten — Poolse administratie
+        fakturaXlExport(claim, await store.findUserById(proId), r).catch(() => {});
       }
     }
   } catch (e) { console.error('Webhook-verwerking mislukt:', e.message); }
@@ -698,7 +700,8 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
 
   if (!stripe) { // geen Stripe geconfigureerd → demo
     const p = leadPrice(r);
-    await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
+    const claim = await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
+    fakturaXlExport(claim, pro, r).catch(() => {});
     return res.json({ ok: true, demo: true, lead: await leadView(r, pro) });
   }
 
@@ -942,6 +945,89 @@ app.get('/api/match', requireRole('customer'), async (req, res) => {
     res.json({ pros: out });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
+
+// ---------------- Faktura XL (Poolse boekhouding + KSeF) ----------------
+// Elke BETAALDE lead-ontgrendeling wordt ook als factuur aangemaakt in
+// Faktura XL (fakturaxl.pl) en doorgestuurd naar KSeF, zodat de verkoop
+// rechtsgeldig in de Poolse administratie staat. Het Faktura XL-nummer wordt
+// daarna het leidende factuurnummer in de app (zelfde nummer op de PDF).
+// Vereist FAKTURAXL_API_KEY. Optioneel: FAKTURAXL_KSEF=0 (niet naar KSeF),
+// FAKTURAXL_VAT (standaard "np" — nie podlega, art. 28b / reverse charge).
+const FAKTURAXL_URL = process.env.FAKTURAXL_URL || 'https://program.fakturaxl.pl/api';
+const xmlEsc = s => String(s == null ? '' : s).replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
+const cdata = s => `<![CDATA[${String(s == null ? '' : s).replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
+async function fxlPost(path, xml) {
+  const r = await fetch(`${FAKTURAXL_URL}/${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/xml; charset=utf-8' },
+    body: xml,
+  });
+  const body = await r.text();
+  return { status: r.status, body, tag: t => (body.match(new RegExp(`<${t}>([^<]*)</${t}>`)) || [])[1] };
+}
+async function fakturaXlExport(claim, pro, request) {
+  if (!process.env.FAKTURAXL_API_KEY || !pro) return;
+  try {
+    const d = new Date(claim.invoiceDate || claim.createdAt);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const ka = pro.kvkAddress || {};
+    const land = /^[A-Z]{2}/.test(pro.nip || '') ? pro.nip.slice(0, 2) : 'NL';
+    const bedrag = Number(claim.amountGross || 0).toFixed(2);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<dokument>
+  <api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token>
+  <typ_faktury>0</typ_faktury>
+  <data_wystawienia>${date}</data_wystawienia>
+  <data_sprzedazy>${date}</data_sprzedazy>
+  <termin_platnosci_data>${date}</termin_platnosci_data>
+  <waluta>EUR</waluta>
+  <status>2</status>
+  <data_oplacenia>${date}</data_oplacenia>
+  <kwota_oplacona>${bedrag}</kwota_oplacona>
+  <rodzaj_platnosci>Przelew</rodzaj_platnosci>
+  <nabywca>
+    <firma_lub_osoba_prywatna>0</firma_lub_osoba_prywatna>
+    <nazwa>${cdata(pro.kvkName || pro.company || pro.name)}</nazwa>
+    <nip>${xmlEsc((pro.nip || '').replace(/[^A-Z0-9]/gi, ''))}</nip>
+    <ulica_i_numer>${cdata((ka.street ? (ka.street + ' ' + (ka.houseNumber || '')).trim() : '') || pro.address || '')}</ulica_i_numer>
+    <kod_pocztowy>${xmlEsc(ka.postcode || pro.postcode || '')}</kod_pocztowy>
+    <miejscowosc>${cdata(ka.city || pro.city || '')}</miejscowosc>
+    <kraj>${xmlEsc(land)}</kraj>
+    <email>${xmlEsc(pro.email || '')}</email>
+  </nabywca>
+  <faktura_pozycje>
+    <pozycja>
+      <nazwa>${cdata(`Budomatch lead: ${(request && request.service) || 'aanvraag'} — odblokowanie zapytania / ontgrendeling aanvraag`)}</nazwa>
+      <ilosc>1</ilosc>
+      <jm>szt.</jm>
+      <cena_netto>${bedrag}</cena_netto>
+      <vat>${xmlEsc(process.env.FAKTURAXL_VAT || 'np')}</vat>
+    </pozycja>
+  </faktura_pozycje>
+  <uwagi>${cdata(`Odwrotne obciążenie / reverse charge (btw verlegd) — art. 28b ustawy o VAT; podatek VAT rozlicza nabywca. Ref: Budomatch ${claim.invoiceNo || claim.id}`)}</uwagi>
+</dokument>`;
+    const r = await fxlPost('dokument_dodaj.php', xml);
+    const kod = r.tag('kod'), id = r.tag('dokument_id'), nr = r.tag('dokument_nr');
+    if (kod !== '1' || !id) {
+      console.error('[fakturaxl] aanmaken mislukt, kod:', kod || r.status, String(r.body).slice(0, 300));
+      await store.updateClaim(claim.id, { fxlError: 'create_' + (kod || r.status) });
+      return;
+    }
+    const patch = { fxlId: id, fxlNr: nr || '', fxlError: '' };
+    if (nr) patch.invoiceNo = nr; // Faktura XL / KSeF-nummer is leidend
+    if (process.env.FAKTURAXL_KSEF !== '0') {
+      try {
+        const k = await fxlPost('dokument_ksef_wyslanie.php',
+          `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token><dokument_id>${id}</dokument_id></dokument>`);
+        const kk = k.tag('kod');
+        patch.fxlKsef = kk === '49' ? 'ok' : 'error_' + (kk || k.status);
+        if (kk !== '49') console.error('[fakturaxl] KSeF-verzending mislukt, kod:', kk, String(k.body).slice(0, 300));
+      } catch (e) { patch.fxlKsef = 'error'; console.error('[fakturaxl] KSeF:', e.message); }
+    }
+    await store.updateClaim(claim.id, patch);
+    console.log(`[fakturaxl] factuur ${nr || id} aangemaakt${patch.fxlKsef === 'ok' ? ' + naar KSeF verstuurd' : ''}`);
+  } catch (e) { console.error('[fakturaxl] export mislukt:', e.message); }
+}
 
 // ---------------- PDF-factuur (Poolse verkoper, zonder btw / reverse charge) ----------------
 app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {

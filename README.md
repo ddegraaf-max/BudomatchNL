@@ -96,6 +96,9 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook   # toont de whsec_
 - **Backups & monitoring:** zet op Railway database-backups aan (PostgreSQL-plugin → Backups) en bewaak `GET /healthz` extern (bijv. UptimeRobot, gratis).
 - **Foto's:** worden als base64 in de database opgeslagen — prima voor de start; verhuis bij groei naar objectopslag (S3/R2).
 
+## Faktura XL + KSeF (Poolse administratie)
+Met `FAKTURAXL_API_KEY` (Faktura XL → Ustawienia → API) wordt **elke betaalde lead-ontgrendeling** automatisch ook als factuur aangemaakt in [Faktura XL](https://fakturaxl.pl) — koper = het NL-bedrijf (naam, adres, btw-nummer), EUR, betaald, met de vermelding *odwrotne obciążenie / reverse charge (art. 28b)* — en direct **naar KSeF** gestuurd. Het Faktura XL-nummer wordt daarna het leidende factuurnummer in de app (zelfde nummer op de PDF die de vakman downloadt). Mislukt de export, dan blijft het interne nummer staan en wordt de fout gelogd (`fxlError` op de claim). Opties: `FAKTURAXL_KSEF=0` (niet automatisch naar KSeF), `FAKTURAXL_VAT` (standaard `np`).
+
 ## Beheerpaneel (`/admin.html`)
 Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt toegang tot het beheerpaneel met:
 - **Overzicht** — klanten/vakmensen, aanvragen, ontgrendelingen, omzet, reviews, open supportverzoeken.
