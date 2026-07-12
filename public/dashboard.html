@@ -439,7 +439,7 @@ async function logout(){ await fetch('/api/logout',{method:'POST'}); location.hr
   $('#loading').remove();
   ME.role==='pro' ? renderPro() : renderCustomer();
   if(location.search.indexOf('everified=1')>=0){
-    history.replaceState(null,'','/dashboard.html');
+    history.replaceState(null,'','/dashboard');
     ME.emailVerified=true;
     const d=document.createElement('div');d.className='kvk-banner';
     d.style.borderColor='rgba(63,166,106,.5)';d.style.background='rgba(63,166,106,.1)';d.style.color='#bfe6cf';
@@ -780,7 +780,7 @@ async function matchPros(){
   el.innerHTML=r.pros.map(p=>`<div class="item"><div class="top">
       <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span>${p.kvkVerified?' <span title="KvK geverifieerd" style="color:#7fd6a0">\u2713</span>':''}</span>
       ${p.rating.count?`<span class="stars-view" style="font-size:.8rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:`<span class="meta">${t('rvNone')}</span>`}
-      <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf.html?id=${p.id}">${t('dirView')}</a></div>
+      <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf?id=${p.id}">${t('dirView')}</a></div>
       <div class="meta">${htmlesc(p.spec||'')}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}</div>
     </div>`).join('');
 }
@@ -1244,7 +1244,7 @@ function renderGolden(){
   box.style.display='block';
   box.innerHTML=`<div class="golden-box"><div class="golden-h">${tierBadge('goud',22)} ${t('goldenTitle')}</div>
     <p class="hint">${t('goldenIntro')}</p>
-    ${GOLDEN_LIST.map(p=>`<div class="golden-item ${GOLDEN_TARGET===p.id?'on':''}" onclick="selectGolden('${p.id}')"><span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span>${p.rating&&p.rating.count?`<span class="stars-view" style="font-size:.78rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:''}<a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank" onclick="event.stopPropagation()">${t('dirView')}</a></div>`).join('')}
+    ${GOLDEN_LIST.map(p=>`<div class="golden-item ${GOLDEN_TARGET===p.id?'on':''}" onclick="selectGolden('${p.id}')"><span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span>${p.rating&&p.rating.count?`<span class="stars-view" style="font-size:.78rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:''}<a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf?id=${p.id}" target="_blank" onclick="event.stopPropagation()">${t('dirView')}</a></div>`).join('')}
     <div class="golden-item ${!GOLDEN_TARGET?'on':''}" onclick="selectGolden('')">${t('goldenNone')}</div></div>`;
 }
 function selectGolden(id){ GOLDEN_TARGET=(GOLDEN_TARGET===id?'':id); renderGolden(); }
@@ -1289,7 +1289,7 @@ function reqCardHtml(q){
   const st=reqStatus(q);
   const responders=(q.status==='open'&&q.responders&&q.responders.length)?`
     <div class="resp-box"><div class="resp-h">${t('reqResponders')} (${q.responders.length}/3)</div>
-    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank">${t('dirView')}</a><button class="btn btn-gold btn-sm" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
+    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf?id=${p.id}" target="_blank">${t('dirView')}</a><button class="btn btn-gold btn-sm" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
   return `<div class="item" id="req-${q.id}"><div class="top"><span class="svc">${htmlesc(q.service)}</span>
     <span class="tag ${st[0]}">${st[1]}</span>
     <span class="tag">${q.claims} ${q.claims===1?t('reaction'):t('reactions')}</span>
@@ -1786,7 +1786,7 @@ function handleReturn(){
   const q=new URLSearchParams(location.search);
   if(q.get('paid')){ showProTab('leads'); toast(t('paidOk')); let n=0; const iv=setInterval(()=>{ loadLeads(); if(++n>=3)clearInterval(iv); },1500); }
   else if(q.get('cancel')){ toast(t('payCancel')); }
-  if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard.html');
+  if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard');
 }
 
 let FB_ADMIN_ME=false;

@@ -317,7 +317,7 @@ img{max-width:100%}
         <a href="#vakmensen" data-i18n="navPros"></a>
         <a href="#opinie" data-i18n="navReviews"></a>
         <a id="loginLink" onclick="openAuth('login')" data-i18n="navLogin"></a>
-        <a id="dashLink" href="/dashboard.html" data-i18n="navDashboard" style="display:none"></a>
+        <a id="dashLink" href="/dashboard" data-i18n="navDashboard" style="display:none"></a>
         <a id="logoutLink" onclick="doLogout()" data-i18n="navLogout" style="display:none"></a>
         <a href="#offerte" class="btn btn-gold cta" data-i18n="navQuote"></a>
       </nav>
@@ -558,8 +558,8 @@ img{max-width:100%}
         <p>REGON: 381430120</p>
         <p>info@budomatch.pl</p>
         <p data-i18n="footHours"></p>
-        <a href="/voorwaarden.html" data-i18n="footTerms"></a>
-        <a href="/privacy.html" data-i18n="footPrivacy"></a>
+        <a href="/voorwaarden" data-i18n="footTerms"></a>
+        <a href="/privacy" data-i18n="footPrivacy"></a>
       </div>
     </div>
     <div class="copy">
@@ -1129,7 +1129,7 @@ async function submitReset(){
     const r=await fetch('/api/password/reset',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:RESET_TOKEN,password})});
     const d=await r.json();
     if(!r.ok||!d.ok){err.textContent=T[LANG].authResetErr;err.classList.add('show');return;}
-    location.href=d.login?'/?login=1':'/dashboard.html';
+    location.href=d.login?'/?login=1':'/dashboard';
   }catch(e){err.textContent=T[LANG].authResetErr;err.classList.add('show');}
 }
 function toggleAuthMode(){openAuth(authMode==='login'?'register':'login');}
@@ -1182,7 +1182,7 @@ async function submitAuth(){
     if(d && d.twofaRequired){ show2fa(d.challenge); return; }
     if(d && d.codeRequired){ showRegCode(d.challenge,email); return; }
     if(!r.ok||!d.user){err.classList.add('show');return;}
-    __me=d.user;closeAuth();location.href='/dashboard.html';
+    __me=d.user;closeAuth();location.href='/dashboard';
   }catch(e){err.classList.add('show');}
 }
 /* bevestigingscode na registratie */
@@ -1207,7 +1207,7 @@ async function submitRegCode(){
     const r=await fetch('/api/register/verify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({challenge:__regChallenge,code})});
     const d=await r.json();
     if(!r.ok||!d.user){err.textContent=T[LANG].regcodeErr;err.classList.add('show');return;}
-    __me=d.user;closeAuth();location.href='/dashboard.html';
+    __me=d.user;closeAuth();location.href='/dashboard';
   }catch(e){err.textContent=T[LANG].regcodeErr;err.classList.add('show');}
 }
 async function resendRegCode(){
@@ -1231,7 +1231,7 @@ async function submit2fa(){
     const r=await fetch('/api/login/2fa',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({challenge:__twofaChallenge,code})});
     const d=await r.json();
     if(!r.ok||!d.user){err.classList.add('show');return;}
-    __me=d.user;closeAuth();location.href='/dashboard.html';
+    __me=d.user;closeAuth();location.href='/dashboard';
   }catch(e){err.classList.add('show');}
 }
 if(location.search.indexOf('login=1')>=0)setTimeout(()=>openAuth('login'),300);

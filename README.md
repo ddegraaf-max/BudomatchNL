@@ -39,7 +39,7 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Endpoints
 | Route | Doel |
 |---|---|
-| `GET /` · `GET /dashboard.html` · `GET /admin.html` | site, dashboard & beheerpaneel |
+|  site, dashboard `GET /` · `GET /dashboard` · `GET /admin`  beheerpaneel | site, dashboard & beheerpaneel |
 | `POST /api/register` · `/api/login` · `/api/logout` · `GET /api/me` | accounts |
 | `POST /api/password/forgot` · `/api/password/reset` | wachtwoord vergeten (herstel-link per e-mail) |
 | `GET /api/verify-email` · `POST /api/verify-email/resend` | e-mailadres bevestigen |
@@ -101,7 +101,7 @@ Met `FAKTURAXL_API_KEY` (Faktura XL → Ustawienia → API) wordt **elke betaald
 
 **Eigen nummerserie (standaard aan).** De app nummert de Faktura XL-facturen zelf: **`BM/nr/jaar`**, afgeleid van de interne gapless teller — zo mengt Budomatch niet met andere bedrijven op hetzelfde Faktura XL-account en hoef je in Faktura XL **niets** in te stellen. Andere prefix: `FAKTURAXL_SERIA` (leeg = Faktura XL nummert zelf). Mislukte exports kun je opnieuw draaien via **Instellingen → "Mislukte exports opnieuw proberen"** (zelfde nummer, dus geen gaten in de serie). Optioneel kun je facturen ook aan een Faktura XL-afdeling koppelen via `FAKTURAXL_DZIAL_ID` (ID-lijst staat in het beheerpaneel).
 
-## Beheerpaneel (`/admin.html`)
+## Beheerpaneel (`/admin`)
 Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt toegang tot het beheerpaneel met:
 - **Overzicht** — klanten/vakmensen, aanvragen, ontgrendelingen, omzet, reviews, open supportverzoeken.
 - **Gebruikers** — zoeken, **handmatige KvK-verificatie** (handig zolang er geen `KVK_API_KEY` is; dubbele KvK-nummers worden geweigerd) en **blokkeren/deblokkeren**.
@@ -141,7 +141,7 @@ Het vakman-portaal heeft tabbladen: **Nieuw** (5 recente aanvragen + KPI's), **O
 **Niveaus op basis van reviews** (extra gratis leads per maand): **Brons** +1, **Zilver** +2, **Goud** +3. Naast de eenmalige 5 welkomstleads. Het niveau volgt de reviewscore (op /10 = gemiddelde × 2): <4 Brons, 4-6 Zilver, 7-10 Goud.
 
 ## Openbare bedrijfsprofielen + directe aanvraag (USP)
-Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf.html?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.
+Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.
 
 ## PDF-factuur (Poolse verkoper, zonder btw)
 Elke betaalde ontgrendeling levert een **downloadbare PDF-factuur** op (`GET /api/invoice/:claimId`), via de knop **Factuur (PDF)** onder Account → facturatie. De factuur wordt uitgegeven door de Poolse onderneming **Budomatch (NIP 7010869430, REGON 381430120, Białka, Polska)**, is tweetalig (PL/NL), **zonder btw** met de vermelding *odwrotne obciążenie / btw verlegd (reverse charge)*, en gebruikt een Unicode-lettertype (`assets/DejaVuSans.ttf`) zodat Poolse tekens correct weergegeven worden. Verkopergegevens zijn overschrijfbaar via env (`SELLER_NAME`, `SELLER_NIP`, enz.).

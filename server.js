@@ -99,7 +99,18 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 app.use(express.json({ limit: '20mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Nette URL's: /dashboard i.p.v. /dashboard.html. Oude .html-links krijgen een
+// 301-redirect (bookmarks en zoekmachines blijven werken), de static-server
+// probeert daarna automatisch <pad>.html (optie "extensions").
+app.use((req, res, next) => {
+  if (req.method === 'GET' && /^\/[a-z0-9-]+\.html$/i.test(req.path)) {
+    const clean = req.path === '/index.html' ? '/' : req.path.slice(0, -5);
+    const q = req.originalUrl.indexOf('?');
+    return res.redirect(301, clean + (q >= 0 ? req.originalUrl.slice(q) : ''));
+  }
+  next();
+});
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ----- 41 specialisaties -----
 const CATS_NL = "Aanbouw, Uitbouw, Opbouw, Airco, Architect, Asbest verwijderen, Badkamerspecialist, Bestraten, Cv-ketel, Dakbedekking, Dakkapel, Dakraam, Elektricien, Garagedeur, Gevelreiniging, Glas, Hekwerken, Inbraakbeveiliging, Isolatie, Keukenspecialist, Kozijnen, Laadpalen, Loodgieter, Ongediertebestrijding, Rolluiken, Schilderwerk, Schuifpui, Serre, Stucwerk, Tegels zetten, Thuisbatterij, Trap, Tuinaanleg, Tuinonderhoud, Ventilatie, Verbouwing, Vloeren, Vloerverwarming, Vochtbestrijding, Warmtepomp, Wellness, Zonnepanelen, Zonwering";
@@ -335,7 +346,7 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
       // beheerder informeren: nieuw bedrijf wacht (handmatige) KvK-verificatie
       sendMail(`Nieuwe vakman-registratie — ${esc(u.company || u.name)}`,
         `<p>Nieuwe vakman op Budomatch: <b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}).</p>
-         <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig in het beheerpaneel (<b>/admin.html → Gebruikers</b>) zodra het KvK-nummer bekend is.</p>`,
+         <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig in het beheerpaneel (<b>/admin → Gebruikers</b>) zodra het KvK-nummer bekend is.</p>`,
         null, FB_ADMIN || undefined).catch(() => {});
     }
     // E-mail eerst bevestigen met een 6-cijferige code — pas daarna is het
@@ -431,7 +442,7 @@ app.get('/api/verify-email', async (req, res) => {
     const p = A.verify(String(req.query.token || ''));
     if (!p || p.t !== 'everify') return res.redirect('/?everify=invalid');
     await store.updateUser(p.uid, { emailVerified: true });
-    res.redirect('/dashboard.html?everified=1');
+    res.redirect('/dashboard?everified=1');
   } catch (e) { console.error(e); res.redirect('/?everify=invalid'); }
 });
 app.post('/api/verify-email/resend', rateLimit('everesend', 5, 60 * 60e3), requireRole(), async (req, res) => {
@@ -721,8 +732,8 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
         },
       }],
       metadata: { proId: pro.id, requestId: r.id },
-      success_url: `${base}/dashboard.html?paid=${encodeURIComponent(r.id)}`,
-      cancel_url: `${base}/dashboard.html?cancel=1`,
+      success_url: `${base}/dashboard?paid=${encodeURIComponent(r.id)}`,
+      cancel_url: `${base}/dashboard?cancel=1`,
     });
     res.json({ url: session.url });
   } catch (e) {
@@ -837,7 +848,7 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
       await store.updateUser(req.user.id, { kvk: num });
       sendMail(`KvK-verificatie aangevraagd — ${esc(req.user.company || req.user.name)}`,
         `<p><b>${esc(req.user.company || req.user.name)}</b> (${esc(req.user.email)}) heeft KvK-nummer <b>${esc(num)}</b> ingevuld en wacht op handmatige verificatie.</p>
-         <p>Verifieer het bedrijf in het beheerpaneel: <b>/admin.html → Gebruikers</b>.</p>`,
+         <p>Verifieer het bedrijf in het beheerpaneel: <b>/admin → Gebruikers</b>.</p>`,
         null, FB_ADMIN || undefined).catch(() => {});
       return res.json({ ok: false, configured: false, saved: true });
     }
@@ -1649,7 +1660,7 @@ app.post('/api/pro', rateLimit('prosignup', 10, 60 * 60e3), async (req, res) => 
 });
 
 // ---------------- beheer (admin) ----------------
-// Toegang: het account waarvan het e-mailadres gelijk is aan ADMIN_EMAIL. Paneel: /admin.html
+// Toegang: het account waarvan het e-mailadres gelijk is aan ADMIN_EMAIL. Paneel: /admin
 const requireAdmin = async (req, res, next) => {
   try {
     const u = await getUser(req);
