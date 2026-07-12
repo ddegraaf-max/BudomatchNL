@@ -973,10 +973,17 @@ async function fakturaXlExport(claim, pro, request) {
     const ka = pro.kvkAddress || {};
     const land = /^[A-Z]{2}/.test(pro.nip || '') ? pro.nip.slice(0, 2) : 'NL';
     const bedrag = Number(claim.amountGross || 0).toFixed(2);
+    // Eigen nummerserie voor Budomatch (standaard "BM"), afgeleid van de gapless
+    // interne teller — zo mengen de facturen niet met andere bedrijven op
+    // hetzelfde Faktura XL-account. FAKTURAXL_SERIA="" schakelt dit uit
+    // (dan nummert Faktura XL zelf, evt. per afdeling via FAKTURAXL_DZIAL_ID).
+    const seria = process.env.FAKTURAXL_SERIA !== undefined ? process.env.FAKTURAXL_SERIA : 'BM';
+    const im = String(claim.invoiceNo || '').match(/^(\d{4})-(\d+)$/);
+    const eigenNr = (seria && im) ? `${seria}/${parseInt(im[2], 10)}/${im[1]}` : '';
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <dokument>
   <api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token>
-  <typ_faktury>0</typ_faktury>
+  <typ_faktury>0</typ_faktury>${eigenNr ? `\n  <numer_faktury>${xmlEsc(eigenNr)}</numer_faktury>` : ''}
   <data_wystawienia>${date}</data_wystawienia>
   <data_sprzedazy>${date}</data_sprzedazy>
   <termin_platnosci_data>${date}</termin_platnosci_data>
@@ -1026,7 +1033,10 @@ async function fakturaXlExport(claim, pro, request) {
     }
     await store.updateClaim(claim.id, patch);
     console.log(`[fakturaxl] factuur ${nr || id} aangemaakt${patch.fxlKsef === 'ok' ? ' + naar KSeF verstuurd' : ''}`);
-  } catch (e) { console.error('[fakturaxl] export mislukt:', e.message); }
+  } catch (e) {
+    console.error('[fakturaxl] export mislukt:', e.message);
+    try { await store.updateClaim(claim.id, { fxlError: 'network' }); } catch (e2) {}
+  }
 }
 
 // ---------------- PDF-factuur (Poolse verkoper, zonder btw / reverse charge) ----------------
@@ -1740,6 +1750,23 @@ app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
     const status = ['nieuw', 'bezig', 'afgerond'].includes((req.body || {}).status) ? req.body.status : 'nieuw';
     await store.updateFeedback(f.id, { status });
     res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Faktura XL: mislukte exports opnieuw proberen (max 1 request/s bij Faktura XL).
+app.post('/api/admin/fakturaxl/retry', requireAdmin, async (req, res) => {
+  try {
+    if (!process.env.FAKTURAXL_API_KEY) return res.json({ ok: false, configured: false });
+    const failed = (await store.listClaims()).filter(c => c.fxlError && !c.fxlId && !c.free && c.paid);
+    let done = 0;
+    for (const c of failed) {
+      const pro = await store.findUserById(c.proId);
+      const r = await store.findRequest(c.requestId);
+      await fakturaXlExport(c, pro, r);
+      const after = (await store.claimsByPro(c.proId)).find(x => x.id === c.id);
+      if (after && after.fxlId) done++;
+      await new Promise(rs => setTimeout(rs, 1100));
+    }
+    res.json({ ok: true, retried: failed.length, success: done });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 // Faktura XL: afdelingen (działy) ophalen, zodat de beheerder het juiste

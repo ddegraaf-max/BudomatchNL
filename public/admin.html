@@ -194,11 +194,10 @@ async function renderSettings(){
       <p class="meta" style="font-size:.85rem">Niet gekoppeld — zet <b>FAKTURAXL_API_KEY</b> in de Railway-variabelen om elke betaalde lead automatisch als factuur in Faktura XL (en KSeF) te zetten.</p>`;
   } else if(f){
     fxl=`<h3 style="font-size:1.05rem;margin:26px 0 8px">Faktura XL / KSeF <span class="tag green">gekoppeld</span></h3>
-      <p class="meta" style="font-size:.85rem">Elke betaalde lead wordt automatisch als factuur aangemaakt en naar KSeF gestuurd. Het Faktura XL-nummer is het factuurnummer in de app.</p>
-      <p class="meta" style="font-size:.85rem;margin-top:8px"><b>Afdeling (dział) voor Budomatch:</b> ${f.dzialId?('ID '+esc(f.dzialId)):'<span style="color:#e2c08a">niet ingesteld — facturen gebruiken de standaardnummering van het account</span>'}</p>
-      ${f.items&&f.items.length?`<p class="meta" style="font-size:.85rem;margin-top:8px">Beschikbare afdelingen in je account:</p>
+      <p class="meta" style="font-size:.85rem">Elke betaalde lead wordt automatisch als factuur aangemaakt en naar KSeF gestuurd — in de <b>eigen Budomatch-serie “BM/nr/jaar”</b>, zodat de nummering niet mengt met je andere bedrijven op dit account. Dat nummer is ook het factuurnummer in de app.</p>
+      ${f.items&&f.items.length?`<p class="meta" style="font-size:.85rem;margin-top:8px">Afdelingen in je account (optioneel te koppelen via <b>FAKTURAXL_DZIAL_ID</b>):</p>
       <ul class="meta" style="font-size:.85rem;margin:4px 0 0 18px">${f.items.map(d=>`<li>ID <b>${esc(d.id)}</b> — ${esc(d.nazwa)}${String(d.id)===String(f.dzialId)?' <span class="tag gold">actief</span>':''}</li>`).join('')}</ul>`:''}
-      <p class="meta" style="font-size:.82rem;margin-top:10px;color:#e2c08a">Meerdere bedrijven op één Faktura XL-account? Maak daar een aparte afdeling (dział) “Budomatch” met eigen nummering (bijv. BM/[nr]/[rok]) en zet het ID op Railway als <b>FAKTURAXL_DZIAL_ID</b> — dan blijven de series gescheiden.</p>`;
+      <div style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="retryFxl(this)">Mislukte exports opnieuw proberen</button></div>`;
   }
   $('#setBody').innerHTML=`
     <div style="max-width:460px">
@@ -217,6 +216,15 @@ function updOrient(){
   const v=parseFloat($('#setPrice').value);
   const el=$('#setOrient');if(!el)return;
   el.textContent=isFinite(v)?('€ '+(Math.round(Math.round(v*100)*0.5)/100).toFixed(2).replace('.',',')):'—';
+}
+async function retryFxl(btn){
+  btn.disabled=true;btn.textContent='Bezig…';
+  try{
+    const r=await api('/api/admin/fakturaxl/retry',{method:'POST',body:'{}'});
+    toast(r.retried?`${r.success}/${r.retried} export(s) alsnog gelukt.`:'Geen mislukte exports gevonden.');
+  }catch(e){}
+  btn.disabled=false;btn.textContent='Mislukte exports opnieuw proberen';
+  updateBadge();
 }
 async function saveSettings(){
   const price=parseFloat($('#setPrice').value), free=parseInt($('#setFree').value,10);
