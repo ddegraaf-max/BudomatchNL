@@ -25,6 +25,44 @@ const SELLER = {
 const PORT = process.env.PORT || 3000;
 const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
 
+// ---------------- e-mailhuisstijl ----------------
+// Tabel-layout + inline styles (betrouwbaar in Gmail/Outlook/Apple Mail):
+// donkere kop met goudkleurig woordmerk, lichte kaart, gouden knoppen.
+const SITE_URL = (process.env.BASE_URL || 'https://budomatch.nl').replace(/\/$/, '');
+const mailBtn = (url, label) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto"><tr>
+     <td bgcolor="#C9A227" style="border-radius:50px">
+       <a href="${url}" style="display:inline-block;padding:13px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#13110B;text-decoration:none">${label}</a>
+     </td></tr></table>`;
+const mailCode = code =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto"><tr>
+     <td bgcolor="#13110B" style="border-radius:14px;padding:16px 34px">
+       <span style="font-family:'Courier New',Courier,monospace;font-size:30px;letter-spacing:10px;font-weight:bold;color:#E3C158">${code}</span>
+     </td></tr></table>`;
+const mailMuted = s => `<p style="color:#8A8270;font-size:13px;margin:18px 0 0">${s}</p>`;
+function mailWrap(title, inner) {
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background-color:#EFECE2">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#EFECE2"><tr><td align="center" style="padding:30px 12px">
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
+    <tr><td bgcolor="#13110B" style="border-radius:16px 16px 0 0;padding:26px 36px;text-align:center">
+      <a href="${SITE_URL}" style="text-decoration:none">
+        <span style="font-family:Georgia,'Times New Roman',serif;font-size:23px;letter-spacing:5px;color:#D4AF37">BUDOMATCH</span><br>
+        <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:3px;color:#A89C7E">VAKMANSCHAP&nbsp;DICHTBIJ</span>
+      </a>
+    </td></tr>
+    <tr><td bgcolor="#FFFFFF" style="padding:32px 36px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#2B2820;border-left:1px solid #E7E1D2;border-right:1px solid #E7E1D2">
+      ${title ? `<h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:22px;color:#13110B">${title}</h1>` : ''}
+      ${inner}
+    </td></tr>
+    <tr><td bgcolor="#FBFAF6" style="border:1px solid #E7E1D2;border-top:0;border-radius:0 0 16px 16px;padding:18px 36px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#8A8270">
+      Budomatch — betrouwbare vakmensen in heel Nederland<br>
+      <a href="${SITE_URL}" style="color:#A8842B;text-decoration:none">budomatch.nl</a> &nbsp;·&nbsp; <a href="mailto:${SELLER.email}" style="color:#A8842B;text-decoration:none">${SELLER.email}</a>
+    </td></tr>
+  </table>
+</td></tr></table></body></html>`;
+}
+
 // ----- Pricing -----
 // Standaardwaarden; de actuele waarden staan in de database (beheerpaneel →
 // Instellingen) en worden bij het opstarten in PRICING geladen. Wijzigen kan
@@ -259,7 +297,7 @@ app.post('/api/feedback', requireRole(), async (req, res) => {
     const type = ['idee', 'probleem', 'verbetering'].includes(b.type) ? b.type : 'idee';
     const f = await store.addFeedback({ userId: req.user.id, role: req.user.role, name: req.user.company || req.user.name, type, title, message });
     sendMail(`Nieuwe feedback (${type}) — ${title}`,
-      `<p><b>${esc(title)}</b> — <i>${type}</i></p><p>${esc(message) || '(geen toelichting)'}</p><p style="color:#888">Van ${esc(f.name)} · ${req.user.role === 'pro' ? 'vakman' : 'klant'} · ${esc(req.user.email)}</p>`,
+      mailWrap('Nieuwe feedback', `<p><b>${esc(title)}</b> — <i>${type}</i></p><p>${esc(message) || '(geen toelichting)'}</p>${mailMuted(`Van ${esc(f.name)} · ${req.user.role === 'pro' ? 'vakman' : 'klant'} · ${esc(req.user.email)}`)}`),
       null, FB_ADMIN || undefined).catch(() => {});
     res.json({ feedback: f });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -345,8 +383,10 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
     if (role === 'pro') {
       // beheerder informeren: nieuw bedrijf wacht (handmatige) KvK-verificatie
       sendMail(`Nieuwe vakman-registratie — ${esc(u.company || u.name)}`,
-        `<p>Nieuwe vakman op Budomatch: <b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}).</p>
-         <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig in het beheerpaneel (<b>/admin → Gebruikers</b>) zodra het KvK-nummer bekend is.</p>`,
+        mailWrap('Nieuwe vakman-registratie',
+          `<p><b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}) heeft zich aangemeld.</p>
+           <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig zodra het KvK-nummer bekend is.</p>
+           ${mailBtn(`${SITE_URL}/admin`, 'Open beheerpaneel')}`),
         null, FB_ADMIN || undefined).catch(() => {});
     }
     // E-mail eerst bevestigen met een 6-cijferige code — pas daarna is het
@@ -390,10 +430,10 @@ app.get('/api/me', async (req, res) => {
 
 // ---------------- e-mailverificatie ----------------
 // Bevestigingscode bij registratie (6 cijfers, 10 minuten geldig, max 5 pogingen)
-const regCodeMailHtml = (u, code) => `<h2>Welkom bij Budomatch, ${esc(u.name)}!</h2>
-<p>Je bevestigingscode is:</p>
-<p style="font-size:30px;letter-spacing:8px;font-weight:bold;font-family:monospace">${code}</p>
-<p style="color:#888">Vul deze code in op de website om je account te activeren. De code is 10 minuten geldig. Heb jij je niet aangemeld? Negeer deze e-mail dan.</p>`;
+const regCodeMailHtml = (u, code) => mailWrap(`Welkom bij Budomatch, ${esc(u.name)}!`,
+  `<p>Vul deze bevestigingscode in op de website om je account te activeren:</p>
+   ${mailCode(code)}
+   ${mailMuted('De code is 10 minuten geldig. Heb jij je niet aangemeld? Negeer deze e-mail dan.')}`);
 app.post('/api/register/verify', rateLimit('regverify', 15, 15 * 60e3), async (req, res) => {
   try {
     const b = req.body || {};
@@ -431,10 +471,10 @@ async function sendVerifyMail(u, req) {
   const token = A.sign({ t: 'everify', uid: u.id }, 3); // 3 dagen geldig
   const link = `${baseUrl(req)}/api/verify-email?token=${encodeURIComponent(token)}`;
   await sendMail('Bevestig je e-mailadres — Budomatch',
-    `<h2>Welkom bij Budomatch, ${esc(u.name)}!</h2>
-     <p>Bevestig je e-mailadres door op de knop te klikken:</p>
-     <p><a href="${link}" style="display:inline-block;background:#e3c158;color:#1a1208;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:bold">E-mailadres bevestigen</a></p>
-     <p style="color:#888">Of open deze link: ${link}<br>De link is 3 dagen geldig.</p>`,
+    mailWrap(`Welkom bij Budomatch, ${esc(u.name)}!`,
+      `<p>Bevestig je e-mailadres door op de knop te klikken:</p>
+       ${mailBtn(link, 'E-mailadres bevestigen')}
+       ${mailMuted(`Of open deze link: <a href="${link}" style="color:#A8842B">${link}</a><br>De link is 3 dagen geldig.`)}`),
     null, u.email);
 }
 app.get('/api/verify-email', async (req, res) => {
@@ -467,10 +507,10 @@ app.post('/api/password/forgot', rateLimit('pwforgot', 5, 60 * 60e3), async (req
     const token = A.sign({ t: 'pwreset', uid: u.id, v: String(u.passHash || '').slice(-12) }, 1 / 24); // 1 uur
     const link = `${baseUrl(req)}/?reset=${encodeURIComponent(token)}`;
     await sendMail('Wachtwoord opnieuw instellen — Budomatch',
-      `<h2>Wachtwoord opnieuw instellen</h2>
-       <p>Hoi ${esc(u.name)}, klik op de knop om een nieuw wachtwoord in te stellen:</p>
-       <p><a href="${link}" style="display:inline-block;background:#e3c158;color:#1a1208;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:bold">Nieuw wachtwoord instellen</a></p>
-       <p style="color:#888">Of open deze link: ${link}<br>De link is 1 uur geldig. Niets aangevraagd? Negeer deze e-mail.</p>`,
+      mailWrap('Wachtwoord opnieuw instellen',
+        `<p>Hoi ${esc(u.name)}, klik op de knop om een nieuw wachtwoord in te stellen:</p>
+         ${mailBtn(link, 'Nieuw wachtwoord instellen')}
+         ${mailMuted(`Of open deze link: <a href="${link}" style="color:#A8842B">${link}</a><br>De link is 1 uur geldig. Niets aangevraagd? Negeer deze e-mail.`)}`),
       null, u.email);
   } catch (e) { console.error('pwforgot:', e.message); }
 });
@@ -508,11 +548,12 @@ app.post('/api/support', rateLimit('support', 10, 60 * 60e3), async (req, res) =
       : 'gast';
     sendMail(
       `${business ? '[ZAKELIJK] ' : ''}Support: ${esc(b.subject) || '(geen onderwerp)'}`,
-      `<h2>Supportverzoek${business ? ' — zakelijke klant' : ''}</h2>
-       <p><b>Van:</b> ${who}</p>
-       <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
-       <p><b>Bericht:</b><br>${esc(b.message)}</p>
-       <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>`
+      mailWrap(`Supportverzoek${business ? ' — zakelijke klant' : ''}`,
+        `<p><b>Van:</b> ${who}</p>
+         <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
+         <p><b>Bericht:</b><br>${esc(b.message)}</p>
+         <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>
+         ${mailBtn(`${SITE_URL}/admin`, 'Open support-inbox')}`)
     ).catch(() => {});
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
@@ -847,8 +888,9 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
       // bedrijf handmatig geverifieerd kan worden (beheerpaneel → Gebruikers).
       await store.updateUser(req.user.id, { kvk: num });
       sendMail(`KvK-verificatie aangevraagd — ${esc(req.user.company || req.user.name)}`,
-        `<p><b>${esc(req.user.company || req.user.name)}</b> (${esc(req.user.email)}) heeft KvK-nummer <b>${esc(num)}</b> ingevuld en wacht op handmatige verificatie.</p>
-         <p>Verifieer het bedrijf in het beheerpaneel: <b>/admin → Gebruikers</b>.</p>`,
+        mailWrap('KvK-verificatie aangevraagd',
+          `<p><b>${esc(req.user.company || req.user.name)}</b> (${esc(req.user.email)}) heeft KvK-nummer <b>${esc(num)}</b> ingevuld en wacht op handmatige verificatie.</p>
+           ${mailBtn(`${SITE_URL}/admin`, 'Verifieer in beheerpaneel')}`),
         null, FB_ADMIN || undefined).catch(() => {});
       return res.json({ ok: false, configured: false, saved: true });
     }
@@ -1296,7 +1338,9 @@ async function notifyMessage(ctx, sender) {
   }
   if (!to) return;
   await sendMail(`Nieuw bericht op Budomatch — ${esc(ctx.service)}`,
-    `<h2>Je hebt een nieuw bericht</h2><p>Er is een nieuw bericht in je gesprek over "<b>${esc(ctx.service)}</b>".</p><p>Log in op je Budomatch-portaal om te reageren.</p>`,
+    mailWrap('Je hebt een nieuw bericht',
+      `<p>Er is een nieuw bericht in je gesprek over "<b>${esc(ctx.service)}</b>".</p>
+       ${mailBtn(`${SITE_URL}/dashboard`, 'Bekijk het bericht')}`),
     null, to);
 }
 
@@ -1609,7 +1653,10 @@ async function notifyNewRequest(r, customer) {
   try {
     if (customer && customer.email) {
       await sendMail(`Je aanvraag staat online — ${esc(r.service)}`,
-        `<p>Hoi ${esc(customer.name)},</p><p>Je aanvraag <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} staat op Budomatch. Passende vakmensen kunnen nu reageren — je krijgt bericht zodra er reacties zijn.</p><p style="color:#555">${esc(r.description).slice(0, 600).replace(/\n/g, '<br>')}</p>`,
+        mailWrap('Je aanvraag staat online',
+          `<p>Hoi ${esc(customer.name)},</p><p>Je aanvraag <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} staat op Budomatch. Passende vakmensen kunnen nu reageren — je krijgt bericht zodra er reacties zijn.</p>
+           <p style="color:#8A8270;border-left:3px solid #E7E1D2;padding-left:12px;margin:16px 0">${esc(r.description).slice(0, 600).replace(/\n/g, '<br>')}</p>
+           ${mailBtn(`${SITE_URL}/dashboard`, 'Naar mijn aanvragen')}`),
         null, customer.email).catch(() => {});
     }
     let pros = [];
@@ -1629,7 +1676,9 @@ async function notifyNewRequest(r, customer) {
     for (const p of pros.slice(0, 30)) {
       if (!p.email) continue;
       await sendMail(`Nieuwe aanvraag in jouw regio — ${esc(r.service)}`,
-        `<p>Hoi ${esc(p.company || p.name)},</p><p>Er staat een nieuwe aanvraag voor <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} die past bij jouw werkgebied. Log in op Budomatch om te reageren — wees er snel bij (max. 3 vakmensen per aanvraag).</p>`,
+        mailWrap('Nieuwe aanvraag in jouw regio',
+          `<p>Hoi ${esc(p.company || p.name)},</p><p>Er staat een nieuwe aanvraag voor <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} die past bij jouw werkgebied. Wees er snel bij — maximaal 3 vakmensen per aanvraag.</p>
+           ${mailBtn(`${SITE_URL}/dashboard`, 'Bekijk de aanvraag')}`),
         null, p.email).catch(() => {});
     }
   } catch (e) { console.error('notifyNewRequest:', e.message); }
@@ -1648,14 +1697,16 @@ app.post('/api/quote', rateLimit('quote', 10, 60 * 60e3), async (req, res) => {
   try { const b = req.body || {};
     const atts = photoAttachments(b.photos);
     await sendMail(`Offerteaanvraag (gast) — ${esc(b.service) || '-'}`,
-      `<h2>Offerteaanvraag</h2><p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`,
+      mailWrap('Offerteaanvraag (gast)',
+        `<p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`),
       atts);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
 app.post('/api/pro', rateLimit('prosignup', 10, 60 * 60e3), async (req, res) => {
   try { const b = req.body || {};
     await sendMail(`Vakman-aanmelding — ${esc(b.company) || '-'}`,
-      `<h2>Vakman-aanmelding</h2><p><b>Bedrijf:</b> ${esc(b.company)}</p><p><b>Specialisatie:</b> ${esc(b.spec)}</p><p><b>Stad:</b> ${esc(b.city)}</p><p><b>E-mail:</b> ${esc(b.email)}</p>`);
+      mailWrap('Vakman-aanmelding',
+        `<p><b>Bedrijf:</b> ${esc(b.company)}</p><p><b>Specialisatie:</b> ${esc(b.spec)}</p><p><b>Stad:</b> ${esc(b.city)}</p><p><b>E-mail:</b> ${esc(b.email)}</p>`));
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
 
@@ -1727,7 +1778,9 @@ app.post('/api/admin/users/:id/verify', requireAdmin, async (req, res) => {
     await store.updateUser(u.id, { kvk: num, verifiedKvk: num, kvkName: u.kvkName || u.company || u.name });
     // bedrijf informeren: profiel is nu actief
     sendMail('Je bedrijf is geverifieerd — Budomatch',
-      `<p>Goed nieuws, ${esc(u.name)}!</p><p><b>${esc(u.company || u.name)}</b> is geverifieerd (KvK ${esc(num)}). Je profiel is nu actief: je bent zichtbaar voor klanten en kunt op aanvragen reageren.</p>`,
+      mailWrap('Je bedrijf is geverifieerd 🎉',
+        `<p>Goed nieuws, ${esc(u.name)}!</p><p><b>${esc(u.company || u.name)}</b> is geverifieerd (KvK ${esc(num)}). Je profiel is nu actief: je bent zichtbaar voor klanten en kunt op aanvragen reageren.</p>
+         ${mailBtn(`${SITE_URL}/dashboard`, 'Naar je dashboard')}`),
       null, u.email).catch(() => {});
     res.json({ ok: true, kvk: num });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
