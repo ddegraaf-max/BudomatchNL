@@ -121,7 +121,7 @@ async function getUser(req) {
 }
 async function publicUser(u) {
   if (!u) return null;
-  const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, ...rest } = u;
+  const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, regCode, regCodeExp, regCodeTries, ...rest } = u;
   rest.twofaEnabled = !!u.twofaEnabled;
   rest.twofaRecoveryLeft = (u.twofaRecovery || []).length;
   rest.emailVerified = u.emailVerified !== false; // bestaande accounts (zonder veld) gelden als bevestigd
@@ -329,13 +329,23 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
       }
     }
     await store.addUser(u);
-    sendVerifyMail(u, req).catch(e => console.error('verify-mail:', e.message));
     if (role === 'pro') {
       // beheerder informeren: nieuw bedrijf wacht (handmatige) KvK-verificatie
       sendMail(`Nieuwe vakman-registratie — ${esc(u.company || u.name)}`,
         `<p>Nieuwe vakman op Budomatch: <b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}).</p>
          <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig in het beheerpaneel (<b>/admin.html → Gebruikers</b>) zodra het KvK-nummer bekend is.</p>`,
         null, FB_ADMIN || undefined).catch(() => {});
+    }
+    // E-mail eerst bevestigen met een 6-cijferige code — pas daarna is het
+    // account ingelogd. Mislukt de mail, dan blokkeren we de registratie niet
+    // (anders zou een mailstoring alle registraties tegenhouden).
+    if (process.env.RESEND_API_KEY) {
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      await store.updateUser(u.id, { regCode: A.hashRecovery(code), regCodeExp: Date.now() + 10 * 60e3, regCodeTries: 0 });
+      try {
+        await sendMail('Je bevestigingscode — Budomatch', regCodeMailHtml(u, code), null, u.email);
+        return res.json({ codeRequired: true, challenge: A.sign({ t: 'regcode', uid: u.id }, 0.02) });
+      } catch (e) { console.error('regcode-mail:', e.message); }
     }
     A.setAuthCookie(res, sessionToken(u), isHttps(req));
     res.json({ user: await publicUser(u) });
@@ -366,6 +376,43 @@ app.get('/api/me', async (req, res) => {
 });
 
 // ---------------- e-mailverificatie ----------------
+// Bevestigingscode bij registratie (6 cijfers, 10 minuten geldig, max 5 pogingen)
+const regCodeMailHtml = (u, code) => `<h2>Welkom bij Budomatch, ${esc(u.name)}!</h2>
+<p>Je bevestigingscode is:</p>
+<p style="font-size:30px;letter-spacing:8px;font-weight:bold;font-family:monospace">${code}</p>
+<p style="color:#888">Vul deze code in op de website om je account te activeren. De code is 10 minuten geldig. Heb jij je niet aangemeld? Negeer deze e-mail dan.</p>`;
+app.post('/api/register/verify', rateLimit('regverify', 15, 15 * 60e3), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const p = A.verify(String(b.challenge || ''));
+    if (!p || p.t !== 'regcode') return res.status(401).json({ error: 'challenge' });
+    const u = await store.findUserById(p.uid);
+    if (!u || u.blocked) return res.status(401).json({ error: 'auth' });
+    if (!u.regCode || Date.now() > (u.regCodeExp || 0)) return res.status(401).json({ error: 'expired' });
+    if ((u.regCodeTries || 0) >= 5) return res.status(401).json({ error: 'too_many' });
+    const code = String(b.code || '').replace(/\D/g, '');
+    if (!code || A.hashRecovery(code) !== u.regCode) {
+      await store.updateUser(u.id, { regCodeTries: (u.regCodeTries || 0) + 1 });
+      return res.status(401).json({ error: 'bad_code' });
+    }
+    await store.updateUser(u.id, { regCode: '', regCodeExp: 0, regCodeTries: 0, emailVerified: true });
+    A.setAuthCookie(res, sessionToken(u), isHttps(req));
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/register/resend', rateLimit('regresend', 5, 15 * 60e3), async (req, res) => {
+  try {
+    const p = A.verify(String((req.body || {}).challenge || ''));
+    if (!p || p.t !== 'regcode') return res.status(401).json({ error: 'challenge' });
+    const u = await store.findUserById(p.uid);
+    if (!u || u.blocked || u.emailVerified) return res.status(401).json({ error: 'auth' });
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await store.updateUser(u.id, { regCode: A.hashRecovery(code), regCodeExp: Date.now() + 10 * 60e3, regCodeTries: 0 });
+    await sendMail('Je bevestigingscode — Budomatch', regCodeMailHtml(u, code), null, u.email);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
 async function sendVerifyMail(u, req) {
   if (u.emailVerified) return;
   const token = A.sign({ t: 'everify', uid: u.id }, 3); // 3 dagen geldig

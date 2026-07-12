@@ -641,6 +641,12 @@ img{max-width:100%}
       <button class="btn btn-gold" style="width:100%;margin-top:6px" id="resetBtn" onclick="submitReset()"></button>
       <div class="swap"><a id="resetBack" onclick="backToLogin()"></a></div>
     </div>
+    <div id="regcodeStep" style="display:none">
+      <p class="sub" id="regcodeMsg"></p>
+      <input class="inp" id="aRegCode" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;font-size:1.4rem;letter-spacing:8px" onkeydown="if(event.key==='Enter')submitRegCode()">
+      <button class="btn btn-gold" style="width:100%;margin-top:6px" id="regcodeBtn" onclick="submitRegCode()"></button>
+      <div class="swap"><a id="regcodeResend" onclick="resendRegCode()"></a></div>
+    </div>
   </div>
 </div>
 
@@ -739,6 +745,8 @@ const T={
   regNote:"Phone, address and KvK you complete later in your profile — quick to start.",authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
+  regcodeTitle:"Confirm your e-mail",regcodeMsg:"We sent a 6-digit code to {email}. Enter it to activate your account.",
+  regcodeBtn:"Confirm",regcodeResend:"Send a new code",regcodeSent:"New code sent — check your inbox (and spam).",regcodeErr:"Incorrect or expired code. Try again or request a new code.",
   authForgot:"Forgot password?",authForgotTitle:"Reset password",authForgotSub:"Enter your e-mail address and we will send you a reset link.",
   authForgotBtn:"Send reset link",authForgotSent:"If this address is known to us, a reset e-mail is on its way. Check your inbox (and spam).",
   authResetTitle:"Choose a new password",authResetSub:"Enter a new password for your account.",authNewPass:"New password (min. 6 characters)",
@@ -816,6 +824,8 @@ const T={
   regNote:"Telefoon, adres en KvK vul je later in je profiel in — zo ben je zo aangemeld.",authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
+  regcodeTitle:"Bevestig je e-mail",regcodeMsg:"We hebben een 6-cijferige code gestuurd naar {email}. Vul de code in om je account te activeren.",
+  regcodeBtn:"Bevestigen",regcodeResend:"Nieuwe code sturen",regcodeSent:"Nieuwe code verstuurd — check je inbox (en spam).",regcodeErr:"Onjuiste of verlopen code. Probeer opnieuw of vraag een nieuwe code aan.",
   authForgot:"Wachtwoord vergeten?",authForgotTitle:"Wachtwoord vergeten",authForgotSub:"Vul je e-mailadres in, dan sturen we je een herstel-link.",
   authForgotBtn:"Stuur herstel-link",authForgotSent:"Als dit adres bij ons bekend is, is er een herstel-e-mail onderweg. Check je inbox (en spam).",
   authResetTitle:"Kies een nieuw wachtwoord",authResetSub:"Voer een nieuw wachtwoord in voor je account.",authNewPass:"Nieuw wachtwoord (min. 6 tekens)",
@@ -1030,11 +1040,12 @@ async function refreshAuthUI(){
 }
 async function doLogout(){try{await fetch('/api/logout',{method:'POST'});}catch{}__me=null;refreshAuthUI();}
 
-function authStep(step){ // 'normal' | 'twofa' | 'forgot' | 'reset'
-  ['authNormal','twofaStep','forgotStep','resetStep'].forEach(id=>{
+function authStep(step){ // 'normal' | 'twofa' | 'forgot' | 'reset' | 'regcode'
+  ['authNormal','twofaStep','forgotStep','resetStep','regcodeStep'].forEach(id=>{
     document.getElementById(id).style.display=(
       (step==='normal'&&id==='authNormal')||(step==='twofa'&&id==='twofaStep')||
-      (step==='forgot'&&id==='forgotStep')||(step==='reset'&&id==='resetStep'))?'block':'none';
+      (step==='forgot'&&id==='forgotStep')||(step==='reset'&&id==='resetStep')||
+      (step==='regcode'&&id==='regcodeStep'))?'block':'none';
   });
 }
 /* btw-lookup bij registratie: haalt bedrijfsgegevens op en vult ze in;
@@ -1169,9 +1180,39 @@ async function submitAuth(){
     const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(d && d.twofaRequired){ show2fa(d.challenge); return; }
+    if(d && d.codeRequired){ showRegCode(d.challenge,email); return; }
     if(!r.ok||!d.user){err.classList.add('show');return;}
     __me=d.user;closeAuth();location.href='/dashboard.html';
   }catch(e){err.classList.add('show');}
+}
+/* bevestigingscode na registratie */
+let __regChallenge='';
+function showRegCode(ch,email){
+  __regChallenge=ch;
+  const d=T[LANG];
+  authStep('regcode');
+  document.getElementById('authTitle').textContent=d.regcodeTitle;
+  document.getElementById('authSub').textContent='';
+  document.getElementById('regcodeMsg').textContent=d.regcodeMsg.replace('{email}',email);
+  document.getElementById('regcodeBtn').textContent=d.regcodeBtn;
+  document.getElementById('regcodeResend').textContent=d.regcodeResend;
+  document.getElementById('authErr').classList.remove('show');
+  setTimeout(()=>document.getElementById('aRegCode').focus(),50);
+}
+async function submitRegCode(){
+  const err=document.getElementById('authErr');err.classList.remove('show');
+  const code=document.getElementById('aRegCode').value.trim();
+  if(!code)return;
+  try{
+    const r=await fetch('/api/register/verify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({challenge:__regChallenge,code})});
+    const d=await r.json();
+    if(!r.ok||!d.user){err.textContent=T[LANG].regcodeErr;err.classList.add('show');return;}
+    __me=d.user;closeAuth();location.href='/dashboard.html';
+  }catch(e){err.textContent=T[LANG].regcodeErr;err.classList.add('show');}
+}
+async function resendRegCode(){
+  try{await fetch('/api/register/resend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({challenge:__regChallenge})});}catch(e){}
+  const m=document.getElementById('regcodeMsg');m.textContent=T[LANG].regcodeSent;m.style.color='#9fdcb4';
 }
 let __twofaChallenge='';
 function show2fa(ch){
