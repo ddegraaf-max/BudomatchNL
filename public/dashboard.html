@@ -1541,9 +1541,13 @@ async function checkVat(){
   st.textContent='…'; st.style.color='var(--muted)';
   let r; try{ r=await api('/api/vat/'+encodeURIComponent(raw)); }catch(e){ st.textContent=t('vatInvalid'); st.style.color='#e2708a'; return; }
   if(r.ok){
-    st.innerHTML='✓ '+t('vatVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
     document.getElementById('pfNip').value=r.vat;
+    // officiële naam (en plaats) uit VIES overnemen en direct opslaan
+    if(r.name){ const c=document.getElementById('pfCompany'); if(c)c.value=r.name; }
+    if(r.city){ const ct=document.getElementById('pfCity'); if(ct&&!ct.value)ct.value=r.city; }
     if(ME){ ME.nip=r.vat; ME.vatVerified=true; ME.vatName=r.name||''; }
+    try{ await saveProfileInfo(); }catch(e){}
+    st.innerHTML='✓ '+t('vatVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
   }
   else if(r.configured===false){ st.textContent=t('vatNotSet'); st.style.color='var(--muted)'; }
   else if(r.error==='unavailable'){ st.textContent=t('vatDown'); st.style.color='var(--muted)'; }

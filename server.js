@@ -837,7 +837,7 @@ app.get('/api/vat/:number', rateLimit('vat', 10, 60 * 60e3), requireRole('pro'),
     const v = await vatValidate(req.params.number);
     if (!v.ok) return res.json(v);
     await store.updateUser(req.user.id, { nip: v.vat, verifiedVat: v.vat, vatName: v.name, vatAddress: v.address });
-    res.json({ ok: true, vat: v.vat, name: v.name, address: v.address });
+    res.json({ ok: true, vat: v.vat, name: v.name, address: v.address, city: v.city });
   } catch (e) { console.error('VAT-fout:', e.message); res.json({ ok: false, error: 'server' }); }
 });
 // Publieke lookup voor het registratieformulier: zoekt bedrijfsgegevens op bij het
