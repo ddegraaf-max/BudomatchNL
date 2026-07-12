@@ -70,8 +70,8 @@ footer b{color:var(--gold-soft)}
 
 <h2>Artikel 5 — Leads en betalingen</h2>
 <ul>
-<li>De eerste <b>5 leads</b> per Vakman zijn <b>gratis</b>.</li>
-<li>Elke volgende lead kost <b>€ 18,15</b> (oriëntatie-leads 50%: € 9,08). Budomatch levert uitsluitend aan ondernemers; de btw wordt verlegd naar de afnemer (reverse charge). Op de factuur staat 0% btw met de vermelding „btw verlegd” en het btw-nummer van de afnemer.</li>
+<li>De eerste <b><span data-freeleads>5</span> leads</b> per Vakman zijn <b>gratis</b>.</li>
+<li>Elke volgende lead kost <b><span data-price>€ 18,15</span></b> (oriëntatie-leads 50%: <span data-orient>€ 9,08</span>). Budomatch levert uitsluitend aan ondernemers; de btw wordt verlegd naar de afnemer (reverse charge). Op de factuur staat 0% btw met de vermelding „btw verlegd” en het btw-nummer van de afnemer.</li>
 <li>Betalingen verlopen via betaaldienstverlener Stripe (o.a. iDEAL, creditcard, Bancontact).</li>
 <li>De contactgegevens worden zichtbaar na een geslaagde betaling. Gezien het digitale karakter van de dienst kan het herroepingsrecht na uitvoering (het tonen van de gegevens) zijn uitgesloten conform de geldende regelgeving.</li>
 </ul>
@@ -92,6 +92,15 @@ footer b{color:var(--gold-soft)}
 <footer><div class="wrap">
 <p><b>Budomatch DANIËL DE GRAAF</b> · 15, 09-550 Białka, Polska · NIP: 7010869430 · REGON: 381430120</p>
 <p>© <span id="yr"></span> Budomatch</p>
-</div><script>document.getElementById('yr').textContent=new Date().getFullYear();</script></footer>
+</div><script>
+document.getElementById('yr').textContent=new Date().getFullYear();
+/* actuele prijzen van de server (beheerpaneel) — de vaste bedragen hierboven zijn de fallback */
+fetch('/api/pricing').then(function(r){return r.json()}).then(function(p){
+  var eur=function(n){return '€ '+Number(n).toFixed(2).replace('.',',');};
+  document.querySelectorAll('[data-price]').forEach(function(e){e.textContent=eur(p.gross)});
+  document.querySelectorAll('[data-orient]').forEach(function(e){e.textContent=eur(p.orient)});
+  document.querySelectorAll('[data-freeleads]').forEach(function(e){e.textContent=p.freeLeads});
+}).catch(function(){});
+</script></footer>
 </body>
 </html>

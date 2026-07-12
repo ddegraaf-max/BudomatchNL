@@ -698,7 +698,7 @@ const T={
   proB3:"Build your reputation with reviews from happy customers",
   proB4:"Company profile and certificates visible across the Netherlands",
   proTitle:"Create a tradesman profile",proSub:"Free registration — your first leads this week.",
-  proPrice:"First 5 leads free — then € 18,15 per lead. Orientation leads: only 50%.",
+  proPrice:"First {FREE} leads free — then {PRICE} per lead. Orientation leads: only 50%.",
   proUSP:"Work you can’t take on? Share it with a colleague for free and turn it into a partnership. Only on Budomatch.",
   proUSP2:"With a Gold badge, customers can hand you a job directly — and you only pay when you unlock it yourself.",
   lblCompany:"Company name",phCompany:"e.g. Jansen Construction",lblSpec:"Specialisation",
@@ -773,7 +773,7 @@ const T={
   proB3:"Bouw je reputatie op met reviews van tevreden klanten",
   proB4:"Bedrijfsprofiel en certificaten zichtbaar in heel Nederland",
   proTitle:"Maak een vakman-profiel aan",proSub:"Gratis registratie — je eerste leads nog deze week.",
-  proPrice:"Eerste 5 leads gratis — daarna € 18,15 per lead. Oriëntatie-leads: maar 50%.",
+  proPrice:"Eerste {FREE} leads gratis — daarna {PRICE} per lead. Oriëntatie-leads: maar 50%.",
   proUSP:"Werk dat blijft liggen? Deel het gratis met een collega en kom zo tot een samenwerking. Alleen op Budomatch.",
   proUSP2:"Met een gouden badge kunnen klanten je direct een opdracht geven — en je betaalt pas als je zélf ontgrendelt.",
   lblCompany:"Bedrijfsnaam",phCompany:"bijv. Jansen Bouw",lblSpec:"Specialisatie",
@@ -936,10 +936,19 @@ function proSubmit(e){e.preventDefault();const f=e.target;
   openAuth('register',{role:'pro',company:f.company.value,spec:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',city:f.city.value,email:f.email.value});
   return false;}
 
+/* actuele prijzen van de server — vullen {PRICE}/{ORIENT}/{FREE} in de teksten
+   (fallback: de vaste waarden hieronder als de fetch mislukt) */
+let PRICEV={price:'€ 18,15',orient:'€ 9,08',free:'5'};
+const priceFill=s=>String(s).replace(/\{PRICE\}/g,PRICEV.price).replace(/\{ORIENT\}/g,PRICEV.orient).replace(/\{FREE\}/g,PRICEV.free);
+fetch('/api/pricing').then(r=>r.json()).then(p=>{
+  const eur=n=>'€ '+Number(n).toFixed(2).replace('.',',');
+  PRICEV={price:eur(p.gross),orient:eur(p.orient),free:String(p.freeLeads)};
+  applyLang();
+}).catch(()=>{});
 function applyLang(){
   const d=T[LANG];
   document.documentElement.lang=LANG;
-  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(d[k]!=null)el.innerHTML=d[k]});
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(d[k]!=null)el.innerHTML=priceFill(d[k])});
   document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.dataset.ph;if(d[k]!=null)el.placeholder=d[k]});
   fillSelect(document.getElementById('selCat'),'selPh');
   fillSelect(document.getElementById('qCat'),'selPh');

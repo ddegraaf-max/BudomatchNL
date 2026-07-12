@@ -194,8 +194,7 @@ async function renderSettings(){
       <label>Gratis welkomstleads (eenmalig per nieuw bedrijf)</label>
       <input class="inp" id="setFree" type="number" step="1" min="0" max="100" value="${s.freeLeads}">
       <button class="btn btn-gold" onclick="saveSettings()">Opslaan — direct actief</button>
-      <p class="meta" style="margin-top:14px;font-size:.82rem">Werkt direct door in: leads, ontgrendelen/afrekenen, facturen, dashboard-KPI's en de AI-assistent.</p>
-      <p class="meta" style="margin-top:6px;font-size:.82rem;color:#e2c08a">⚠ Vaste marketingteksten (homepage, FAQ, algemene voorwaarden) noemen de prijs ook — pas die teksten aan bij een blijvende prijswijziging.</p>
+      <p class="meta" style="margin-top:14px;font-size:.82rem">Werkt direct door in: leads, ontgrendelen/afrekenen, facturen, dashboard-KPI's, de AI-assistent én de teksten op de homepage, FAQ en algemene voorwaarden.</p>
       <p class="meta" style="margin-top:6px;font-size:.82rem">Standaard: € ${Number(s.defaults.leadPriceGross).toFixed(2).replace('.',',')} · ${s.defaults.freeLeads} gratis leads.</p>
     </div>`;
 }

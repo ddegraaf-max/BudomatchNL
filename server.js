@@ -1613,6 +1613,12 @@ app.post('/api/admin/settings', requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
+// Publieke prijsinfo — homepage, FAQ en voorwaarden vullen hiermee hun vaste
+// teksten, zodat een prijswijziging in het beheerpaneel overal direct zichtbaar is.
+app.get('/api/pricing', (req, res) => {
+  res.json({ gross: PRICING.gross, orient: leadPrice({ intent: 'orientatie' }).gross, freeLeads: PRICING.freeLeads });
+});
+
 app.get('/healthz', (_, res) => res.send('ok'));
 // Optionele demo-accounts (zet SEED_DEMO=1). Idempotent.
 async function seedDemo() {
