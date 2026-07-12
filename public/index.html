@@ -604,6 +604,9 @@ img{max-width:100%}
     <label data-i18n="authPass"></label><input class="inp" id="aPass" type="password" autocomplete="current-password">
     <div id="forgotRow" style="text-align:right;margin:-8px 0 10px;font-size:.85rem"><a style="cursor:pointer;color:var(--gold-bright)" id="forgotLink" onclick="openForgot()"></a></div>
     <div id="proFields" style="display:none">
+      <label data-i18n="authVat"></label>
+      <div style="display:flex;gap:8px"><input class="inp" id="aVat" placeholder="NL123456789B01" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupVat();}"><button type="button" class="btn btn-gold" style="padding:0 18px;height:45px;border-radius:11px;flex:none" id="aVatBtn" onclick="lookupVat()"></button></div>
+      <p class="sub" id="aVatStatus" style="font-size:.8rem;margin:-6px 0 12px;display:none"></p>
       <label data-i18n="authCompany"></label><input class="inp" id="aCompany">
       <label data-i18n="authSpec"></label><select class="inp" id="aSpec"></select>
       <label data-i18n="authCity"></label><input class="inp" id="aCity">
@@ -731,6 +734,8 @@ const T={
   authRoleCustomer:"I am a customer",authRolePro:"I am a tradesman",
   authTypePriv:"Private",authTypeBiz:"Business",
   authCompany:"Company name",authSpec:"Specialisation",authCity:"City",authPhone:"Phone (optional)",authNip:"VAT number (optional)",authAddr:"Address (for invoice, optional)",
+  authVat:"VAT number (btw-id) — we auto-fill your company details",vatSearch:"Look up",vatBusy:"Looking up…",
+  vatFound:"✓ Found: {name} — details filled in below.",vatNotFoundReg:"No match found — enter your details manually (you can add the VAT number later in your profile).",
   regNote:"Phone, address and KvK you complete later in your profile — quick to start.",authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
@@ -806,6 +811,8 @@ const T={
   authRoleCustomer:"Ik ben klant",authRolePro:"Ik ben vakman",
   authTypePriv:"Particulier",authTypeBiz:"Zakelijk",
   authCompany:"Bedrijfsnaam",authSpec:"Specialisatie",authCity:"Plaats",authPhone:"Telefoon (optioneel)",authNip:"Btw-nummer (optioneel)",authAddr:"Adres (voor factuur, optioneel)",
+  authVat:"Btw-nummer (btw-id) — wij vullen je bedrijfsgegevens automatisch in",vatSearch:"Zoeken",vatBusy:"Opzoeken…",
+  vatFound:"✓ Gevonden: {name} — gegevens hieronder ingevuld.",vatNotFoundReg:"Geen match gevonden — vul je gegevens handmatig in (btw-nummer kan later in je profiel).",
   regNote:"Telefoon, adres en KvK vul je later in je profiel in — zo ben je zo aangemeld.",authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
@@ -1030,11 +1037,37 @@ function authStep(step){ // 'normal' | 'twofa' | 'forgot' | 'reset'
       (step==='forgot'&&id==='forgotStep')||(step==='reset'&&id==='resetStep'))?'block':'none';
   });
 }
+/* btw-lookup bij registratie: haalt bedrijfsgegevens op en vult ze in;
+   het token bewijst de validatie bij het registreren (nummer = geverifieerd) */
+let VATTOKEN='';
+async function lookupVat(){
+  const inp=document.getElementById('aVat'), st=document.getElementById('aVatStatus'), d=T[LANG];
+  VATTOKEN='';
+  const raw=inp.value.trim();
+  if(!raw){st.style.display='none';return;}
+  st.style.display='block';st.style.color='var(--muted)';st.textContent=d.vatBusy;
+  try{
+    const r=await fetch('/api/vat-lookup/'+encodeURIComponent(raw));
+    const j=await r.json();
+    if(j.ok){
+      VATTOKEN=j.token||'';
+      inp.value=j.vat;
+      if(j.name)document.getElementById('aCompany').value=j.name;
+      const ct=document.getElementById('aCity'); if(j.city&&ct&&!ct.value)ct.value=j.city;
+      st.style.color='#9fdcb4';st.textContent=d.vatFound.replace('{name}',j.name||j.vat);
+    } else {
+      st.style.color=j.configured===false?'var(--muted)':'#ff9b9b';
+      st.textContent=d.vatNotFoundReg;
+    }
+  }catch(e){ st.style.display='none'; }
+}
 function openAuth(mode,prefill){
   authMode=mode||'login';
   if(prefill&&prefill.role)authRole=prefill.role;
   authModal.classList.add('open');
   authStep('normal');
+  VATTOKEN='';
+  const vs=document.getElementById('aVatStatus'); if(vs)vs.style.display='none';
   applyAuthTexts();
   setRole(authRole);
   if(prefill){
@@ -1115,6 +1148,7 @@ function applyAuthTexts(){
   document.getElementById('custFields').style.display=(reg&&authRole==='customer')?'block':'none';
   document.getElementById('forgotRow').style.display=reg?'none':'block';
   document.getElementById('forgotLink').textContent=d.authForgot;
+  document.getElementById('aVatBtn').textContent=d.vatSearch;
   // waarde = NL-naam (canoniek voor matching), weergave in de gekozen taal
   const s=document.getElementById('aSpec');
   if(s){const cur=s.value;s.innerHTML=CATS.map(c=>`<option value="${c[1]}">${catName(c)}</option>`).join('');if(cur)s.value=cur;}
@@ -1128,7 +1162,7 @@ async function submitAuth(){
   if(authMode==='register'){
     url='/api/register';
     body={role:authRole,name:document.getElementById('aName').value.trim(),email,password};
-    if(authRole==='pro'){const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};body.company=gv('aCompany');body.spec=gv('aSpec');body.city=gv('aCity');body.phone=gv('aPhone');body.nip=gv('aNip');body.address=gv('aAddr');}
+    if(authRole==='pro'){const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};body.company=gv('aCompany');body.spec=gv('aSpec');body.city=gv('aCity');body.phone=gv('aPhone');body.nip=gv('aVat');body.address=gv('aAddr');if(VATTOKEN)body.vatToken=VATTOKEN;}
     else{body.customerType=custType;if(custType==='zakelijk'){body.company=document.getElementById('aCustCompany').value.trim();body.nip=document.getElementById('aCustNip').value.trim();}}
   }else{url='/api/login';body={email,password};}
   try{

@@ -114,6 +114,8 @@ De vakman-registratie is bewust kort: bedrijfsnaam, **één hoofdspecialisme** (
 
 Met `EUVAT_API_KEY` (sleutel van [euvatapi.com](https://euvatapi.com)) kan de vakman zijn btw-nummer laten **controleren tegen de EU VIES-databases** (knop *Controleren* naast het veld): het nummer wordt gevalideerd, genormaliseerd opgeslagen en gemarkeerd als geverifieerd, inclusief de officiële bedrijfsnaam. Zonder landcode wordt `NL` aangenomen. Zonder sleutel blijft handmatig invullen gewoon werken.
 
+**Autofill bij registratie:** het vakman-registratieformulier heeft een btw-veld met een *Zoeken*-knop. Die zoekt het bedrijf op in VIES en vult **bedrijfsnaam en plaats automatisch in**; het nummer wordt bij het aanmaken van het account direct als geverifieerd opgeslagen (via een kortlevend ondertekend token — geen tweede API-call, niet te vervalsen). Zonder `EUVAT_API_KEY` verschijnt een nette melding en blijft handmatig invullen werken.
+
 ## Database (PostgreSQL)
 
 De app gebruikt automatisch **PostgreSQL** zodra `DATABASE_URL` is gezet (op Railway: voeg de PostgreSQL-plugin toe). Zonder die variabele valt de app terug op een JSON-bestand (`lib/store.js`) — handig voor lokaal ontwikkelen. Het schema (users, requests, claims, factuurteller) wordt bij het opstarten automatisch aangemaakt.

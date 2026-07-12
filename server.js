@@ -302,8 +302,16 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
       u.spec = String(b.spec || '').trim();
       u.city = String(b.city || '').trim();
       u.phone = String(b.phone || '').trim();
-      u.nip = String(b.nip || '').trim();
+      u.nip = String(b.nip || '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 20);
       u.address = String(b.address || '').trim();
+      // btw-nummer al gevalideerd via /api/vat-lookup? Het ondertekende token
+      // bewijst dat — dan direct als geverifieerd opslaan (naam uit VIES).
+      if (b.vatToken) {
+        const vp = A.verify(String(b.vatToken));
+        if (vp && vp.t === 'vatreg' && vp.vat && vp.vat === u.nip.replace(/[^A-Z0-9]/g, '')) {
+          u.nip = vp.vat; u.verifiedVat = vp.vat; u.vatName = String(vp.name || '');
+        }
+      }
       // werkcategorieën: expliciet meegegeven, anders het hoofdspecialisme —
       // zo is het bedrijf na KvK-verificatie direct matchbaar (meer vakken: tab Werkgebied)
       const cats = Array.isArray(b.workCategories)
@@ -805,21 +813,42 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
 });
 // Btw-nummer-controle via euvatapi.com (EU VIES-databases). Vereist EUVAT_API_KEY.
 // Bij succes wordt het geverifieerde nummer opgeslagen — dat komt op de lead-factuur.
+// Gedeelde VIES-validatie via euvatapi.com. Geeft { ok, vat, name, address, city }
+// of { ok:false, error/configured }.
+async function vatValidate(raw) {
+  let num = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (/^\d/.test(num)) num = 'NL' + num; // zonder landcode → NL aannemen
+  if (num.length < 8 || num.length > 14) return { ok: false, error: 'invalid' };
+  if (!process.env.EUVAT_API_KEY) return { ok: false, configured: false };
+  const r = await fetch(`https://euvatapi.com/api/v1/validate?access_key=${encodeURIComponent(process.env.EUVAT_API_KEY)}&vat_number=${encodeURIComponent(num)}`);
+  if (!r.ok) return { ok: false, error: 'lookup', status: r.status };
+  const d = await r.json();
+  if (!d.success) { console.error('EUVAT-fout:', JSON.stringify(d.error || d)); return { ok: false, error: 'lookup' }; }
+  if (d.database === 'failure') return { ok: false, error: 'unavailable' }; // VIES-lidstaat tijdelijk offline
+  if (!d.valid) return { ok: false, error: d.format_valid === false ? 'invalid' : 'not_found' };
+  const address = d.company_address || '';
+  // NL-adres eindigt op "1234 AB PLAATS" → plaats eruit halen (best effort)
+  const m = address.toUpperCase().match(/\d{4}\s?[A-Z]{2}\s+([A-Z\-\s.'`]+)$/);
+  const city = m ? m[1].trim().toLowerCase().replace(/(^|[\s\-'])\S/g, c => c.toUpperCase()) : '';
+  return { ok: true, vat: num, name: d.company_name || '', address, city };
+}
 app.get('/api/vat/:number', rateLimit('vat', 10, 60 * 60e3), requireRole('pro'), async (req, res) => {
   try {
-    let num = String(req.params.number).toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (/^\d/.test(num)) num = 'NL' + num; // zonder landcode → NL aannemen
-    if (num.length < 8 || num.length > 14) return res.json({ ok: false, error: 'invalid' });
-    if (!process.env.EUVAT_API_KEY) return res.json({ ok: false, configured: false });
-    const r = await fetch(`https://euvatapi.com/api/v1/validate?access_key=${encodeURIComponent(process.env.EUVAT_API_KEY)}&vat_number=${encodeURIComponent(num)}`);
-    if (!r.ok) return res.json({ ok: false, error: 'lookup', status: r.status });
-    const d = await r.json();
-    if (!d.success) { console.error('EUVAT-fout:', JSON.stringify(d.error || d)); return res.json({ ok: false, error: 'lookup' }); }
-    if (d.database === 'failure') return res.json({ ok: false, error: 'unavailable' }); // VIES-lidstaat tijdelijk offline
-    if (!d.valid) return res.json({ ok: false, error: d.format_valid === false ? 'invalid' : 'not_found' });
-    await store.updateUser(req.user.id, { nip: num, verifiedVat: num, vatName: d.company_name || '', vatAddress: d.company_address || '' });
-    res.json({ ok: true, vat: num, name: d.company_name || '', address: d.company_address || '' });
+    const v = await vatValidate(req.params.number);
+    if (!v.ok) return res.json(v);
+    await store.updateUser(req.user.id, { nip: v.vat, verifiedVat: v.vat, vatName: v.name, vatAddress: v.address });
+    res.json({ ok: true, vat: v.vat, name: v.name, address: v.address });
   } catch (e) { console.error('VAT-fout:', e.message); res.json({ ok: false, error: 'server' }); }
+});
+// Publieke lookup voor het registratieformulier: zoekt bedrijfsgegevens op bij het
+// btw-nummer (autofill) en geeft een kortlevend ondertekend token mee, zodat de
+// registratie het nummer als geverifieerd kan opslaan zonder tweede API-call.
+app.get('/api/vat-lookup/:number', rateLimit('vatlookup', 10, 15 * 60e3), async (req, res) => {
+  try {
+    const v = await vatValidate(req.params.number);
+    if (!v.ok) return res.json(v);
+    res.json({ ok: true, vat: v.vat, name: v.name, city: v.city, token: A.sign({ t: 'vatreg', vat: v.vat, name: v.name }, 1 / 24) });
+  } catch (e) { console.error('VAT-lookup-fout:', e.message); res.json({ ok: false, error: 'server' }); }
 });
 app.get('/api/pros', async (req, res) => {
   try {
