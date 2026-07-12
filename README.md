@@ -108,6 +108,8 @@ Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt to
 ## Registratie & btw-nummer
 De vakman-registratie is bewust kort: bedrijfsnaam, **één hoofdspecialisme** (dropdown) en plaats. Het hoofdspecialisme wordt direct het werkgebied en de plaats wordt gegeocodeerd, zodat het bedrijf na KvK-verificatie meteen matchbaar is; extra vakgebieden voegt het bedrijf later toe onder **Werkgebied**. In **Bedrijfsprofiel → Gegevens** vult de vakman zijn **btw-nummer (btw-id)** in — dat is nodig op de lead-facturen (btw verlegd / reverse charge; de KvK-API levert geen btw-nummers, dus dit vult het bedrijf zelf in).
 
+Met `EUVAT_API_KEY` (sleutel van [euvatapi.com](https://euvatapi.com)) kan de vakman zijn btw-nummer laten **controleren tegen de EU VIES-databases** (knop *Controleren* naast het veld): het nummer wordt gevalideerd, genormaliseerd opgeslagen en gemarkeerd als geverifieerd, inclusief de officiële bedrijfsnaam. Zonder landcode wordt `NL` aangenomen. Zonder sleutel blijft handmatig invullen gewoon werken.
+
 ## Database (PostgreSQL)
 
 De app gebruikt automatisch **PostgreSQL** zodra `DATABASE_URL` is gezet (op Railway: voeg de PostgreSQL-plugin toe). Zonder die variabele valt de app terug op een JSON-bestand (`lib/store.js`) — handig voor lokaal ontwikkelen. Het schema (users, requests, claims, factuurteller) wordt bij het opstarten automatisch aangemaakt.

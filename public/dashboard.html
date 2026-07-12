@@ -354,6 +354,7 @@ const T = {
     rcNet:'Net', rcVat:'VAT (reverse charge, 0%)', rcGross:'Total', rcDate:'Date', rcPrint:'Print / save as PDF', rcNip:'VAT number',
     evBanner:'Please confirm your e-mail address — check your inbox for the confirmation link.', evResend:'Resend e-mail', evSent:'Sent! Check your inbox (and spam).', evDone:'✓ E-mail address confirmed',
     prNip:'VAT number (btw-id)', prNipHint:'Appears on your lead invoices (VAT reverse-charged) — e.g. NL123456789B01.',
+    vatCheck:'Validate', vatVerified:'VAT number verified (EU VIES)', vatInvalid:'Invalid or unknown VAT number.', vatNotSet:'VAT validation is not configured yet — you can save your number manually.', vatDown:'The EU validation service is temporarily unavailable — try again later.',
   },
   nl: {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
@@ -406,6 +407,7 @@ const T = {
     rcNet:'Netto', rcVat:'Btw (verlegd, 0%)', rcGross:'Totaal', rcDate:'Datum', rcPrint:'Afdrukken / opslaan als PDF', rcNip:'Btw-nummer',
     evBanner:'Bevestig je e-mailadres — check je inbox voor de bevestigingslink.', evResend:'E-mail opnieuw sturen', evSent:'Verstuurd! Check je inbox (en spam).', evDone:'✓ E-mailadres bevestigd',
     prNip:'Btw-nummer (btw-id)', prNipHint:'Komt op je lead-facturen (btw verlegd) — bijv. NL123456789B01.',
+    vatCheck:'Controleren', vatVerified:'Btw-nummer geverifieerd (EU VIES)', vatInvalid:'Ongeldig of onbekend btw-nummer.', vatNotSet:'Btw-controle is nog niet ingesteld — je kunt je nummer handmatig opslaan.', vatDown:'De EU-controledienst is tijdelijk niet bereikbaar — probeer het later opnieuw.',
   }
 };
 const t = k => (T[LANG][k]!=null?T[LANG][k]:k);
@@ -1442,7 +1444,10 @@ function pfInfoHtml(){ const u=ME; return `<div class="pf-grid">
     <div><label>${t('prSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}"></div>
     <div><label>${t('prCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}"></div>
     <div><label>${t('prPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}"></div>
-    <div><label>${t('prNip')}</label><input class="inp" id="pfNip" value="${htmlesc(u.nip||'')}" placeholder="NL123456789B01" style="margin-bottom:4px"><p class="meta" style="margin:0 0 10px;font-size:.78rem">${t('prNipHint')}</p></div>
+    <div><label>${t('prNip')}</label>
+      <div class="kvk-row"><input class="inp" id="pfNip" value="${htmlesc(u.nip||'')}" placeholder="NL123456789B01" style="margin-bottom:4px"><button class="btn btn-gold btn-sm" onclick="checkVat()">${t('vatCheck')}</button></div>
+      <div class="kvk-status" id="vatStatus">${u.vatVerified?('✓ '+t('vatVerified')+(u.vatName?' — '+htmlesc(u.vatName):'')):''}</div>
+      <p class="meta" style="margin:0 0 10px;font-size:.78rem">${t('prNipHint')}</p></div>
     <div style="grid-column:1/-1"><label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}">${u.websitePreview?siteCardHtml(u.websitePreview,u.website):''}</div>
   </div>
   <label>${t('prBio')} <span style="color:var(--muted);font-weight:400">(${t('optional')})</span></label><textarea class="inp" id="pfBio" rows="4" placeholder="${u.websitePreview?'':''}">${htmlesc(u.bio||'')}</textarea>
@@ -1526,6 +1531,20 @@ function profileHtml(){
     <div class="photo-thumbs" id="pfThumbs"></div>
     <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="saveProfile()">${t('save')}</button>
     <div class="note" id="pfNote">${t('saved')}</div></div>`;
+}
+async function checkVat(){
+  const raw=(document.getElementById('pfNip').value||'').toUpperCase().replace(/[^A-Z0-9]/g,''); const st=document.getElementById('vatStatus');
+  if(raw.length<8){ st.textContent=t('vatInvalid'); st.style.color='#e2708a'; return; }
+  st.textContent='…'; st.style.color='var(--muted)';
+  let r; try{ r=await api('/api/vat/'+encodeURIComponent(raw)); }catch(e){ st.textContent=t('vatInvalid'); st.style.color='#e2708a'; return; }
+  if(r.ok){
+    st.innerHTML='✓ '+t('vatVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
+    document.getElementById('pfNip').value=r.vat;
+    if(ME){ ME.nip=r.vat; ME.vatVerified=true; ME.vatName=r.name||''; }
+  }
+  else if(r.configured===false){ st.textContent=t('vatNotSet'); st.style.color='var(--muted)'; }
+  else if(r.error==='unavailable'){ st.textContent=t('vatDown'); st.style.color='var(--muted)'; }
+  else { st.textContent=t('vatInvalid'); st.style.color='#e2708a'; }
 }
 async function checkKvk(){
   const num=(document.getElementById('pfKvk').value||'').replace(/\D/g,''); const st=document.getElementById('kvkStatus');

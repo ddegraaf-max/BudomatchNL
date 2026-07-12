@@ -125,6 +125,7 @@ async function publicUser(u) {
     rest.workCategories = u.workCategories || [];
     rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
     rest.kvkAddress = u.kvkAddress || null;
+    rest.vatVerified = !!(u.nip && u.verifiedVat && u.nip === u.verifiedVat); rest.vatName = u.vatName || '';
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -771,6 +772,24 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
     await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name, kvkAddress });
     res.json({ ok: true, kvk: num, name, city, type: item.type || '', address: kvkAddress });
   } catch (e) { console.error('KvK-fout:', e.message); res.json({ ok: false, error: 'server' }); }
+});
+// Btw-nummer-controle via euvatapi.com (EU VIES-databases). Vereist EUVAT_API_KEY.
+// Bij succes wordt het geverifieerde nummer opgeslagen — dat komt op de lead-factuur.
+app.get('/api/vat/:number', rateLimit('vat', 10, 60 * 60e3), requireRole('pro'), async (req, res) => {
+  try {
+    let num = String(req.params.number).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (/^\d/.test(num)) num = 'NL' + num; // zonder landcode → NL aannemen
+    if (num.length < 8 || num.length > 14) return res.json({ ok: false, error: 'invalid' });
+    if (!process.env.EUVAT_API_KEY) return res.json({ ok: false, configured: false });
+    const r = await fetch(`https://euvatapi.com/api/v1/validate?access_key=${encodeURIComponent(process.env.EUVAT_API_KEY)}&vat_number=${encodeURIComponent(num)}`);
+    if (!r.ok) return res.json({ ok: false, error: 'lookup', status: r.status });
+    const d = await r.json();
+    if (!d.success) { console.error('EUVAT-fout:', JSON.stringify(d.error || d)); return res.json({ ok: false, error: 'lookup' }); }
+    if (d.database === 'failure') return res.json({ ok: false, error: 'unavailable' }); // VIES-lidstaat tijdelijk offline
+    if (!d.valid) return res.json({ ok: false, error: d.format_valid === false ? 'invalid' : 'not_found' });
+    await store.updateUser(req.user.id, { nip: num, verifiedVat: num, vatName: d.company_name || '', vatAddress: d.company_address || '' });
+    res.json({ ok: true, vat: num, name: d.company_name || '', address: d.company_address || '' });
+  } catch (e) { console.error('VAT-fout:', e.message); res.json({ ok: false, error: 'server' }); }
 });
 app.get('/api/pros', async (req, res) => {
   try {
