@@ -980,7 +980,7 @@ async function fakturaXlExport(claim, pro, request) {
   <data_wystawienia>${date}</data_wystawienia>
   <data_sprzedazy>${date}</data_sprzedazy>
   <termin_platnosci_data>${date}</termin_platnosci_data>
-  <waluta>EUR</waluta>
+  <waluta>EUR</waluta>${process.env.FAKTURAXL_DZIAL_ID ? `\n  <id_dzialy_firmy>${xmlEsc(process.env.FAKTURAXL_DZIAL_ID)}</id_dzialy_firmy>` : ''}
   <status>2</status>
   <data_oplacenia>${date}</data_oplacenia>
   <kwota_oplacona>${bedrag}</kwota_oplacona>
@@ -1667,6 +1667,7 @@ app.get('/api/admin/overview', requireAdmin, async (req, res) => {
         claimsTotal: claims.length,
         claimsPaid: paid.length,
         revenueGross: +paid.reduce((s, c) => s + (c.amountGross || 0), 0).toFixed(2),
+        fxlErrors: claims.filter(c => c.fxlError).length,
         reviews: reviews.length,
         supportOpen: (await store.listFeedback()).filter(f => f.kind === 'support' && (f.status || 'nieuw') !== 'afgerond').length,
       },
@@ -1740,6 +1741,18 @@ app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
     await store.updateFeedback(f.id, { status });
     res.json({ ok: true, status });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Faktura XL: afdelingen (działy) ophalen, zodat de beheerder het juiste
+// FAKTURAXL_DZIAL_ID kan kiezen (aparte nummering per bedrijfsonderdeel).
+app.get('/api/admin/fakturaxl/dzialy', requireAdmin, async (req, res) => {
+  try {
+    if (!process.env.FAKTURAXL_API_KEY) return res.json({ configured: false, items: [] });
+    const r = await fxlPost('dokument_lista_dzialow.php',
+      `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token></dokument>`);
+    const items = [...String(r.body).matchAll(/<dzial>\s*<id>(\d+)<\/id>\s*<nazwa>(?:<!\[CDATA\[)?([^<\]]*)/g)]
+      .map(m => ({ id: m[1], nazwa: m[2].trim() }));
+    res.json({ configured: true, dzialId: process.env.FAKTURAXL_DZIAL_ID || '', items });
+  } catch (e) { console.error('[fakturaxl] dzialy:', e.message); res.json({ configured: true, dzialId: process.env.FAKTURAXL_DZIAL_ID || '', items: [], error: 'lookup' }); }
 });
 // Instellingen: leadprijs en gratis welkomstleads — direct actief, zonder herstart.
 app.get('/api/admin/settings', requireAdmin, async (req, res) => {
