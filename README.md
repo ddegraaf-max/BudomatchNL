@@ -39,7 +39,7 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Endpoints
 | Route | Doel |
 |---|---|
-|  site, dashboard `GET /` · `GET /dashboard` · `GET /admin`  beheerpaneel | site, dashboard & beheerpaneel |
+| `GET /` · `GET /dashboard` · `GET /admin` | site, dashboard & beheerpaneel (nette URL's; oude `.html`-links krijgen een 301) |
 | `POST /api/register` · `/api/login` · `/api/logout` · `GET /api/me` | accounts |
 | `POST /api/password/forgot` · `/api/password/reset` | wachtwoord vergeten (herstel-link per e-mail) |
 | `GET /api/verify-email` · `POST /api/verify-email/resend` | e-mailadres bevestigen |
