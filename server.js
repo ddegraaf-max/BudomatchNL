@@ -19,7 +19,7 @@ const SELLER = {
   country: process.env.SELLER_COUNTRY || 'Polska',
   nip: process.env.SELLER_NIP || '7010869430',
   regon: process.env.SELLER_REGON || '381430120',
-  email: process.env.SELLER_EMAIL || 'info@budomatch.pl',
+  email: process.env.SELLER_EMAIL || 'info@budomatch.nl',
 };
 
 const PORT = process.env.PORT || 3000;
@@ -1224,7 +1224,7 @@ async function geocodeNL(q) {
   if (NL_CITIES[cityKey]) return { lat: NL_CITIES[cityKey][0], lng: NL_CITIES[cityKey][1] };
   for (const k in NL_CITIES) { if (cityKey.length > 3 && (cityKey.includes(k) || k.includes(cityKey))) return { lat: NL_CITIES[k][0], lng: NL_CITIES[k][1] }; }
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': 'Budomatch/1.0 (info@budomatch.pl)' } });
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': 'Budomatch/1.0 (info@budomatch.nl)' } });
     const d = await r.json();
     if (d && d[0]) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
   } catch (e) { /* stil */ }
@@ -1638,7 +1638,7 @@ app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
 // ---------------- e-mail (Resend) voor gast-aanvragen / aanmeldingen ----------------
 async function sendMail(subject, html, attachments, to) {
   if (!process.env.RESEND_API_KEY) { console.log('[Resend niet ingesteld]', subject, to ? '→ ' + to : '', attachments ? `(+${attachments.length} bijlage(n))` : ''); return { skipped: true }; }
-  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: to || process.env.MAIL_TO || 'info@budomatch.pl', subject, html };
+  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: to || process.env.MAIL_TO || 'info@budomatch.nl', subject, html };
   if (attachments && attachments.length) payload.attachments = attachments;
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
