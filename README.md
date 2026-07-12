@@ -138,6 +138,9 @@ Elke betaalde ontgrendeling levert een **downloadbare PDF-factuur** op (`GET /ap
 ## Bedrijfsprofiel + KvK-controle
 Het bedrijfsprofiel is heringedeeld (logo, reviews, tweekoloms velden). Vakmensen kunnen hun **KvK-nummer** invoeren en op **Ophalen & controleren** klikken: de server haalt via de KvK-API de officiele bedrijfsnaam/plaats op en markeert het profiel als **geregistreerd/geverifieerd** (vinkje op profiel, in de bedrijvenlijst en op de openbare pagina). Vereist `KVK_API_KEY`; zonder sleutel is handmatig invullen mogelijk. Alle pagina's staan op `lang=nl` met `notranslate` zodat browsers de eigen NL/EN-teksten niet meer automatisch (verkeerd) vertalen.
 
+## AI-assistent kent het hele platform
+Het system prompt van de assistent bevat een **kennisbank met alle platformfeiten** (prijzen, gratis leads, niveaus Brons/Zilver/Goud, KvK-verificatie, collega-klussen, btw verlegd, wachtwoord vergeten, support, …), zodat hij vragen over Budomatch feitelijk juist beantwoordt en niets verzint. De prijzen in de kennisbank komen uit de servervariabelen en bewegen automatisch mee met prijswijzigingen. Het statische deel wordt via **prompt caching** gecached (±90% goedkoper per vervolgvraag); het gebruikersspecifieke deel staat er als apart blok achter zodat de cache tussen alle gebruikers gedeeld wordt.
+
 ## AI-assistent voor de vakman
 De AI-assistent in het vakman-portaal draait nu in **vakman-modus**: hij helpt opdrachten binnenhalen en afhandelen — een professionele **reactie of offertetekst aan de klant** opstellen, bedenken welke vragen je moet stellen, en tips geven. In elk klantgesprek (Berichten) staat een knop **"Reactie voorstellen (AI)"** die op basis van de klus en het gesprek een kant-en-klare reactie in het invoerveld zet, die de vakman kan aanpassen en versturen. (Vereist `ANTHROPIC_API_KEY`.) De klant-assistent blijft de klant helpen met een heldere klusomschrijving.
 

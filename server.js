@@ -1281,27 +1281,67 @@ app.post('/api/projobs/:id/take', requireRole('pro'), async (req, res) => {
 });
 
 // ---------------- AI assistant ----------------
-function systemPrompt(lang, user, mode) {
+// Kennisbank: alle regels, prijzen en functies van het platform, zodat de assistent
+// vragen over Budomatch feitelijk juist beantwoordt. Prijzen komen uit de
+// constanten bovenin — een prijswijziging werkt hier automatisch door.
+const PLATFORM_KNOWLEDGE = (() => {
+  const eur = n => '€ ' + n.toFixed(2).replace('.', ',');
+  const orient = Math.round(Math.round(LEAD_PRICE_GROSS * 100) * 0.5) / 100;
+  return `PLATFORMKENNIS BUDOMATCH (feiten — baseer je antwoorden uitsluitend hierop; verzin geen functies of prijzen die hier niet staan):
+
+VOOR KLANTEN (altijd gratis)
+- Een klant maakt gratis een account aan en plaatst gratis een aanvraag: dienst, plaats, omschrijving, gewenste termijn en optioneel foto's (max 3) en adres.
+- Type aanvraag: "opdracht" (moet echt uitgevoerd worden) of "oriëntatie" (klant oriënteert zich nog; vakmensen betalen dan 50% minder voor het contact).
+- Maximaal 3 vakmensen kunnen op een aanvraag reageren. De contactgegevens van de klant zijn afgeschermd tot een vakman de aanvraag ontgrendelt.
+- Zodra een vakman ontgrendelt, opent automatisch een chat in het portaal (tab Berichten). Daar kan de vakman ook een offerte sturen (bedrag + omschrijving) die de klant met één klik accepteert of afwijst, en een afspraak voorstellen die de klant bevestigt.
+- De klant vergelijkt reageerders (bedrijfsnaam, reviews, niveau-badge, profiel via "Bekijk"), kan de klus aan één vakman toewijzen ("Kies deze vakman"), en kan de aanvraag bewerken, annuleren of heropenen.
+- Na contact kan de klant de vakman beoordelen (1-5 sterren + opmerking) — één review per aanvraag.
+- Tab "Vakman zoeken": kies soort werk + plaats en zie alleen KvK-geverifieerde bedrijven die dat werk doen én binnen wiens werkstraal de klant valt. Daar (en bij een nieuwe aanvraag) kan de klant een aanvraag direct naar één bedrijf sturen — alleen dat bedrijf ziet 'm dan. Vakmensen met een GOUDEN badge zijn direct te benaderen.
+- Elk vakbedrijf heeft een openbare profielpagina met logo, omschrijving, projectfoto's, reviews, website-voorbeeld en een badge (Brons/Zilver/Goud).
+
+VOOR VAKMENSEN (professionals)
+- Registratie is kort: bedrijfsnaam, één hoofdspecialisme, plaats. Meer vakgebieden en de werkstraal stel je in onder Werkgebied; telefoon, btw-nummer en KvK vul je in je Bedrijfsprofiel in.
+- Het profiel wordt pas ACTIEF na KvK-verificatie (Bedrijfsprofiel → KvK-controle): zonder verificatie is het bedrijf niet zichtbaar en kan het niet op aanvragen reageren. Eén KvK-nummer kan maar bij één account horen. De geverifieerde KvK-gegevens (naam + adres) komen op de factuur.
+- Kosten: de eerste ${FREE_LEADS} leads zijn gratis (welkomsttegoed). Daarna kost het ontgrendelen van een aanvraag ${eur(LEAD_PRICE_GROSS)} per lead; oriëntatie-aanvragen kosten de helft: ${eur(orient)}. Plaatsen van collega-klussen, chatten en het profiel zijn gratis. Betalen kan met iDEAL, creditcard of Bancontact.
+- Btw: de btw wordt verlegd naar de afnemer (reverse charge, 0% op de factuur). De vakman vult zijn btw-nummer (btw-id) in bij Bedrijfsprofiel → Gegevens; dat komt op de factuur. Facturen (PDF) staan onder Account → Facturatie.
+- Niveaus op basis van reviewscore (score op 10 = gemiddelde sterren × 2): Brons (score < 4) geeft +1 gratis lead per maand, Zilver (4-6) +2, Goud (7-10) +3 — bovenop het eenmalige welkomsttegoed. GOUD betekent ook: klanten kunnen je direct een opdracht sturen — extra zichtbaarheid.
+- Collega-klussen (gratis USP): werk dat blijft liggen deel je gratis met collega-vakmensen; een collega pakt de klus op en er opent automatisch een vakman⇆vakman chat. Zo ontstaan samenwerkingen.
+- Werkgebied: plaats/postcode + straal (km) + vinkjes voor alle vakgebieden die het bedrijf doet — dit bepaalt welke aanvragen je ziet en of klanten je vinden.
+
+ACCOUNT & VEILIGHEID
+- Wachtwoord vergeten? Op de inlogpagina staat "Wachtwoord vergeten?" — je krijgt een herstel-link per e-mail (1 uur geldig).
+- Na registratie krijg je een bevestigingsmail; bevestig je e-mailadres via de link (banner in het dashboard, met knop om opnieuw te sturen).
+- Twee-stapsverificatie (2FA) met een authenticator-app kan aan via Instellingen/Beveiliging, inclusief herstelcodes.
+
+SUPPORT
+- Vragen of problemen: in het dashboard via Helpdesk het supportformulier invullen — zakelijke klanten krijgen voorrang. Verwijs de gebruiker daarnaar als je een vraag niet met bovenstaande feiten kunt beantwoorden (bijv. over betalingen, een specifiek account of een storing).`;
+})();
+
+// Statisch deel van het system prompt (cachebaar): rol + doel + kennisbank.
+function systemPrompt(lang, mode) {
   const cats = lang === 'en' ? CATS_EN : CATS_NL;
-  const who = user
-    ? (lang === 'en'
-        ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`
-        : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`)
-    : '';
   if (lang === 'en') {
     const goal = mode === 'customer'
       ? 'Your goal is to guide the customer: sharpen the job (scope, location, timing, indicative budget), pick the right trade, and write a clear job description. When complete, summarise it so the customer can paste it into the form.'
       : mode === 'pro'
       ? 'You assist the TRADESMAN (professional). Help them win and handle jobs: draft a professional, friendly reply or quote text to a (potential) customer based on the request, suggest the right questions to ask the customer, and give practical tips. When drafting a reply, write it ready-to-send in the customer\'s language, concise and concrete. Never invent prices or facts — leave placeholders like [price] where needed.'
       : 'Help choose the right trade, describe the job and explain how Budomatch works.';
-    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople. ${who}\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. Do not invent fixed prices.`;
+    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople.\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. For facts about how the platform works, rely strictly on the platform knowledge below (it is written in Dutch; answer in English).\n\n${PLATFORM_KNOWLEDGE}`;
   }
   const goal = mode === 'customer'
     ? 'Je doel is de klant soepel door het traject loodsen: de klus aanscherpen (omvang, locatie, gewenste termijn, indicatief budget), het juiste vakgebied kiezen, en een heldere klusomschrijving opstellen. Als die compleet is, vat je die kort samen zodat de klant hem in het formulier kan plakken.'
     : mode === 'pro'
     ? 'Je ondersteunt de VAKMAN (professional). Help hem opdrachten binnenhalen en afhandelen: stel een professionele, vriendelijke reactie of offertetekst op aan een (potentiële) klant op basis van de aanvraag, bedenk de juiste vragen om aan de klant te stellen, en geef praktische tips. Als je een reactie opstelt, schrijf die kant-en-klaar zodat de vakman hem direct kan versturen — in de taal van de klant, beknopt en concreet. Verzin nooit prijzen of feiten; gebruik desnoods een plaatshouder als [prijs].'
     : 'Help het juiste vakgebied kiezen, de klus beschrijven en leg uit hoe Budomatch werkt.';
-  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen. ${who}\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Verzin geen vaste prijzen.`;
+  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen.\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Baseer feiten over het platform strikt op onderstaande platformkennis.\n\n${PLATFORM_KNOWLEDGE}`;
+}
+// Dynamisch deel (per gebruiker) — apart blok NÁ het cachebare deel, zodat de
+// kennisbank voor alle gebruikers uit de prompt-cache komt.
+function userContext(lang, user) {
+  if (!user) return '';
+  return lang === 'en'
+    ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`
+    : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`;
 }
 
 app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
@@ -1320,10 +1360,16 @@ app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
         : 'De assistent is nog niet geconfigureerd (geen API-sleutel ingesteld).' });
     }
 
+    // Systeem als blokken: het grote statische deel (rol + kennisbank) met
+    // prompt-caching, het kleine gebruikersdeel erna zodat de cache gedeeld
+    // blijft tussen alle gebruikers.
+    const system = [{ type: 'text', text: systemPrompt(lang, mode), cache_control: { type: 'ephemeral' } }];
+    const who = userContext(lang, user);
+    if (who) system.push({ type: 'text', text: who });
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 700, system: systemPrompt(lang, user, mode), messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 700, system, messages }),
     });
     if (!r.ok) { console.error('Anthropic', r.status, await r.text()); return res.status(502).json({ reply: lang === 'pl' ? 'Asystent chwilowo niedostępny.' : 'De assistent is even niet bereikbaar.' }); }
     const data = await r.json();
