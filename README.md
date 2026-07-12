@@ -101,6 +101,10 @@ Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt to
 - **Overzicht** — klanten/vakmensen, aanvragen, ontgrendelingen, omzet, reviews, open supportverzoeken.
 - **Gebruikers** — zoeken, **handmatige KvK-verificatie** (handig zolang er geen `KVK_API_KEY` is; dubbele KvK-nummers worden geweigerd) en **blokkeren/deblokkeren**.
 - **Support** — inbox van supportverzoeken uit het dashboard (met status Nieuw/Bezig/Afgerond en een knop om per e-mail te antwoorden). Supportverzoeken komen daarnaast nog steeds per e-mail binnen.
+- **Instellingen** — pas de **leadprijs** en het aantal **gratis welkomstleads** aan; direct actief zonder herstart (leads, afrekenen, facturen, KPI's én de AI-assistent rekenen ermee). De oriëntatieprijs volgt automatisch (50%). Let op: vaste marketingteksten (homepage, FAQ, voorwaarden) noemen de prijs ook — pas die handmatig aan bij een blijvende wijziging.
+
+### Handmatige KvK-verificatie (zolang er geen `KVK_API_KEY` is)
+De flow werkt end-to-end zonder KvK-API: **(1)** een nieuwe vakman registreert → de beheerder krijgt een e-mail; **(2)** de vakman vult zijn KvK-nummer in en klikt "Ophalen & controleren" → het nummer wordt opgeslagen en de beheerder krijgt opnieuw een e-mail; **(3)** de beheerder verifieert in het paneel (Gebruikers → filter "Alleen te verifiëren" → *Verifieer KvK*) → de vakman krijgt een e-mail dat zijn profiel actief is. Zodra `KVK_API_KEY` is gezet verloopt de verificatie automatisch via de KvK-API; de handmatige knop blijft daarnaast gewoon werken.
 
 - **Juridisch:** `voorwaarden.html` en `privacy.html` bevatten je bedrijfsgegevens (KvK/btw-nummer) en zijn opgesteld als degelijke basis — laat ze vóór livegang nog juridisch nakijken.
 - **Facturen:** voor elke betaalde lead wordt automatisch een **factuur** aangemaakt met doorlopende nummering (jaar-volgnummer), verkoper- (KvK/btw-nummer) en kopergegevens (NIP/adres indien ingevuld) en de netto/btw/bruto-opbouw. Professionals downloaden de factuur (afdrukken of opslaan als PDF) vanuit hun facturatie-overzicht. De nummering reset per kalenderjaar.

@@ -101,14 +101,25 @@ function shell(){
       <button class="ptab" data-k="overzicht" onclick="showTab('overzicht')">Overzicht</button>
       <button class="ptab" data-k="gebruikers" onclick="showTab('gebruikers')">Gebruikers</button>
       <button class="ptab" data-k="support" onclick="showTab('support')">Support <span id="supBadge"></span></button>
+      <button class="ptab" data-k="instellingen" onclick="showTab('instellingen')">Instellingen</button>
     </div>
     <div id="tab"></div>`;
 }
 function showTab(k){
   TAB=k;document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
   if(k==='overzicht')renderOverview();
-  else if(k==='gebruikers'){$('#tab').innerHTML=`<div class="card"><h2>Gebruikers</h2><input class="inp" id="uq" placeholder="Zoek op naam, e-mail, bedrijf, KvK of plaats…" oninput="debounceUsers()"><div class="tblwrap" id="uList"><p class="empty">Laden…</p></div></div>`;loadUsers();}
+  else if(k==='gebruikers'){$('#tab').innerHTML=`<div class="card"><h2>Gebruikers</h2>
+    <input class="inp" id="uq" placeholder="Zoek op naam, e-mail, bedrijf, KvK of plaats…" oninput="debounceUsers()">
+    <div style="margin:-6px 0 12px"><button class="btn btn-ghost btn-sm" id="uPending" onclick="togglePending()">Alleen te verifiëren vakmensen</button></div>
+    <div class="tblwrap" id="uList"><p class="empty">Laden…</p></div></div>`;loadUsers();}
   else if(k==='support')renderSupport();
+  else if(k==='instellingen')renderSettings();
+}
+let PENDING_ONLY=false;
+function togglePending(){
+  PENDING_ONLY=!PENDING_ONLY;
+  const b=$('#uPending');if(b){b.classList.toggle('btn-gold',PENDING_ONLY);b.classList.toggle('btn-ghost',!PENDING_ONLY);}
+  renderUserRows();
 }
 function renderOverview(){
   const s=OVERVIEW.stats;
@@ -138,10 +149,14 @@ async function loadUsers(){
   const q=($('#uq')&&$('#uq').value.trim())||'';
   let r;try{r=await api('/api/admin/users?q='+encodeURIComponent(q));}catch(e){return;}
   USERS=r.users;
+  renderUserRows();
+}
+function renderUserRows(){
   const el=$('#uList');if(!el)return;
-  if(!USERS.length){el.innerHTML='<p class="empty">Geen gebruikers gevonden.</p>';return;}
+  const list=PENDING_ONLY?USERS.filter(u=>u.role==='pro'&&!u.kvkVerified&&!u.blocked):USERS;
+  if(!list.length){el.innerHTML='<p class="empty">'+(PENDING_ONLY?'Geen vakmensen die op verificatie wachten.':'Geen gebruikers gevonden.')+'</p>';return;}
   el.innerHTML=`<table class="tbl"><thead><tr><th>Naam / bedrijf</th><th>E-mail</th><th>Rol</th><th>Status</th><th>Sinds</th><th>Acties</th></tr></thead><tbody>
-    ${USERS.map(u=>`<tr>
+    ${list.map(u=>`<tr>
       <td><b>${esc(u.company||u.name)}</b>${u.company?`<br><span style="color:var(--muted)">${esc(u.name)}</span>`:''}${u.city?`<br><span style="color:var(--muted);font-size:.8rem">${esc(u.city)}</span>`:''}</td>
       <td>${esc(u.email)}${u.emailVerified?'':' <span class="tag red">e-mail niet bevestigd</span>'}</td>
       <td><span class="tag ${u.role==='pro'?'gold':'blue'}">${u.role==='pro'?'vakman':'klant'+(u.customerType==='zakelijk'?' (zakelijk)':'')}</span></td>
@@ -166,6 +181,35 @@ async function blockUser(id,block){
   try{
     const r=await api('/api/admin/users/'+id+'/block',{method:'POST',body:JSON.stringify({blocked:block})});
     if(r.ok){toast(block?'Geblokkeerd.':'Gedeblokkeerd.');loadUsers();}
+  }catch(e){}
+}
+async function renderSettings(){
+  $('#tab').innerHTML='<div class="card"><h2>Instellingen</h2><div id="setBody"><p class="empty">Laden…</p></div></div>';
+  let s;try{s=await api('/api/admin/settings');}catch(e){return;}
+  $('#setBody').innerHTML=`
+    <div style="max-width:460px">
+      <label>Leadprijs (bruto, btw verlegd) — €</label>
+      <input class="inp" id="setPrice" type="number" step="0.01" min="1" max="500" value="${s.leadPriceGross}" oninput="updOrient()">
+      <p class="meta" style="margin:-8px 0 14px;font-size:.82rem">Oriëntatie-leads (automatisch 50%): <b id="setOrient">€ ${Number(s.orientPriceGross).toFixed(2).replace('.',',')}</b></p>
+      <label>Gratis welkomstleads (eenmalig per nieuw bedrijf)</label>
+      <input class="inp" id="setFree" type="number" step="1" min="0" max="100" value="${s.freeLeads}">
+      <button class="btn btn-gold" onclick="saveSettings()">Opslaan — direct actief</button>
+      <p class="meta" style="margin-top:14px;font-size:.82rem">Werkt direct door in: leads, ontgrendelen/afrekenen, facturen, dashboard-KPI's en de AI-assistent.</p>
+      <p class="meta" style="margin-top:6px;font-size:.82rem;color:#e2c08a">⚠ Vaste marketingteksten (homepage, FAQ, algemene voorwaarden) noemen de prijs ook — pas die teksten aan bij een blijvende prijswijziging.</p>
+      <p class="meta" style="margin-top:6px;font-size:.82rem">Standaard: € ${Number(s.defaults.leadPriceGross).toFixed(2).replace('.',',')} · ${s.defaults.freeLeads} gratis leads.</p>
+    </div>`;
+}
+function updOrient(){
+  const v=parseFloat($('#setPrice').value);
+  const el=$('#setOrient');if(!el)return;
+  el.textContent=isFinite(v)?('€ '+(Math.round(Math.round(v*100)*0.5)/100).toFixed(2).replace('.',',')):'—';
+}
+async function saveSettings(){
+  const price=parseFloat($('#setPrice').value), free=parseInt($('#setFree').value,10);
+  try{
+    const r=await api('/api/admin/settings',{method:'POST',body:JSON.stringify({leadPriceGross:price,freeLeads:free})});
+    if(r.ok){toast('Opgeslagen — nieuwe prijzen zijn direct actief.');renderSettings();}
+    else toast(r.error==='invalid_price'?'Ongeldige prijs (€ 1 – € 500).':'Ongeldige invoer.');
   }catch(e){}
 }
 async function renderSupport(){

@@ -26,12 +26,26 @@ const PORT = process.env.PORT || 3000;
 const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
 
 // ----- Pricing -----
+// Standaardwaarden; de actuele waarden staan in de database (beheerpaneel →
+// Instellingen) en worden bij het opstarten in PRICING geladen. Wijzigen kan
+// zonder herstart via POST /api/admin/settings.
 const FREE_LEADS = 5;
 const LEAD_PRICE_GROSS = 18.15;         // euro (btw verlegd)
 const VAT_RATE = 0;                      // 0% — btw verlegd (reverse charge, B2B NL)
-const LEAD_PRICE_NET = +(LEAD_PRICE_GROSS / (1 + VAT_RATE)).toFixed(2);   // 12.50 (btw verlegd)
-const LEAD_PRICE_VAT = +(LEAD_PRICE_GROSS - LEAD_PRICE_NET).toFixed(2);   // 0.00 (verlegd)
 const CURRENCY = 'eur';
+
+const PRICING = { gross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS };
+async function loadPricing() {
+  try {
+    const s = await store.getSettings();
+    if (Number(s.leadPriceGross) > 0) PRICING.gross = Math.round(Number(s.leadPriceGross) * 100) / 100;
+    if (Number.isFinite(Number(s.freeLeads)) && Number(s.freeLeads) >= 0) PRICING.freeLeads = Math.round(Number(s.freeLeads));
+    console.log(`[pricing] leadprijs € ${PRICING.gross.toFixed(2)} · ${PRICING.freeLeads} gratis welkomstleads`);
+  } catch (e) { console.error('[pricing] instellingen laden mislukt:', e.message); }
+}
+loadPricing();
+// Samenvatting voor API-antwoorden (btw verlegd → netto = bruto, btw = 0)
+const priceInfo = () => ({ gross: PRICING.gross, net: PRICING.gross, vat: 0, vatRate: VAT_RATE });
 
 // Prijs per lead hangt af van het type aanvraag:
 // - 'opdracht' (echte klus): volle prijs
@@ -39,7 +53,7 @@ const CURRENCY = 'eur';
 function leadPrice(r) {
   const factor = (r && r.intent === 'orientatie') ? 0.5 : 1;
   // in centen rekenen: 1815 × 0,5 = 907,5 → 908 → € 9,08 (geen float-afronding naar 9,07)
-  const gross = Math.round(Math.round(LEAD_PRICE_GROSS * 100) * factor) / 100;
+  const gross = Math.round(Math.round(PRICING.gross * 100) * factor) / 100;
   const net = +(gross / (1 + VAT_RATE)).toFixed(2);
   const vat = +(gross - net).toFixed(2);
   return { gross, net, vat, vatRate: VAT_RATE, orientation: factor !== 1 };
@@ -308,6 +322,13 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
     }
     await store.addUser(u);
     sendVerifyMail(u, req).catch(e => console.error('verify-mail:', e.message));
+    if (role === 'pro') {
+      // beheerder informeren: nieuw bedrijf wacht (handmatige) KvK-verificatie
+      sendMail(`Nieuwe vakman-registratie — ${esc(u.company || u.name)}`,
+        `<p>Nieuwe vakman op Budomatch: <b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}).</p>
+         <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig in het beheerpaneel (<b>/admin.html → Gebruikers</b>) zodra het KvK-nummer bekend is.</p>`,
+        null, FB_ADMIN || undefined).catch(() => {});
+    }
     A.setAuthCookie(res, sessionToken(u), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
@@ -575,7 +596,7 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
       creditsUsed: ci.usedTotal,
       welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining,
       tier: ci.tier, rating: ci.rating,
-      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
+      price: priceInfo(),
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -665,8 +686,8 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
     res.json({
       claims, creditsUsed: ci.usedTotal, creditsLeft: ci.freeAvailable,
       welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining, tier: ci.tier, rating: ci.rating,
-      freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
-      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
+      freeLeads: PRICING.freeLeads, paidTotalGross: +paidTotal.toFixed(2),
+      price: priceInfo(),
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -752,7 +773,16 @@ app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
   try {
     const num = String(req.params.number).replace(/\D/g, '');
     if (num.length !== 8) return res.json({ ok: false, error: 'invalid' });
-    if (!process.env.KVK_API_KEY) return res.json({ ok: false, configured: false });
+    if (!process.env.KVK_API_KEY) {
+      // Geen API-sleutel: nummer opslaan en de beheerder mailen, zodat het
+      // bedrijf handmatig geverifieerd kan worden (beheerpaneel → Gebruikers).
+      await store.updateUser(req.user.id, { kvk: num });
+      sendMail(`KvK-verificatie aangevraagd — ${esc(req.user.company || req.user.name)}`,
+        `<p><b>${esc(req.user.company || req.user.name)}</b> (${esc(req.user.email)}) heeft KvK-nummer <b>${esc(num)}</b> ingevuld en wacht op handmatige verificatie.</p>
+         <p>Verifieer het bedrijf in het beheerpaneel: <b>/admin.html → Gebruikers</b>.</p>`,
+        null, FB_ADMIN || undefined).catch(() => {});
+      return res.json({ ok: false, configured: false, saved: true });
+    }
     const r = await fetch(`https://api.kvk.nl/api/v2/zoeken?kvkNummer=${num}`, { headers: { apikey: process.env.KVK_API_KEY } });
     if (!r.ok) return res.json({ ok: false, error: 'lookup', status: r.status });
     const d = await r.json();
@@ -986,7 +1016,7 @@ async function creditInfo(pro) {
   const claims = await store.claimsByPro(pro.id);
   const free = claims.filter(c => c.free);
   const welcomeUsed = free.filter(c => c.bucket !== 'monthly').length;
-  const welcomeRemaining = Math.max(0, FREE_LEADS - welcomeUsed);
+  const welcomeRemaining = Math.max(0, PRICING.freeLeads - welcomeUsed);
   const rating = await proRating(pro.id);
   const tier = tierInfo(rating);
   const cm = monthKey(Date.now());
@@ -1282,11 +1312,11 @@ app.post('/api/projobs/:id/take', requireRole('pro'), async (req, res) => {
 
 // ---------------- AI assistant ----------------
 // Kennisbank: alle regels, prijzen en functies van het platform, zodat de assistent
-// vragen over Budomatch feitelijk juist beantwoordt. Prijzen komen uit de
-// constanten bovenin — een prijswijziging werkt hier automatisch door.
-const PLATFORM_KNOWLEDGE = (() => {
+// vragen over Budomatch feitelijk juist beantwoordt. Prijzen komen live uit
+// PRICING (beheerpaneel → Instellingen) — een prijswijziging werkt direct door.
+function platformKnowledge() {
   const eur = n => '€ ' + n.toFixed(2).replace('.', ',');
-  const orient = Math.round(Math.round(LEAD_PRICE_GROSS * 100) * 0.5) / 100;
+  const orient = Math.round(Math.round(PRICING.gross * 100) * 0.5) / 100;
   return `PLATFORMKENNIS BUDOMATCH (feiten — baseer je antwoorden uitsluitend hierop; verzin geen functies of prijzen die hier niet staan):
 
 VOOR KLANTEN (altijd gratis)
@@ -1302,7 +1332,7 @@ VOOR KLANTEN (altijd gratis)
 VOOR VAKMENSEN (professionals)
 - Registratie is kort: bedrijfsnaam, één hoofdspecialisme, plaats. Meer vakgebieden en de werkstraal stel je in onder Werkgebied; telefoon, btw-nummer en KvK vul je in je Bedrijfsprofiel in.
 - Het profiel wordt pas ACTIEF na KvK-verificatie (Bedrijfsprofiel → KvK-controle): zonder verificatie is het bedrijf niet zichtbaar en kan het niet op aanvragen reageren. Eén KvK-nummer kan maar bij één account horen. De geverifieerde KvK-gegevens (naam + adres) komen op de factuur.
-- Kosten: de eerste ${FREE_LEADS} leads zijn gratis (welkomsttegoed). Daarna kost het ontgrendelen van een aanvraag ${eur(LEAD_PRICE_GROSS)} per lead; oriëntatie-aanvragen kosten de helft: ${eur(orient)}. Plaatsen van collega-klussen, chatten en het profiel zijn gratis. Betalen kan met iDEAL, creditcard of Bancontact.
+- Kosten: de eerste ${PRICING.freeLeads} leads zijn gratis (welkomsttegoed). Daarna kost het ontgrendelen van een aanvraag ${eur(PRICING.gross)} per lead; oriëntatie-aanvragen kosten de helft: ${eur(orient)}. Plaatsen van collega-klussen, chatten en het profiel zijn gratis. Betalen kan met iDEAL, creditcard of Bancontact.
 - Btw: de btw wordt verlegd naar de afnemer (reverse charge, 0% op de factuur). De vakman vult zijn btw-nummer (btw-id) in bij Bedrijfsprofiel → Gegevens; dat komt op de factuur. Facturen (PDF) staan onder Account → Facturatie.
 - Niveaus op basis van reviewscore (score op 10 = gemiddelde sterren × 2): Brons (score < 4) geeft +1 gratis lead per maand, Zilver (4-6) +2, Goud (7-10) +3 — bovenop het eenmalige welkomsttegoed. GOUD betekent ook: klanten kunnen je direct een opdracht sturen — extra zichtbaarheid.
 - Collega-klussen (gratis USP): werk dat blijft liggen deel je gratis met collega-vakmensen; een collega pakt de klus op en er opent automatisch een vakman⇆vakman chat. Zo ontstaan samenwerkingen.
@@ -1315,7 +1345,7 @@ ACCOUNT & VEILIGHEID
 
 SUPPORT
 - Vragen of problemen: in het dashboard via Helpdesk het supportformulier invullen — zakelijke klanten krijgen voorrang. Verwijs de gebruiker daarnaar als je een vraag niet met bovenstaande feiten kunt beantwoorden (bijv. over betalingen, een specifiek account of een storing).`;
-})();
+}
 
 // Statisch deel van het system prompt (cachebaar): rol + doel + kennisbank.
 function systemPrompt(lang, mode) {
@@ -1326,14 +1356,14 @@ function systemPrompt(lang, mode) {
       : mode === 'pro'
       ? 'You assist the TRADESMAN (professional). Help them win and handle jobs: draft a professional, friendly reply or quote text to a (potential) customer based on the request, suggest the right questions to ask the customer, and give practical tips. When drafting a reply, write it ready-to-send in the customer\'s language, concise and concrete. Never invent prices or facts — leave placeholders like [price] where needed.'
       : 'Help choose the right trade, describe the job and explain how Budomatch works.';
-    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople.\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. For facts about how the platform works, rely strictly on the platform knowledge below (it is written in Dutch; answer in English).\n\n${PLATFORM_KNOWLEDGE}`;
+    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople.\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. For facts about how the platform works, rely strictly on the platform knowledge below (it is written in Dutch; answer in English).\n\n${platformKnowledge()}`;
   }
   const goal = mode === 'customer'
     ? 'Je doel is de klant soepel door het traject loodsen: de klus aanscherpen (omvang, locatie, gewenste termijn, indicatief budget), het juiste vakgebied kiezen, en een heldere klusomschrijving opstellen. Als die compleet is, vat je die kort samen zodat de klant hem in het formulier kan plakken.'
     : mode === 'pro'
     ? 'Je ondersteunt de VAKMAN (professional). Help hem opdrachten binnenhalen en afhandelen: stel een professionele, vriendelijke reactie of offertetekst op aan een (potentiële) klant op basis van de aanvraag, bedenk de juiste vragen om aan de klant te stellen, en geef praktische tips. Als je een reactie opstelt, schrijf die kant-en-klaar zodat de vakman hem direct kan versturen — in de taal van de klant, beknopt en concreet. Verzin nooit prijzen of feiten; gebruik desnoods een plaatshouder als [prijs].'
     : 'Help het juiste vakgebied kiezen, de klus beschrijven en leg uit hoe Budomatch werkt.';
-  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen.\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Baseer feiten over het platform strikt op onderstaande platformkennis.\n\n${PLATFORM_KNOWLEDGE}`;
+  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen.\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Baseer feiten over het platform strikt op onderstaande platformkennis.\n\n${platformKnowledge()}`;
 }
 // Dynamisch deel (per gebruiker) — apart blok NÁ het cachebare deel, zodat de
 // kennisbank voor alle gebruikers uit de prompt-cache komt.
@@ -1511,6 +1541,10 @@ app.post('/api/admin/users/:id/verify', requireAdmin, async (req, res) => {
     const dup = (await store.listPros()).find(p => p.id !== u.id && p.verifiedKvk === num);
     if (dup) return res.status(409).json({ error: 'duplicate' });
     await store.updateUser(u.id, { kvk: num, verifiedKvk: num, kvkName: u.kvkName || u.company || u.name });
+    // bedrijf informeren: profiel is nu actief
+    sendMail('Je bedrijf is geverifieerd — Budomatch',
+      `<p>Goed nieuws, ${esc(u.name)}!</p><p><b>${esc(u.company || u.name)}</b> is geverifieerd (KvK ${esc(num)}). Je profiel is nu actief: je bent zichtbaar voor klanten en kunt op aanvragen reageren.</p>`,
+      null, u.email).catch(() => {});
     res.json({ ok: true, kvk: num });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -1543,6 +1577,39 @@ app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
     const status = ['nieuw', 'bezig', 'afgerond'].includes((req.body || {}).status) ? req.body.status : 'nieuw';
     await store.updateFeedback(f.id, { status });
     res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Instellingen: leadprijs en gratis welkomstleads — direct actief, zonder herstart.
+app.get('/api/admin/settings', requireAdmin, async (req, res) => {
+  res.json({
+    leadPriceGross: PRICING.gross,
+    orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
+    freeLeads: PRICING.freeLeads,
+    defaults: { leadPriceGross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS },
+  });
+});
+app.post('/api/admin/settings', requireAdmin, async (req, res) => {
+  try {
+    const b = req.body || {}, patch = {};
+    if (b.leadPriceGross !== undefined) {
+      const v = Math.round(Number(b.leadPriceGross) * 100) / 100;
+      if (!(v >= 1 && v <= 500)) return res.status(400).json({ error: 'invalid_price' });
+      patch.leadPriceGross = v;
+    }
+    if (b.freeLeads !== undefined) {
+      const v = Math.round(Number(b.freeLeads));
+      if (!(v >= 0 && v <= 100)) return res.status(400).json({ error: 'invalid_free' });
+      patch.freeLeads = v;
+    }
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty' });
+    await store.updateSettings(patch);
+    await loadPricing();
+    res.json({
+      ok: true,
+      leadPriceGross: PRICING.gross,
+      orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
+      freeLeads: PRICING.freeLeads,
+    });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
