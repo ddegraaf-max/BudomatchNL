@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="nl" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Budomatch — Beheer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%2313110B'/%3E%3Cpath d='M24 7 L41 24 L34 24 L24 14.5 L14 24 L7 24 Z' fill='%23E3C158'/%3E%3Cpath d='M24 24 l6.5 5.5 -6.5 5.5 -6.5 -5.5 Z' fill='%23E3C158'/%3E%3Crect x='12.5' y='37.5' width='23' height='3.8' rx='1.9' fill='%23E3C158'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#13110B;--bg-2:#1B180F;--panel:#211D12;--gold:#C9A227;--gold-bright:#E3C158;--gold-soft:#E8D9A8;
+--cream:#F4EFE3;--muted:#A89C7E;--line:rgba(201,162,39,.18);--red:#C8102E;--green:#3FA66A;--shadow:0 24px 60px rgba(0,0,0,.45)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--cream);line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(1000px 500px at 85% -10%,rgba(201,162,39,.10),transparent 60%),var(--bg)}
+h1,h2,h3{font-family:'Marcellus',serif;font-weight:400;letter-spacing:.5px}
+a{color:var(--gold-bright);text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+header{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:rgba(19,17,11,.82);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:16px;height:72px}
+.logo{display:flex;align-items:center;gap:11px}
+.logo svg{width:38px;height:38px}
+.logo .word{font-family:'Marcellus',serif;font-size:1.35rem;letter-spacing:1.4px;background:linear-gradient(120deg,#F2DC8C,#D4AF37 55%,#B8901E);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.nav .sp{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-family:'Manrope';font-weight:700;font-size:.92rem;padding:11px 20px;border-radius:50px;transition:.2s}
+.btn-gold{background:linear-gradient(145deg,var(--gold-bright),var(--gold));color:#13110B}
+.btn-ghost{background:transparent;color:var(--gold-soft);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--gold)}
+.btn-sm{padding:7px 13px;font-size:.8rem}
+main{padding:38px 0 80px}
+.head{margin-bottom:24px}
+.head h1{font-size:2rem;margin-bottom:4px}
+.head p{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:var(--shadow);margin-bottom:22px}
+.card h2{font-size:1.3rem;margin-bottom:16px}
+.inp{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:11px;padding:11px 14px;color:var(--cream);font-family:'Manrope';font-size:.95rem;outline:none;margin-bottom:14px}
+.inp:focus{border-color:var(--gold)}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.kpi .k{flex:1;min-width:140px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+.kpi .n{font-family:'Marcellus';font-size:1.7rem;color:var(--gold-bright);line-height:1}
+.kpi .l{font-size:.8rem;color:var(--muted);margin-top:4px}
+.ptabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.ptab{background:var(--panel);border:1px solid var(--line);color:var(--gold-soft);border-radius:50px;padding:9px 18px;cursor:pointer;font-family:'Manrope';font-weight:600;font-size:.9rem}
+.ptab.on{background:linear-gradient(145deg,var(--gold-bright),var(--gold));color:#13110B;border-color:var(--gold)}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{color:var(--muted);text-align:left;font-size:.76rem;letter-spacing:.5px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:hover td{background:rgba(201,162,39,.04)}
+.tblwrap{overflow-x:auto}
+.tag{font-size:.7rem;font-weight:700;letter-spacing:.4px;padding:3px 9px;border-radius:50px;border:1px solid var(--line);color:var(--gold-soft);white-space:nowrap}
+.tag.green{background:rgba(63,166,106,.16);border-color:var(--green);color:#bfe6cf}
+.tag.red{background:rgba(200,80,90,.16);border-color:rgba(200,80,90,.5);color:#e2a0aa}
+.tag.gold{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--gold-bright)}
+.tag.blue{background:rgba(90,140,200,.16);border-color:rgba(90,140,200,.5);color:#bcd0ec}
+.item{border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:12px;background:var(--bg-2)}
+.item .top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.item .meta{font-size:.82rem;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:30px}
+.center{min-height:70vh;display:grid;place-items:center;text-align:center}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--cream);padding:13px 22px;border-radius:12px;box-shadow:var(--shadow);z-index:100;font-size:.92rem}
+@media(max-width:700px){.tbl{font-size:.8rem}.card{padding:18px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav">
+  <div class="logo">
+    <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#13110B"/><path d="M24 7 L41 24 L34 24 L24 14.5 L14 24 L7 24 Z" fill="#E3C158"/><path d="M24 24 l6.5 5.5 -6.5 5.5 -6.5 -5.5 Z" fill="#E3C158"/><rect x="12.5" y="37.5" width="23" height="3.8" rx="1.9" fill="#E3C158"/></svg>
+    <span class="word">BUDOMATCH</span><span style="color:var(--muted);font-size:.85rem;margin-left:2px">· Beheer</span>
+  </div>
+  <div class="sp"></div>
+  <a class="btn btn-ghost btn-sm" href="/dashboard.html">Dashboard</a>
+  <button class="btn btn-ghost btn-sm" onclick="logout()">Uitloggen</button>
+</div></header>
+
+<main class="wrap" id="main">
+  <div class="center" id="loading"><p style="color:var(--muted)">Laden…</p></div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const money=n=>'€ '+Number(n||0).toFixed(2).replace('.',',');
+const fmtDate=ms=>new Date(ms).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'});
+let TAB='overzicht', OVERVIEW=null, USERS=[], SUPPORT=[];
+
+async function api(url,opt={}){
+  const r=await fetch(url,{headers:{'content-type':'application/json'},...opt});
+  if(r.status===401){location.href='/?login=1';throw new Error('auth');}
+  if(r.status===403){$('#main').innerHTML='<div class="center"><div><h1>Geen toegang</h1><p style="color:var(--muted);margin-top:8px">Dit account is geen beheerder. Stel <b>ADMIN_EMAIL</b> in op het e-mailadres van je account.</p></div></div>';throw new Error('forbidden');}
+  return r.json();
+}
+async function logout(){await fetch('/api/logout',{method:'POST'});location.href='/';}
+function toast(msg){const d=document.createElement('div');d.className='toast';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
+
+function shell(){
+  $('#main').innerHTML=`
+    <div class="head"><h1>Beheer</h1><p>Overzicht van gebruikers, aanvragen, omzet en support.</p></div>
+    <div class="ptabs">
+      <button class="ptab" data-k="overzicht" onclick="showTab('overzicht')">Overzicht</button>
+      <button class="ptab" data-k="gebruikers" onclick="showTab('gebruikers')">Gebruikers</button>
+      <button class="ptab" data-k="support" onclick="showTab('support')">Support <span id="supBadge"></span></button>
+    </div>
+    <div id="tab"></div>`;
+}
+function showTab(k){
+  TAB=k;document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  if(k==='overzicht')renderOverview();
+  else if(k==='gebruikers'){$('#tab').innerHTML=`<div class="card"><h2>Gebruikers</h2><input class="inp" id="uq" placeholder="Zoek op naam, e-mail, bedrijf, KvK of plaats…" oninput="debounceUsers()"><div class="tblwrap" id="uList"><p class="empty">Laden…</p></div></div>`;loadUsers();}
+  else if(k==='support')renderSupport();
+}
+function renderOverview(){
+  const s=OVERVIEW.stats;
+  $('#tab').innerHTML=`
+    <div class="kpi">
+      <div class="k"><div class="n">${s.customers}</div><div class="l">klanten</div></div>
+      <div class="k"><div class="n">${s.pros}</div><div class="l">vakmensen (${s.prosVerified} geverifieerd)</div></div>
+      <div class="k"><div class="n">${s.requestsTotal}</div><div class="l">aanvragen (${s.requestsOpen} open)</div></div>
+      <div class="k"><div class="n">${s.claimsTotal}</div><div class="l">ontgrendelingen (${s.claimsPaid} betaald)</div></div>
+      <div class="k"><div class="n">${money(s.revenueGross)}</div><div class="l">omzet (bruto)</div></div>
+      <div class="k"><div class="n">${s.reviews}</div><div class="l">reviews</div></div>
+      <div class="k"><div class="n">${s.supportOpen}</div><div class="l">open supportverzoeken</div></div>
+      <div class="k"><div class="n">${s.blocked}</div><div class="l">geblokkeerd</div></div>
+    </div>
+    <div class="card"><h2>Recente aanvragen</h2><div class="tblwrap">
+      <table class="tbl"><thead><tr><th>Dienst</th><th>Plaats</th><th>Klant</th><th>Status</th><th>Datum</th></tr></thead>
+      <tbody>${OVERVIEW.recentRequests.map(r=>`<tr>
+        <td>${esc(r.service)}${r.direct?' <span class="tag gold">direct</span>':''}</td>
+        <td>${esc(r.zip)}</td><td>${esc(r.name)}</td>
+        <td><span class="tag ${r.status==='open'?'green':(r.status==='cancelled'?'red':'')}">${esc(r.status)}</span></td>
+        <td style="white-space:nowrap">${fmtDate(r.createdAt)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nog geen aanvragen.</td></tr>'}</tbody></table>
+    </div></div>`;
+}
+let uTimer=null;
+function debounceUsers(){clearTimeout(uTimer);uTimer=setTimeout(loadUsers,300);}
+async function loadUsers(){
+  const q=($('#uq')&&$('#uq').value.trim())||'';
+  let r;try{r=await api('/api/admin/users?q='+encodeURIComponent(q));}catch(e){return;}
+  USERS=r.users;
+  const el=$('#uList');if(!el)return;
+  if(!USERS.length){el.innerHTML='<p class="empty">Geen gebruikers gevonden.</p>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Naam / bedrijf</th><th>E-mail</th><th>Rol</th><th>Status</th><th>Sinds</th><th>Acties</th></tr></thead><tbody>
+    ${USERS.map(u=>`<tr>
+      <td><b>${esc(u.company||u.name)}</b>${u.company?`<br><span style="color:var(--muted)">${esc(u.name)}</span>`:''}${u.city?`<br><span style="color:var(--muted);font-size:.8rem">${esc(u.city)}</span>`:''}</td>
+      <td>${esc(u.email)}${u.emailVerified?'':' <span class="tag red">e-mail niet bevestigd</span>'}</td>
+      <td><span class="tag ${u.role==='pro'?'gold':'blue'}">${u.role==='pro'?'vakman':'klant'+(u.customerType==='zakelijk'?' (zakelijk)':'')}</span></td>
+      <td>${u.blocked?'<span class="tag red">geblokkeerd</span>':(u.role==='pro'?(u.kvkVerified?'<span class="tag green">KvK ✓ '+esc(u.kvk)+'</span>':'<span class="tag">niet geverifieerd</span>'):'<span class="tag green">actief</span>')}</td>
+      <td style="white-space:nowrap">${fmtDate(u.createdAt)}</td>
+      <td style="white-space:nowrap">
+        ${u.role==='pro'&&!u.kvkVerified?`<button class="btn btn-gold btn-sm" onclick="verifyUser('${u.id}','${esc(u.kvk)}')">Verifieer KvK</button> `:''}
+        <button class="btn btn-ghost btn-sm" onclick="blockUser('${u.id}',${u.blocked?'false':'true'})">${u.blocked?'Deblokkeer':'Blokkeer'}</button>
+      </td></tr>`).join('')}</tbody></table>`;
+}
+async function verifyUser(id,kvk){
+  const num=prompt('KvK-nummer (8 cijfers) voor handmatige verificatie:',kvk||'');
+  if(num==null)return;
+  try{
+    const r=await api('/api/admin/users/'+id+'/verify',{method:'POST',body:JSON.stringify({kvk:num})});
+    if(r.ok){toast('Vakman geverifieerd ✓');loadUsers();}
+    else toast(r.error==='duplicate'?'Dit KvK-nummer is al in gebruik.':'Ongeldig KvK-nummer (8 cijfers).');
+  }catch(e){}
+}
+async function blockUser(id,block){
+  if(block&&!confirm('Dit account blokkeren? De gebruiker wordt direct uitgelogd en kan niet meer inloggen.'))return;
+  try{
+    const r=await api('/api/admin/users/'+id+'/block',{method:'POST',body:JSON.stringify({blocked:block})});
+    if(r.ok){toast(block?'Geblokkeerd.':'Gedeblokkeerd.');loadUsers();}
+  }catch(e){}
+}
+async function renderSupport(){
+  $('#tab').innerHTML='<div class="card"><h2>Supportverzoeken</h2><div id="supList"><p class="empty">Laden…</p></div></div>';
+  let r;try{r=await api('/api/admin/support');}catch(e){return;}
+  SUPPORT=r.items;
+  const el=$('#supList');
+  if(!SUPPORT.length){el.innerHTML='<p class="empty">Geen supportverzoeken.</p>';return;}
+  el.innerHTML=SUPPORT.map(s=>`<div class="item">
+    <div class="top"><b>${esc(s.subject||'(geen onderwerp)')}</b>
+      ${s.business?'<span class="tag blue">zakelijk</span>':''}
+      <span class="tag ${s.status==='afgerond'?'green':(s.status==='bezig'?'gold':'red')}">${esc(s.status)}</span>
+      <span class="meta" style="margin-left:auto">${fmtDate(s.createdAt)}</span></div>
+    <div style="font-size:.92rem;white-space:pre-wrap;margin:4px 0 8px">${esc(s.message)}</div>
+    <div class="meta">Van: <b>${esc(s.name)}</b> (${esc(s.role)}) · ${s.email?`<a href="mailto:${esc(s.email)}">${esc(s.email)}</a>`:''} ${esc(s.phone)}</div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${['nieuw','bezig','afgerond'].filter(x=>x!==s.status).map(x=>`<button class="btn btn-ghost btn-sm" onclick="setSupStatus('${s.id}','${x}')">${x==='nieuw'?'Markeer nieuw':(x==='bezig'?'In behandeling':'Afgerond')}</button>`).join('')}
+      ${s.email?`<a class="btn btn-gold btn-sm" href="mailto:${esc(s.email)}?subject=${encodeURIComponent('Re: '+(s.subject||'je supportverzoek bij Budomatch'))}">Beantwoorden (e-mail)</a>`:''}
+    </div></div>`).join('');
+}
+async function setSupStatus(id,status){
+  try{await api('/api/admin/support/'+id+'/status',{method:'POST',body:JSON.stringify({status})});renderSupport();updateBadge();}catch(e){}
+}
+async function updateBadge(){
+  try{OVERVIEW=await api('/api/admin/overview');}catch(e){return;}
+  const b=$('#supBadge');if(b)b.innerHTML=OVERVIEW.stats.supportOpen?` <span class="tag red">${OVERVIEW.stats.supportOpen}</span>`:'';
+}
+(async function init(){
+  try{OVERVIEW=await api('/api/admin/overview');}catch(e){return;}
+  $('#loading')&&$('#loading').remove();
+  shell();
+  showTab('overzicht');
+  updateBadge();
+})();
+</script>
+</body>
+</html>

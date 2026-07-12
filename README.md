@@ -33,14 +33,17 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Hoe het werkt
 - **Klanten** maken gratis een account aan en plaatsen **gratis** een aanvraag.
 - **Professionals** zien aanvragen; contactgegevens zijn afgeschermd tot ze een lead
-  **ontgrendelen**. Eerste **5 gratis**; daarna **€ 12,50 per lead** (btw verlegd / reverse charge).
+  **ontgrendelen**. Eerste **5 gratis**; daarna **€ 18,15 per lead** (oriëntatie-leads 50%: € 9,08; btw verlegd / reverse charge).
 - De **AI-assistent** helpt klanten hun klus scherp te omschrijven.
 
 ## Endpoints
 | Route | Doel |
 |---|---|
-| `GET /` · `GET /dashboard.html` | site & dashboard |
+| `GET /` · `GET /dashboard.html` · `GET /admin.html` | site, dashboard & beheerpaneel |
 | `POST /api/register` · `/api/login` · `/api/logout` · `GET /api/me` | accounts |
+| `POST /api/password/forgot` · `/api/password/reset` | wachtwoord vergeten (herstel-link per e-mail) |
+| `GET /api/verify-email` · `POST /api/verify-email/resend` | e-mailadres bevestigen |
+| `GET/POST /api/admin/*` | beheer: statistieken, gebruikers, handmatige KvK-verificatie, blokkeren, support-inbox |
 | `POST /api/requests` · `GET /api/requests/mine` | klant: plaatsen / overzicht |
 | `GET /api/leads` · `POST /api/leads/:id/claim` · `POST /api/leads/:id/checkout` | pro: leads / gratis ontgrendelen / betalen (Stripe) |
 | `POST /api/stripe/webhook` | Stripe-bevestiging (maakt de claim aan) |
@@ -65,7 +68,7 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Stripe instellen
 1. Maak in het Stripe-dashboard een account (test-modus eerst). Kopieer de **Secret key** → `STRIPE_SECRET_KEY`.
 2. Zet voor Nederland de betaalmethoden **iDEAL**, **creditcard** en **Bancontact** aan (Settings → Payment methods).
-   EUR is de valuta; € 12,50 per lead, btw verlegd naar de afnemer (reverse charge, B2B).
+   EUR is de valuta; € 18,15 per lead, btw verlegd naar de afnemer (reverse charge, B2B).
 3. Webhook: Developers → Webhooks → **Add endpoint** → URL `https://<jouw-domein>/api/stripe/webhook`,
    event `checkout.session.completed`. Kopieer de **Signing secret** → `STRIPE_WEBHOOK_SECRET`.
 4. De claim wordt **via de webhook** aangemaakt (betrouwbaar), niet alleen bij terugkeer op de site.
@@ -87,9 +90,23 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook   # toont de whsec_
 ## Productie-aandachtspunten
 - **Opslag:** JSON is prima voor de start; voor schaal/meerdere instances is PostgreSQL beter.
 - **Taal:** de site en het dashboard staan standaard op **Nederlands**; de taalkeuze (NL/PL) wordt onthouden via een cookie en is gedeeld tussen site en dashboard.
-- **Beveiliging:** inlog-cookies krijgen automatisch de `Secure`-vlag achter HTTPS (Railway), zijn `HttpOnly` en `SameSite=Lax`.
+- **Beveiliging:** inlog-cookies krijgen automatisch de `Secure`-vlag achter HTTPS (Railway), zijn `HttpOnly` en `SameSite=Lax`. Login, registratie, wachtwoord-reset, chat en gastformulieren hebben **rate limiting** (per IP). Na een **wachtwoordwijziging vervallen alle oude sessies**. Geblokkeerde accounts (beheerpaneel) zijn direct overal uitgelogd.
+- **Wachtwoord vergeten:** klanten en vakmensen kunnen via "Wachtwoord vergeten?" een herstel-link per e-mail aanvragen (1 uur geldig, eenmalig te gebruiken; vereist `RESEND_API_KEY`).
+- **E-mailverificatie:** na registratie krijgt de gebruiker een bevestigingslink per e-mail; tot die tijd staat er een banner in het dashboard. Zonder `RESEND_API_KEY` (lokaal ontwikkelen) wordt het adres direct als bevestigd gemarkeerd.
+- **Backups & monitoring:** zet op Railway database-backups aan (PostgreSQL-plugin → Backups) en bewaak `GET /healthz` extern (bijv. UptimeRobot, gratis).
+- **Foto's:** worden als base64 in de database opgeslagen — prima voor de start; verhuis bij groei naar objectopslag (S3/R2).
+
+## Beheerpaneel (`/admin.html`)
+Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt toegang tot het beheerpaneel met:
+- **Overzicht** — klanten/vakmensen, aanvragen, ontgrendelingen, omzet, reviews, open supportverzoeken.
+- **Gebruikers** — zoeken, **handmatige KvK-verificatie** (handig zolang er geen `KVK_API_KEY` is; dubbele KvK-nummers worden geweigerd) en **blokkeren/deblokkeren**.
+- **Support** — inbox van supportverzoeken uit het dashboard (met status Nieuw/Bezig/Afgerond en een knop om per e-mail te antwoorden). Supportverzoeken komen daarnaast nog steeds per e-mail binnen.
+
 - **Juridisch:** `voorwaarden.html` en `privacy.html` bevatten je bedrijfsgegevens (KvK/btw-nummer) en zijn opgesteld als degelijke basis — laat ze vóór livegang nog juridisch nakijken.
 - **Facturen:** voor elke betaalde lead wordt automatisch een **factuur** aangemaakt met doorlopende nummering (jaar-volgnummer), verkoper- (KvK/btw-nummer) en kopergegevens (NIP/adres indien ingevuld) en de netto/btw/bruto-opbouw. Professionals downloaden de factuur (afdrukken of opslaan als PDF) vanuit hun facturatie-overzicht. De nummering reset per kalenderjaar.
+
+## Registratie & btw-nummer
+De vakman-registratie is bewust kort: bedrijfsnaam, **één hoofdspecialisme** (dropdown) en plaats. Het hoofdspecialisme wordt direct het werkgebied en de plaats wordt gegeocodeerd, zodat het bedrijf na KvK-verificatie meteen matchbaar is; extra vakgebieden voegt het bedrijf later toe onder **Werkgebied**. In **Bedrijfsprofiel → Gegevens** vult de vakman zijn **btw-nummer (btw-id)** in — dat is nodig op de lead-facturen (btw verlegd / reverse charge; de KvK-API levert geen btw-nummers, dus dit vult het bedrijf zelf in).
 
 ## Database (PostgreSQL)
 

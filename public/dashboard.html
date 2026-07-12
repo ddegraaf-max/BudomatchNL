@@ -352,6 +352,8 @@ const T = {
     paidOk:'Payment successful — the lead will be unlocked.', payCancel:'Payment cancelled.',
     rcTitle:'Invoice', rcSeller:'Seller', rcBuyer:'Buyer', rcDesc:'Description', rcLead:'Lead unlock',
     rcNet:'Net', rcVat:'VAT (reverse charge, 0%)', rcGross:'Total', rcDate:'Date', rcPrint:'Print / save as PDF', rcNip:'VAT number',
+    evBanner:'Please confirm your e-mail address — check your inbox for the confirmation link.', evResend:'Resend e-mail', evSent:'Sent! Check your inbox (and spam).', evDone:'✓ E-mail address confirmed',
+    prNip:'VAT number (btw-id)', prNipHint:'Appears on your lead invoices (VAT reverse-charged) — e.g. NL123456789B01.',
   },
   nl: {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
@@ -402,6 +404,8 @@ const T = {
     paidOk:'Betaling gelukt — de lead wordt ontgrendeld.', payCancel:'Betaling geannuleerd.',
     rcTitle:'Factuur', rcSeller:'Verkoper', rcBuyer:'Koper', rcDesc:'Omschrijving', rcLead:'Ontgrendeling lead',
     rcNet:'Netto', rcVat:'Btw (verlegd, 0%)', rcGross:'Totaal', rcDate:'Datum', rcPrint:'Afdrukken / opslaan als PDF', rcNip:'Btw-nummer',
+    evBanner:'Bevestig je e-mailadres — check je inbox voor de bevestigingslink.', evResend:'E-mail opnieuw sturen', evSent:'Verstuurd! Check je inbox (en spam).', evDone:'✓ E-mailadres bevestigd',
+    prNip:'Btw-nummer (btw-id)', prNipHint:'Komt op je lead-facturen (btw verlegd) — bijv. NL123456789B01.',
   }
 };
 const t = k => (T[LANG][k]!=null?T[LANG][k]:k);
@@ -429,7 +433,26 @@ async function logout(){ await fetch('/api/logout',{method:'POST'}); location.hr
   applyChrome();
   $('#loading').remove();
   ME.role==='pro' ? renderPro() : renderCustomer();
+  if(location.search.indexOf('everified=1')>=0){
+    history.replaceState(null,'','/dashboard.html');
+    ME.emailVerified=true;
+    const d=document.createElement('div');d.className='kvk-banner';
+    d.style.borderColor='rgba(63,166,106,.5)';d.style.background='rgba(63,166,106,.1)';d.style.color='#bfe6cf';
+    d.textContent=t('evDone');
+    const m=$('#main');m.insertBefore(d,m.firstChild);
+    setTimeout(()=>d.remove(),6000);
+  }
 })();
+
+/* banner: e-mailadres nog niet bevestigd */
+function everifyBannerHtml(){
+  if(ME.emailVerified)return '';
+  return `<div class="kvk-banner" id="evBanner"><span>✉ ${t('evBanner')}</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="resendVerify()">${t('evResend')}</button></div>`;
+}
+async function resendVerify(){
+  try{ await api('/api/verify-email/resend',{method:'POST',body:'{}'}); }catch(e){ return; }
+  const b=document.getElementById('evBanner'); if(b)b.innerHTML=`<span>${t('evSent')}</span>`;
+}
 
 const CATS_EN = "Extension,Bump-out extension,Storey addition,Air conditioning,Architect,Asbestos removal,Bathroom,Paving,Boiler (CH),Roofing,Dormer,Roof window,Electrician,Garage door,Facade cleaning,Glazing,Fencing,Burglary protection,Insulation,Kitchen,Window frames,EV charging,Plumber,Pest control,Roller shutters,Painting,Sliding doors,Conservatory,Plastering,Tiling,Home battery,Stairs,Landscaping,Garden maintenance,Ventilation,Renovation,Flooring,Underfloor heating,Damp proofing,Heat pump,Wellness & sauna,Solar panels,Awnings & sun protection".split(',');
 const CATS_NL = "Aanbouw,Uitbouw,Opbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,Bestraten,Cv-ketel,Dakbedekking,Dakkapel,Dakraam,Elektricien,Garagedeur,Gevelreiniging,Glas,Hekwerken,Inbraakbeveiliging,Isolatie,Keukenspecialist,Kozijnen,Laadpalen,Loodgieter,Ongediertebestrijding,Rolluiken,Schilderwerk,Schuifpui,Serre,Stucwerk,Tegels zetten,Thuisbatterij,Trap,Tuinaanleg,Tuinonderhoud,Ventilatie,Verbouwing,Vloeren,Vloerverwarming,Vochtbestrijding,Warmtepomp,Wellness,Zonnepanelen,Zonwering".split(',');
@@ -859,6 +882,7 @@ function custAiHtml(){
 function renderCustomer(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('cWelcome')}, ${ME.name}</h1><p>${t('cIntro')}</p></div>
+    ${everifyBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showCustTab('nieuw')">${t('cTabNew')}</button>
       <button class="ptab" data-k="aanvragen" onclick="showCustTab('aanvragen')">${t('myReq')}</button>
@@ -1326,6 +1350,7 @@ function proBannerHtml(){
 async function renderPro(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1></div>
+    ${everifyBannerHtml()}
     ${ME.kvkVerified?'':proBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showProTab('nieuw')">${t('tabNew')}</button>
@@ -1417,6 +1442,7 @@ function pfInfoHtml(){ const u=ME; return `<div class="pf-grid">
     <div><label>${t('prSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}"></div>
     <div><label>${t('prCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}"></div>
     <div><label>${t('prPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}"></div>
+    <div><label>${t('prNip')}</label><input class="inp" id="pfNip" value="${htmlesc(u.nip||'')}" placeholder="NL123456789B01" style="margin-bottom:4px"><p class="meta" style="margin:0 0 10px;font-size:.78rem">${t('prNipHint')}</p></div>
     <div style="grid-column:1/-1"><label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}">${u.websitePreview?siteCardHtml(u.websitePreview,u.website):''}</div>
   </div>
   <label>${t('prBio')} <span style="color:var(--muted);font-weight:400">(${t('optional')})</span></label><textarea class="inp" id="pfBio" rows="4" placeholder="${u.websitePreview?'':''}">${htmlesc(u.bio||'')}</textarea>
@@ -1431,7 +1457,7 @@ function pfKvkHtml(){ const u=ME; const verified=u.kvkVerified; return `<div cla
   ${u.kvkVerified?`<div class="kvk-box" style="margin-top:12px"><div class="cfg-h" style="font-size:.95rem">${t('kvkVerifiedData')}</div>
     <p style="margin:2px 0"><b>${htmlesc(u.kvkName||u.company||'')}</b></p>
     ${u.kvkAddress?`<p class="meta" style="margin:2px 0">${htmlesc(((u.kvkAddress.street||'')+' '+(u.kvkAddress.houseNumber||'')).trim())}</p><p class="meta" style="margin:2px 0">${htmlesc([u.kvkAddress.postcode,u.kvkAddress.city].filter(Boolean).join(' '))}</p>`:''}
-    <p class="meta" style="margin:2px 0">KvK: ${htmlesc(u.kvk||'')}</p>
+    <p class="meta" style="margin:2px 0">KvK: ${htmlesc(u.kvk||'')}${u.nip?` \u00b7 BTW: ${htmlesc(u.nip)}`:''}</p>
     <p class="hint" style="color:#7fd6a0">\u2713 ${t('kvkInvoiceNote')}</p></div>`:`<p class="hint">${t('kvkInactive')}</p>`}`;
 }
 async function loadMyReviews(){
@@ -1454,7 +1480,7 @@ function pfPhotosHtml(){ return `<div class="pf-logo-wrap" style="margin-bottom:
   <div class="note" id="pfNote2">${t('saved')}</div>`;
 }
 async function saveProfileInfo(){
-  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,website:$('#pfWebsite').value,bio:$('#pfBio').value};
+  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,nip:$('#pfNip').value,website:$('#pfWebsite').value,bio:$('#pfBio').value};
   const r=await api('/api/profile',{method:'POST',body:JSON.stringify(body)});
   if(r.user){ ME=r.user; const n=$('#pfNote'); if(n)n.classList.add('show'); if(typeof applyChrome==='function')applyChrome(); }
 }

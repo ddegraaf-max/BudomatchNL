@@ -38,7 +38,8 @@ const CURRENCY = 'eur';
 // - 'orientatie' (klant oriënteert / wil iets kopen): 50% ontgrendelprijs
 function leadPrice(r) {
   const factor = (r && r.intent === 'orientatie') ? 0.5 : 1;
-  const gross = +(LEAD_PRICE_GROSS * factor).toFixed(2);
+  // in centen rekenen: 1815 × 0,5 = 907,5 → 908 → € 9,08 (geen float-afronding naar 9,07)
+  const gross = Math.round(Math.round(LEAD_PRICE_GROSS * 100) * factor) / 100;
   const net = +(gross / (1 + VAT_RATE)).toFixed(2);
   const vat = +(gross - net).toFixed(2);
   return { gross, net, vat, vatRate: VAT_RATE, orientation: factor !== 1 };
@@ -90,18 +91,26 @@ const CATS_EN = "Extension, Bump-out extension, Storey addition, Air conditionin
 
 // ---------------- helpers ----------------
 const isHttps = req => (req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
+// Sessietoken bevat een vingerafdruk van het wachtwoord (ph): na een wachtwoord-
+// wijziging/reset vervallen alle oude sessies. Tokens zonder ph (van vóór deze
+// wijziging) blijven geldig tot ze verlopen.
+const passFp = u => String(u.passHash || '').slice(-8);
+const sessionToken = u => A.sign({ uid: u.id, role: u.role, ph: passFp(u) });
 async function getUser(req) {
   const t = A.parseCookies(req).bm_token;
   const p = A.verify(t);
   if (!p) return null;
   const u = await store.findUserById(p.uid);
-  return u || null;
+  if (!u || u.blocked) return null; // geblokkeerde accounts zijn overal uitgelogd
+  if (p.ph !== undefined && p.ph !== passFp(u)) return null; // wachtwoord gewijzigd → oude sessie vervalt
+  return u;
 }
 async function publicUser(u) {
   if (!u) return null;
   const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, ...rest } = u;
   rest.twofaEnabled = !!u.twofaEnabled;
   rest.twofaRecoveryLeft = (u.twofaRecovery || []).length;
+  rest.emailVerified = u.emailVerified !== false; // bestaande accounts (zonder veld) gelden als bevestigd
   if (u.role === 'pro') {
     const ci = await creditInfo(u);
     rest.creditsUsed = ci.usedTotal;
@@ -133,8 +142,26 @@ const requireRole = role => async (req, res, next) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 };
 
+// ---------------- rate limiting (in-memory, per IP) ----------------
+// Beschermt login/registratie/reset tegen brute force en misbruik van formulieren.
+const RL_BUCKETS = new Map();
+setInterval(() => { const now = Date.now(); for (const [k, e] of RL_BUCKETS) if (now > e.reset) RL_BUCKETS.delete(k); }, 60000).unref();
+const rateLimit = (name, max, windowMs) => (req, res, next) => {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const key = `${name}|${ip}`;
+  const now = Date.now();
+  let e = RL_BUCKETS.get(key);
+  if (!e || now > e.reset) { e = { n: 0, reset: now + windowMs }; RL_BUCKETS.set(key, e); }
+  if (++e.n > max) {
+    res.set('Retry-After', String(Math.ceil((e.reset - now) / 1000)));
+    return res.status(429).json({ error: 'rate_limited' });
+  }
+  next();
+};
+const baseUrl = req => process.env.BASE_URL || `${String(req.headers['x-forwarded-proto'] || req.protocol || 'http').split(',')[0]}://${req.headers.host}`;
+
 // ---------------- 2FA (TOTP) ----------------
-app.post('/api/login/2fa', async (req, res) => {
+app.post('/api/login/2fa', rateLimit('2fa', 10, 15 * 60e3), async (req, res) => {
   try {
     const b = req.body || {};
     const p = A.verify(String(b.challenge || ''));
@@ -148,7 +175,7 @@ app.post('/api/login/2fa', async (req, res) => {
       if (idx >= 0) { list.splice(idx, 1); await store.updateUser(u.id, { twofaRecovery: list }); ok = true; }
     }
     if (!ok) return res.status(401).json({ error: 'bad_code' });
-    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    A.setAuthCookie(res, sessionToken(u), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -211,7 +238,7 @@ app.post('/api/feedback', requireRole(), async (req, res) => {
 });
 app.get('/api/feedback', requireRole(), async (req, res) => {
   try {
-    const items = (await store.listFeedback()).map(f => ({
+    const items = (await store.listFeedback()).filter(f => f.kind !== 'support').map(f => ({
       id: f.id, type: f.type, title: f.title, message: f.message, name: f.name, role: f.role,
       status: f.status || 'nieuw', votes: (f.votes || []).length, voted: (f.votes || []).includes(req.user.id),
       mine: f.userId === req.user.id, createdAt: f.createdAt,
@@ -240,7 +267,7 @@ app.post('/api/feedback/:id/status', requireRole(), async (req, res) => {
 });
 
 // ---------------- auth ----------------
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res) => {
   try {
     const b = req.body || {};
     const role = b.role === 'pro' ? 'pro' : 'customer';
@@ -252,6 +279,8 @@ app.post('/api/register', async (req, res) => {
     const u = {
       role, name: String(b.name).trim(), email,
       passHash: A.hashPassword(String(b.password)),
+      // zonder mail-integratie valt er niets te bevestigen → direct als bevestigd markeren
+      emailVerified: !process.env.RESEND_API_KEY,
     };
     if (role === 'pro') {
       u.company = String(b.company || '').trim();
@@ -260,6 +289,14 @@ app.post('/api/register', async (req, res) => {
       u.phone = String(b.phone || '').trim();
       u.nip = String(b.nip || '').trim();
       u.address = String(b.address || '').trim();
+      // werkcategorieën: expliciet meegegeven, anders het hoofdspecialisme —
+      // zo is het bedrijf na KvK-verificatie direct matchbaar (meer vakken: tab Werkgebied)
+      const cats = Array.isArray(b.workCategories)
+        ? [...new Set(b.workCategories.map(x => String(x).trim().slice(0, 60)).filter(Boolean))].slice(0, 41)
+        : [];
+      if (!u.spec && cats.length) u.spec = cats[0];
+      u.workCategories = cats.length ? cats : (u.spec ? [u.spec] : []);
+      if (u.city) { const g = await geocodeNL(u.city); if (g) { u.lat = g.lat; u.lng = g.lng; } }
     } else {
       // Particulier of zakelijk (bedrijf)
       u.customerType = b.customerType === 'zakelijk' ? 'zakelijk' : 'particulier';
@@ -269,21 +306,23 @@ app.post('/api/register', async (req, res) => {
       }
     }
     await store.addUser(u);
-    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    sendVerifyMail(u, req).catch(e => console.error('verify-mail:', e.message));
+    A.setAuthCookie(res, sessionToken(u), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', rateLimit('login', 10, 15 * 60e3), async (req, res) => {
   try {
     const b = req.body || {};
     const u = await store.findUserByEmail(String(b.email || ''));
     if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
       return res.status(401).json({ error: 'bad_credentials' });
+    if (u.blocked) return res.status(403).json({ error: 'blocked' });
     if (u.twofaEnabled) {
       return res.json({ twofaRequired: true, challenge: A.sign({ t: '2fa', uid: u.id }, 0.02) });
     }
-    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
+    A.setAuthCookie(res, sessionToken(u), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -296,24 +335,95 @@ app.get('/api/me', async (req, res) => {
   res.json({ user: await publicUser(u) });
 });
 
+// ---------------- e-mailverificatie ----------------
+async function sendVerifyMail(u, req) {
+  if (u.emailVerified) return;
+  const token = A.sign({ t: 'everify', uid: u.id }, 3); // 3 dagen geldig
+  const link = `${baseUrl(req)}/api/verify-email?token=${encodeURIComponent(token)}`;
+  await sendMail('Bevestig je e-mailadres — Budomatch',
+    `<h2>Welkom bij Budomatch, ${esc(u.name)}!</h2>
+     <p>Bevestig je e-mailadres door op de knop te klikken:</p>
+     <p><a href="${link}" style="display:inline-block;background:#e3c158;color:#1a1208;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:bold">E-mailadres bevestigen</a></p>
+     <p style="color:#888">Of open deze link: ${link}<br>De link is 3 dagen geldig.</p>`,
+    null, u.email);
+}
+app.get('/api/verify-email', async (req, res) => {
+  try {
+    const p = A.verify(String(req.query.token || ''));
+    if (!p || p.t !== 'everify') return res.redirect('/?everify=invalid');
+    await store.updateUser(p.uid, { emailVerified: true });
+    res.redirect('/dashboard.html?everified=1');
+  } catch (e) { console.error(e); res.redirect('/?everify=invalid'); }
+});
+app.post('/api/verify-email/resend', rateLimit('everesend', 5, 60 * 60e3), requireRole(), async (req, res) => {
+  try {
+    if (req.user.emailVerified) return res.json({ ok: true, already: true });
+    if (!process.env.RESEND_API_KEY) { await store.updateUser(req.user.id, { emailVerified: true }); return res.json({ ok: true, already: true }); }
+    await sendVerifyMail(req.user, req);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- wachtwoord vergeten / opnieuw instellen ----------------
+// Antwoordt altijd ok — verraadt niet of een e-mailadres bestaat (geen enumeratie).
+app.post('/api/password/forgot', rateLimit('pwforgot', 5, 60 * 60e3), async (req, res) => {
+  res.json({ ok: true });
+  try {
+    const email = String((req.body || {}).email || '').trim().toLowerCase();
+    if (!email) return;
+    const u = await store.findUserByEmail(email);
+    if (!u || u.blocked) return;
+    // v = vingerafdruk van het huidige wachtwoord → de link werkt maar één keer
+    const token = A.sign({ t: 'pwreset', uid: u.id, v: String(u.passHash || '').slice(-12) }, 1 / 24); // 1 uur
+    const link = `${baseUrl(req)}/?reset=${encodeURIComponent(token)}`;
+    await sendMail('Wachtwoord opnieuw instellen — Budomatch',
+      `<h2>Wachtwoord opnieuw instellen</h2>
+       <p>Hoi ${esc(u.name)}, klik op de knop om een nieuw wachtwoord in te stellen:</p>
+       <p><a href="${link}" style="display:inline-block;background:#e3c158;color:#1a1208;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:bold">Nieuw wachtwoord instellen</a></p>
+       <p style="color:#888">Of open deze link: ${link}<br>De link is 1 uur geldig. Niets aangevraagd? Negeer deze e-mail.</p>`,
+      null, u.email);
+  } catch (e) { console.error('pwforgot:', e.message); }
+});
+app.post('/api/password/reset', rateLimit('pwreset', 10, 60 * 60e3), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const p = A.verify(String(b.token || ''));
+    if (!p || p.t !== 'pwreset') return res.status(400).json({ error: 'token' });
+    const u = await store.findUserById(p.uid);
+    if (!u || String(u.passHash || '').slice(-12) !== p.v) return res.status(400).json({ error: 'token' });
+    if (!b.password || String(b.password).length < 6) return res.status(400).json({ error: 'invalid' });
+    await store.updateUser(u.id, { passHash: A.hashPassword(String(b.password)) });
+    if (u.twofaEnabled) return res.json({ ok: true, login: true }); // 2FA blijft vereist → opnieuw inloggen
+    A.setAuthCookie(res, sessionToken(u), isHttps(req));
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
 // ---------------- support (klanten én bedrijven) ----------------
-app.post('/api/support', async (req, res) => {
+app.post('/api/support', rateLimit('support', 10, 60 * 60e3), async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.message) return res.status(400).json({ error: 'invalid' });
     const u = await getUser(req);
+    const business = (u && u.customerType === 'zakelijk') || (b.customerType === 'zakelijk');
+    // opslaan in de support-inbox (beheerpaneel) — de mail is een extra melding
+    await store.addFeedback({
+      kind: 'support', userId: u ? u.id : '', role: u ? u.role : 'gast',
+      name: u ? (u.company || u.name) : String(b.name || 'Gast').slice(0, 80), business: !!business,
+      subject: String(b.subject || '').slice(0, 150), message: String(b.message).slice(0, 4000),
+      email: String(b.email || (u && u.email) || '').slice(0, 120), phone: String(b.phone || '').slice(0, 40),
+    });
     const who = u
       ? `${esc(u.name)} &lt;${esc(u.email)}&gt; (${u.role}${u.role === 'customer' ? '/' + (u.customerType || 'particulier') : ''}${u.company ? ' — ' + esc(u.company) : ''})`
       : 'gast';
-    const business = (u && u.customerType === 'zakelijk') || (b.customerType === 'zakelijk');
-    await sendMail(
+    sendMail(
       `${business ? '[ZAKELIJK] ' : ''}Support: ${esc(b.subject) || '(geen onderwerp)'}`,
       `<h2>Supportverzoek${business ? ' — zakelijke klant' : ''}</h2>
        <p><b>Van:</b> ${who}</p>
        <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
        <p><b>Bericht:</b><br>${esc(b.message)}</p>
        <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>`
-    );
+    ).catch(() => {});
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
@@ -585,6 +695,7 @@ app.post('/api/profile', requireRole('pro'), async (req, res) => {
     if (b.phone !== undefined) patch.phone = String(b.phone).slice(0, 40);
     if (b.city !== undefined) patch.city = String(b.city).slice(0, 80);
     if (b.spec !== undefined) patch.spec = String(b.spec).slice(0, 80);
+    if (b.nip !== undefined) patch.nip = String(b.nip).toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 20); // btw-nummer (bijv. NL123456789B01) — komt op de factuur
     if (b.workZip !== undefined) patch.workZip = String(b.workZip).slice(0, 20);
     if (b.kvk !== undefined) patch.kvk = String(b.kvk).replace(/\D/g, '').slice(0, 8);
     if (b.workRadius !== undefined) patch.workRadius = Math.min(500, Math.max(0, parseInt(b.workRadius, 10) || 0));
@@ -617,7 +728,10 @@ async function fetchSitePreview(url) {
     let desc = meta('og:description') || meta('description') || '';
     let img = meta('og:image') || meta('og:image:url') || '';
     try { if (img && !/^https?:\/\//i.test(img)) img = new URL(img, u).href; } catch (e) {}
-    const dec = s => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    const dec = s => String(s)
+      .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+      .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n))
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
     return { url: u, title: dec(title).slice(0, 140), description: dec(desc).slice(0, 240), image: img.slice(0, 500) };
   } catch (e) { return { url: String(url) }; }
 }
@@ -773,7 +887,7 @@ app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {
       .text('Odwrotne obci\u0105\u017cenie \u2014 podatek VAT rozlicza nabywca.', 50, ty + 90, { width: 495 })
       .text('Btw verlegd naar de afnemer (reverse charge). Er is geen btw in rekening gebracht.', 50, ty + 104, { width: 495 })
       .text(`Betaalwijze / Sposób p\u0142atno\u015bci: online. Betaald / Zap\u0142acono: ${date}.`, 50, ty + 128, { width: 495 });
-    doc.fontSize(8).fillColor('#999').text(`Budomatch \u00b7 ${SELLER.email}`, 50, 790, { width: 495, align: 'center' });
+    doc.fontSize(8).fillColor('#999').text(`Budomatch \u00b7 ${SELLER.email}`, 50, 778, { width: 495, align: 'center', lineBreak: false });
     doc.end();
   } catch (e) { console.error('Factuur-fout:', e.message); if (!res.headersSent) res.status(500).send('Kon factuur niet maken'); }
 });
@@ -1171,7 +1285,7 @@ function systemPrompt(lang, user, mode) {
   return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen. ${who}\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Verzin geen vaste prijzen.`;
 }
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
   try {
     const lang = req.body.lang === 'en' ? 'en' : 'nl';
     const mode = ['customer', 'pro'].includes(req.body.mode) ? req.body.mode : 'site';
@@ -1252,7 +1366,7 @@ function photoAttachments(photos) {
     return { filename: `foto${i + 1}.${ext[m[1]] || 'jpg'}`, content: m[2] };
   }).filter(Boolean);
 }
-app.post('/api/quote', async (req, res) => {
+app.post('/api/quote', rateLimit('quote', 10, 60 * 60e3), async (req, res) => {
   try { const b = req.body || {};
     const atts = photoAttachments(b.photos);
     await sendMail(`Offerteaanvraag (gast) — ${esc(b.service) || '-'}`,
@@ -1260,11 +1374,111 @@ app.post('/api/quote', async (req, res) => {
       atts);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
-app.post('/api/pro', async (req, res) => {
+app.post('/api/pro', rateLimit('prosignup', 10, 60 * 60e3), async (req, res) => {
   try { const b = req.body || {};
     await sendMail(`Vakman-aanmelding — ${esc(b.company) || '-'}`,
       `<h2>Vakman-aanmelding</h2><p><b>Bedrijf:</b> ${esc(b.company)}</p><p><b>Specialisatie:</b> ${esc(b.spec)}</p><p><b>Stad:</b> ${esc(b.city)}</p><p><b>E-mail:</b> ${esc(b.email)}</p>`);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
+});
+
+// ---------------- beheer (admin) ----------------
+// Toegang: het account waarvan het e-mailadres gelijk is aan ADMIN_EMAIL. Paneel: /admin.html
+const requireAdmin = async (req, res, next) => {
+  try {
+    const u = await getUser(req);
+    if (!u) return res.status(401).json({ error: 'auth' });
+    if (!FB_ADMIN || u.email.toLowerCase() !== FB_ADMIN) return res.status(403).json({ error: 'forbidden' });
+    req.user = u; next();
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+};
+app.get('/api/admin/overview', requireAdmin, async (req, res) => {
+  try {
+    const users = await store.listUsers();
+    const requests = await store.listRequests();
+    const claims = await store.listClaims();
+    const reviews = await store.listReviews();
+    const pros = users.filter(u => u.role === 'pro');
+    const paid = claims.filter(c => !c.free);
+    res.json({
+      stats: {
+        customers: users.filter(u => u.role === 'customer').length,
+        pros: pros.length,
+        prosVerified: pros.filter(isVerifiedPro).length,
+        blocked: users.filter(u => u.blocked).length,
+        requestsTotal: requests.length,
+        requestsOpen: requests.filter(r => (r.status || 'open') === 'open').length,
+        claimsTotal: claims.length,
+        claimsPaid: paid.length,
+        revenueGross: +paid.reduce((s, c) => s + (c.amountGross || 0), 0).toFixed(2),
+        reviews: reviews.length,
+        supportOpen: (await store.listFeedback()).filter(f => f.kind === 'support' && (f.status || 'nieuw') !== 'afgerond').length,
+      },
+      recentRequests: requests.slice(0, 20).map(r => ({
+        id: r.id, service: r.service, zip: r.zip || '', status: r.status || 'open',
+        createdAt: r.createdAt, name: r.name || '', direct: !!r.targetProId,
+      })),
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const q = String(req.query.q || '').toLowerCase();
+    let users = await store.listUsers();
+    if (q) users = users.filter(u => `${u.email} ${u.name} ${u.company || ''} ${u.kvk || ''} ${u.city || ''}`.toLowerCase().includes(q));
+    users.sort((a, b) => b.createdAt - a.createdAt);
+    res.json({
+      users: users.slice(0, 200).map(u => ({
+        id: u.id, role: u.role, name: u.name, email: u.email, company: u.company || '',
+        city: u.city || '', customerType: u.customerType || '', kvk: u.kvk || '',
+        kvkVerified: isVerifiedPro(u), emailVerified: u.emailVerified !== false,
+        blocked: !!u.blocked, createdAt: u.createdAt,
+      })),
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Handmatige KvK-verificatie (bijv. zolang er geen KVK_API_KEY is, of bij twijfelgevallen)
+app.post('/api/admin/users/:id/verify', requireAdmin, async (req, res) => {
+  try {
+    const u = await store.findUserById(req.params.id);
+    if (!u || u.role !== 'pro') return res.status(404).json({ error: 'not_found' });
+    const num = String((req.body || {}).kvk || u.kvk || '').replace(/\D/g, '');
+    if (num.length !== 8) return res.status(400).json({ error: 'invalid_kvk' });
+    const dup = (await store.listPros()).find(p => p.id !== u.id && p.verifiedKvk === num);
+    if (dup) return res.status(409).json({ error: 'duplicate' });
+    await store.updateUser(u.id, { kvk: num, verifiedKvk: num, kvkName: u.kvkName || u.company || u.name });
+    res.json({ ok: true, kvk: num });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/admin/users/:id/block', requireAdmin, async (req, res) => {
+  try {
+    const u = await store.findUserById(req.params.id);
+    if (!u) return res.status(404).json({ error: 'not_found' });
+    if (u.email.toLowerCase() === FB_ADMIN) return res.status(400).json({ error: 'self' });
+    const blocked = !!(req.body || {}).blocked;
+    await store.updateUser(u.id, { blocked });
+    res.json({ ok: true, blocked });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.get('/api/admin/support', requireAdmin, async (req, res) => {
+  try {
+    const items = (await store.listFeedback()).filter(f => f.kind === 'support')
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map(f => ({
+        id: f.id, name: f.name || '', role: f.role || '', business: !!f.business,
+        subject: f.subject || '', message: f.message || '', email: f.email || '', phone: f.phone || '',
+        status: f.status || 'nieuw', createdAt: f.createdAt,
+      }));
+    res.json({ items });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
+  try {
+    const f = await store.findFeedback(req.params.id);
+    if (!f || f.kind !== 'support') return res.status(404).json({ error: 'not_found' });
+    const status = ['nieuw', 'bezig', 'afgerond'].includes((req.body || {}).status) ? req.body.status : 'nieuw';
+    await store.updateFeedback(f.id, { status });
+    res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
 app.get('/healthz', (_, res) => res.send('ok'));
@@ -1274,13 +1488,13 @@ async function seedDemo() {
   try {
     let k = await store.findUserByEmail('klant@budomatch.nl');
     if (!k) {
-      k = await store.addUser({ role: 'customer', name: 'Demo Klant', email: 'klant@budomatch.nl', passHash: A.hashPassword('demo1234'), customerType: 'particulier' });
+      k = await store.addUser({ role: 'customer', name: 'Demo Klant', email: 'klant@budomatch.nl', passHash: A.hashPassword('demo1234'), customerType: 'particulier', emailVerified: true });
       await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'opdracht', timing: 'Binnen 1 maand', service: 'Badkamerspecialist', zip: '1011 AB', description: 'Complete badkamer renoveren, ca. 6 m2 — tegels, douche en meubel.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
       await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'orientatie', timing: 'Meer dan 3 maanden', service: 'Zonnepanelen', zip: '1011 AB', description: 'Orienteren op ca. 10 zonnepanelen op schuin dak.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
     }
     const v = await store.findUserByEmail('vakman@budomatch.nl');
     if (!v) {
-      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV' });
+      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV', emailVerified: true });
       const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
     } else if (!(v.kvk && v.verifiedKvk && v.kvk === v.verifiedKvk)) {
       // bestaande demo-vakman alsnog verifieren + coordinaten zetten

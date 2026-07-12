@@ -602,6 +602,7 @@ img{max-width:100%}
     <div id="fName" style="display:none"><label data-i18n="authName"></label><input class="inp" id="aName"></div>
     <label data-i18n="authEmail"></label><input class="inp" id="aEmail" type="email" autocomplete="email">
     <label data-i18n="authPass"></label><input class="inp" id="aPass" type="password" autocomplete="current-password">
+    <div id="forgotRow" style="text-align:right;margin:-8px 0 10px;font-size:.85rem"><a style="cursor:pointer;color:var(--gold-bright)" id="forgotLink" onclick="openForgot()"></a></div>
     <div id="proFields" style="display:none">
       <label data-i18n="authCompany"></label><input class="inp" id="aCompany">
       <label data-i18n="authSpec"></label><select class="inp" id="aSpec"></select>
@@ -625,6 +626,17 @@ img{max-width:100%}
       <p class="sub" id="twofaMsg"></p>
       <input class="inp" id="a2faCode" inputmode="text" maxlength="14" placeholder="123456 of herstelcode" onkeydown="if(event.key==='Enter')submit2fa()">
       <button class="btn btn-gold" style="width:100%;margin-top:6px" id="twofaBtn" onclick="submit2fa()"></button>
+    </div>
+    <div id="forgotStep" style="display:none">
+      <label data-i18n="authEmail"></label><input class="inp" id="fEmail" type="email" autocomplete="email" onkeydown="if(event.key==='Enter')submitForgot()">
+      <button class="btn btn-gold" style="width:100%;margin-top:6px" id="forgotBtn" onclick="submitForgot()"></button>
+      <p class="sub" id="forgotNote" style="display:none;margin:14px 0 0;color:#9fdcb4"></p>
+      <div class="swap"><a id="forgotBack" onclick="backToLogin()"></a></div>
+    </div>
+    <div id="resetStep" style="display:none">
+      <label id="resetPassLbl"></label><input class="inp" id="rPass" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitReset()">
+      <button class="btn btn-gold" style="width:100%;margin-top:6px" id="resetBtn" onclick="submitReset()"></button>
+      <div class="swap"><a id="resetBack" onclick="backToLogin()"></a></div>
     </div>
   </div>
 </div>
@@ -722,6 +734,10 @@ const T={
   regNote:"Phone, address and KvK you complete later in your profile — quick to start.",authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
+  authForgot:"Forgot password?",authForgotTitle:"Reset password",authForgotSub:"Enter your e-mail address and we will send you a reset link.",
+  authForgotBtn:"Send reset link",authForgotSent:"If this address is known to us, a reset e-mail is on its way. Check your inbox (and spam).",
+  authResetTitle:"Choose a new password",authResetSub:"Enter a new password for your account.",authNewPass:"New password (min. 6 characters)",
+  authResetBtn:"Save new password",authResetErr:"This link is invalid or expired. Request a new one via “Forgot password?”.",authBack:"Back to login",
   ebProjects:"Popular",h2Projects:"Projects on Budomatch",pProjects:"A selection of jobs carried out through Budomatch.",
   proj1:"Renovation & extension",proj2:"Craftsmanship on site",proj3:"Shell & structure",proj4:"Solar panels",
   chatTitle:"Budomatch assistant",chatSub:"Always here to help",chatPh:"Ask your question…",
@@ -793,6 +809,10 @@ const T={
   regNote:"Telefoon, adres en KvK vul je later in je profiel in — zo ben je zo aangemeld.",authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
+  authForgot:"Wachtwoord vergeten?",authForgotTitle:"Wachtwoord vergeten",authForgotSub:"Vul je e-mailadres in, dan sturen we je een herstel-link.",
+  authForgotBtn:"Stuur herstel-link",authForgotSent:"Als dit adres bij ons bekend is, is er een herstel-e-mail onderweg. Check je inbox (en spam).",
+  authResetTitle:"Kies een nieuw wachtwoord",authResetSub:"Voer een nieuw wachtwoord in voor je account.",authNewPass:"Nieuw wachtwoord (min. 6 tekens)",
+  authResetBtn:"Nieuw wachtwoord opslaan",authResetErr:"Deze link is ongeldig of verlopen. Vraag een nieuwe aan via “Wachtwoord vergeten?”.",authBack:"Terug naar inloggen",
   ebProjects:"Populair",h2Projects:"Projecten op Budomatch",pProjects:"Een greep uit klussen die via Budomatch worden uitgevoerd.",
   proj1:"Verbouwing & aanbouw",proj2:"Vakmanschap op locatie",proj3:"Ruwbouw & constructie",proj4:"Zonnepanelen",
   chatTitle:"Budomatch-assistent",chatSub:"Altijd hier om te helpen",chatPh:"Stel je vraag…",
@@ -994,20 +1014,71 @@ async function refreshAuthUI(){
 }
 async function doLogout(){try{await fetch('/api/logout',{method:'POST'});}catch{}__me=null;refreshAuthUI();}
 
+function authStep(step){ // 'normal' | 'twofa' | 'forgot' | 'reset'
+  ['authNormal','twofaStep','forgotStep','resetStep'].forEach(id=>{
+    document.getElementById(id).style.display=(
+      (step==='normal'&&id==='authNormal')||(step==='twofa'&&id==='twofaStep')||
+      (step==='forgot'&&id==='forgotStep')||(step==='reset'&&id==='resetStep'))?'block':'none';
+  });
+}
 function openAuth(mode,prefill){
   authMode=mode||'login';
   if(prefill&&prefill.role)authRole=prefill.role;
   authModal.classList.add('open');
+  authStep('normal');
   applyAuthTexts();
   setRole(authRole);
   if(prefill){
     if(prefill.company)document.getElementById('aCompany').value=prefill.company;
     if(prefill.city)document.getElementById('aCity').value=prefill.city;
     if(prefill.email)document.getElementById('aEmail').value=prefill.email;
-    if(prefill.spec)document.getElementById('aSpec').value=prefill.spec;
+    if(prefill.spec){const c=CATS.find(x=>x[0]===prefill.spec||x[1]===prefill.spec);if(c)document.getElementById('aSpec').value=c[1];}
   }
 }
 function closeAuth(){authModal.classList.remove('open');document.getElementById('authErr').classList.remove('show');}
+/* wachtwoord vergeten */
+function openForgot(){
+  const d=T[LANG];
+  authStep('forgot');
+  document.getElementById('authTitle').textContent=d.authForgotTitle;
+  document.getElementById('authSub').textContent=d.authForgotSub;
+  document.getElementById('forgotBtn').textContent=d.authForgotBtn;
+  document.getElementById('forgotBack').textContent=d.authBack;
+  document.getElementById('forgotNote').style.display='none';
+  document.getElementById('fEmail').value=document.getElementById('aEmail').value;
+  document.getElementById('authErr').classList.remove('show');
+  setTimeout(()=>document.getElementById('fEmail').focus(),50);
+}
+function backToLogin(){openAuth('login');}
+async function submitForgot(){
+  const email=document.getElementById('fEmail').value.trim();if(!email)return;
+  try{await fetch('/api/password/forgot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});}catch(e){}
+  const n=document.getElementById('forgotNote');n.textContent=T[LANG].authForgotSent;n.style.display='block';
+}
+/* nieuw wachtwoord instellen (via link uit de e-mail: /?reset=TOKEN) */
+const RESET_TOKEN=new URLSearchParams(location.search).get('reset')||'';
+function openReset(){
+  const d=T[LANG];
+  authModal.classList.add('open');
+  authStep('reset');
+  document.getElementById('authTitle').textContent=d.authResetTitle;
+  document.getElementById('authSub').textContent=d.authResetSub;
+  document.getElementById('resetPassLbl').textContent=d.authNewPass;
+  document.getElementById('resetBtn').textContent=d.authResetBtn;
+  document.getElementById('resetBack').textContent=d.authBack;
+  setTimeout(()=>document.getElementById('rPass').focus(),50);
+}
+async function submitReset(){
+  const err=document.getElementById('authErr');err.classList.remove('show');
+  const password=document.getElementById('rPass').value;
+  if(!password||password.length<6){err.textContent=T[LANG].authNewPass;err.classList.add('show');return;}
+  try{
+    const r=await fetch('/api/password/reset',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:RESET_TOKEN,password})});
+    const d=await r.json();
+    if(!r.ok||!d.ok){err.textContent=T[LANG].authResetErr;err.classList.add('show');return;}
+    location.href=d.login?'/?login=1':'/dashboard.html';
+  }catch(e){err.textContent=T[LANG].authResetErr;err.classList.add('show');}
+}
 function toggleAuthMode(){openAuth(authMode==='login'?'register':'login');}
 function setRole(r){
   authRole=r;
@@ -1033,8 +1104,11 @@ function applyAuthTexts(){
   document.getElementById('fName').style.display=reg?'block':'none';
   document.getElementById('proFields').style.display=(reg&&authRole==='pro')?'block':'none';
   document.getElementById('custFields').style.display=(reg&&authRole==='customer')?'block':'none';
+  document.getElementById('forgotRow').style.display=reg?'none':'block';
+  document.getElementById('forgotLink').textContent=d.authForgot;
+  // waarde = NL-naam (canoniek voor matching), weergave in de gekozen taal
   const s=document.getElementById('aSpec');
-  if(s)s.innerHTML=CATS.map(c=>`<option>${LANG==='nl'?c[1]:c[0]}</option>`).join('');
+  if(s){const cur=s.value;s.innerHTML=CATS.map(c=>`<option value="${c[1]}">${catName(c)}</option>`).join('');if(cur)s.value=cur;}
   const rn=document.getElementById('regNote'); if(rn)rn.textContent=d.regNote;
 }
 async function submitAuth(){
@@ -1059,8 +1133,7 @@ async function submitAuth(){
 let __twofaChallenge='';
 function show2fa(ch){
   __twofaChallenge=ch;
-  document.getElementById('authNormal').style.display='none';
-  document.getElementById('twofaStep').style.display='block';
+  authStep('twofa');
   document.getElementById('authTitle').textContent=(LANG==='nl'?'Verificatie':'Verification');
   document.getElementById('authSub').textContent='';
   document.getElementById('twofaMsg').textContent=T[LANG].twofaMsg;
@@ -1078,6 +1151,7 @@ async function submit2fa(){
   }catch(e){err.classList.add('show');}
 }
 if(location.search.indexOf('login=1')>=0)setTimeout(()=>openAuth('login'),300);
+if(RESET_TOKEN)setTimeout(()=>openReset(),300);
 
 document.getElementById('yr').textContent=new Date().getFullYear();
 setLang(LANG);
