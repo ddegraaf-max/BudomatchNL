@@ -73,6 +73,9 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
    event `checkout.session.completed`. Kopieer de **Signing secret** → `STRIPE_WEBHOOK_SECRET`.
 4. De claim wordt **via de webhook** aangemaakt (betrouwbaar), niet alleen bij terugkeer op de site.
 
+### Stripe end-to-end testen op productie (€ 1, veilig geïsoleerd)
+Zet `SEED_TEST_PAYMENT=1` op Railway. Bij de start ontstaat een testaccount **asdf@gmail.com / admin1234**: KvK-geverifieerd, **geen gratis tegoed** (betalen dus direct), betaalt **€ 1 per lead** (de globale prijs blijft voor iedereen anders gelden), ziet en ontgrendelt **uitsluitend zijn eigen directe testaanvraag** (onzichtbaar voor echte vakmensen, kan geen echte aanvragen claimen — 403) en wordt **overgeslagen door de Faktura XL/KSeF-export**. Bij elke herstart staat er weer een verse testaanvraag klaar. Flow: inloggen → lead ontgrendelen → Stripe Checkout € 1 → terug → lead open + factuur zichtbaar → webhook in Stripe op 200. Na het testen: variabele verwijderen en het account blokkeren in het beheerpaneel.
+
 ### Lokaal testen met de Stripe CLI
 ```bash
 stripe login

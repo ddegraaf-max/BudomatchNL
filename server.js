@@ -96,6 +96,15 @@ function leadPrice(r) {
   const vat = +(gross - net).toFixed(2);
   return { gross, net, vat, vatRate: VAT_RATE, orientation: factor !== 1 };
 }
+// Testaccount (SEED_TEST_PAYMENT) betaalt een vaste testprijs (bijv. € 1) —
+// de globale prijs blijft voor iedereen anders gelden.
+function proLeadPrice(r, pro) {
+  if (pro && Number(pro.testPriceGross) > 0) {
+    const gross = Math.round(Number(pro.testPriceGross) * 100) / 100;
+    return { gross, net: gross, vat: 0, vatRate: VAT_RATE, orientation: false };
+  }
+  return leadPrice(r);
+}
 
 // ----- Stripe (alleen geladen als er een sleutel is) -----
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -121,7 +130,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       // idempotent: alleen claim aanmaken als die nog niet bestaat
       if (proId && requestId && !(await store.claimExists(proId, requestId))) {
         const r = await store.findRequest(requestId);
-        const p = leadPrice(r);
+        const proU = await store.findUserById(proId);
+        const p = proLeadPrice(r, proU);
         const claim = await store.addClaim({
           proId, requestId, free: false, paid: true,
           amountGross: p.gross, amountNet: p.net, amountVat: p.vat,
@@ -129,7 +139,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           stripeSession: s.id, paymentIntent: s.payment_intent || null,
         });
         // factuur ook in Faktura XL (+ KSeF) zetten — Poolse administratie
-        fakturaXlExport(claim, await store.findUserById(proId), r).catch(() => {});
+        fakturaXlExport(claim, proU, r).catch(() => {});
       }
     }
   } catch (e) { console.error('Webhook-verwerking mislukt:', e.message); }
@@ -677,7 +687,7 @@ async function leadView(r, pro) {
     customerType: r.customerType || 'particulier',
     intent: r.intent || 'opdracht', timing: r.timing || '',
     direct: !!r.targetProId,
-    price: leadPrice(r),
+    price: proLeadPrice(r, pro),
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
   };
@@ -689,7 +699,10 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
   try {
     const pro = req.user;
     const ci = await creditInfo(pro);
-    const openAll = (await store.openRequests()).filter(r => !r.targetProId || r.targetProId === pro.id);
+    const openAll = (await store.openRequests())
+      .filter(r => !r.targetProId || r.targetProId === pro.id)
+      // testaccount ziet uitsluitend zijn eigen (directe) testaanvragen
+      .filter(r => !pro.testAccount || r.targetProId === pro.id);
     const leads = [];
     for (const r of openAll) {
       const claimed = await store.claimExists(pro.id, r.id);
@@ -716,6 +729,7 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
     if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
     const r = await store.findRequest(req.params.id);
     if (!r) return res.status(404).json({ error: 'not_found' });
+    if (pro.testAccount && r.targetProId !== pro.id) return res.status(403).json({ error: 'test_account' });
     if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
     if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
     if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
@@ -727,7 +741,7 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
       return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: ci.freeAvailable - 1 });
     }
     // betaling vereist
-    res.json({ ok: false, paymentRequired: true, price: leadPrice(r) });
+    res.json({ ok: false, paymentRequired: true, price: proLeadPrice(r, pro) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -739,6 +753,7 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
   const r = await store.findRequest(req.params.id);
   if (!r) return res.status(404).json({ error: 'not_found' });
+  if (pro.testAccount && r.targetProId !== pro.id) return res.status(403).json({ error: 'test_account' });
   if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
   if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
   if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
@@ -751,14 +766,14 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   }
 
   if (!stripe) { // geen Stripe geconfigureerd → demo
-    const p = leadPrice(r);
+    const p = proLeadPrice(r, pro);
     const claim = await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
     fakturaXlExport(claim, pro, r).catch(() => {});
     return res.json({ ok: true, demo: true, lead: await leadView(r, pro) });
   }
 
   try {
-    const p = leadPrice(r);
+    const p = proLeadPrice(r, pro);
     const proto = (req.headers['x-forwarded-proto'] || req.protocol).split(',')[0];
     const base = process.env.BASE_URL || `${proto}://${req.headers.host}`;
     const session = await stripe.checkout.sessions.create({
@@ -1020,6 +1035,7 @@ async function fxlPost(path, xml) {
 }
 async function fakturaXlExport(claim, pro, request) {
   if (!process.env.FAKTURAXL_API_KEY || !pro) return;
+  if (pro.testAccount) { console.log('[fakturaxl] testaccount — export overgeslagen'); return; }
   try {
     const d = new Date(claim.invoiceDate || claim.createdAt);
     const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1241,12 +1257,13 @@ async function creditInfo(pro) {
   const claims = await store.claimsByPro(pro.id);
   const free = claims.filter(c => c.free);
   const welcomeUsed = free.filter(c => c.bucket !== 'monthly').length;
-  const welcomeRemaining = Math.max(0, PRICING.freeLeads - welcomeUsed);
+  let welcomeRemaining = Math.max(0, PRICING.freeLeads - welcomeUsed);
   const rating = await proRating(pro.id);
   const tier = tierInfo(rating);
   const cm = monthKey(Date.now());
   const monthlyUsed = free.filter(c => c.bucket === 'monthly' && monthKey(c.createdAt) === cm).length;
-  const monthlyRemaining = Math.max(0, tier.bonus - monthlyUsed);
+  let monthlyRemaining = Math.max(0, tier.bonus - monthlyUsed);
+  if (pro.testAccount) { welcomeRemaining = 0; monthlyRemaining = 0; } // testaccount betaalt altijd
   return {
     welcomeRemaining, monthlyRemaining, freeAvailable: welcomeRemaining + monthlyRemaining,
     tier, rating, paidUsed: claims.filter(c => !c.free).length, usedTotal: claims.length,
@@ -1913,5 +1930,44 @@ async function seedDemo() {
   } catch (e) { console.error('[seed] mislukt:', e.message); }
 }
 seedDemo();
+
+// Stripe-testomgeving (zet SEED_TEST_PAYMENT=1). Maakt een geïsoleerd testaccount:
+// asdf@gmail.com / admin1234 — geverifieerd, GEEN gratis tegoed, betaalt € 1 per
+// lead (globale prijs blijft ongemoeid), wordt overgeslagen door Faktura XL, en
+// krijgt één DIRECTE testaanvraag die andere vakmensen niet zien. Idempotent —
+// bij elke start staat er weer een open testaanvraag klaar.
+async function seedTestPayment() {
+  if (!process.env.SEED_TEST_PAYMENT) return;
+  try {
+    let pro = await store.findUserByEmail('asdf@gmail.com');
+    if (!pro) {
+      pro = await store.addUser({
+        role: 'pro', name: 'Stripe Test', email: 'asdf@gmail.com', passHash: A.hashPassword('admin1234'),
+        company: 'Stripe Test BV', spec: 'Schilderwerk', city: 'Amsterdam', workRadius: 30,
+        workCategories: ['Schilderwerk'], kvk: '99999999', verifiedKvk: '99999999', kvkName: 'Stripe Test BV',
+        emailVerified: true, testAccount: true, testPriceGross: 1,
+      });
+      const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
+    }
+    let klant = await store.findUserByEmail('asdf-klant@gmail.com');
+    if (!klant) {
+      klant = await store.addUser({ role: 'customer', name: 'Stripe Testklant', email: 'asdf-klant@gmail.com', passHash: A.hashPassword('admin1234'), customerType: 'particulier', emailVerified: true, testAccount: true });
+    }
+    // zorg dat er altijd één open, nog niet ontgrendelde testaanvraag klaarstaat
+    const open = (await store.openRequests()).find(r => r.targetProId === pro.id && !(r.status && r.status !== 'open'));
+    const unlocked = open ? await store.claimExists(pro.id, open.id) : true;
+    if (!open || unlocked) {
+      await store.addRequest({
+        customerId: klant.id, customerType: 'particulier', company: '', intent: 'opdracht',
+        timing: 'Binnen 1 maand', service: 'Schilderwerk', zip: '1011 AB',
+        description: 'Stripe-testaanvraag — ontgrendelen kost € 1 (alleen zichtbaar voor het testaccount).',
+        name: klant.name, phone: '0600000000', email: klant.email, lang: 'nl', photos: [],
+        targetProId: pro.id, targetProName: pro.company, direct: true,
+      });
+    }
+    console.log('[seed] Stripe-testomgeving gereed — asdf@gmail.com / admin1234 (lead kost € 1)');
+  } catch (e) { console.error('[seed] testbetaling mislukt:', e.message); }
+}
+seedTestPayment();
 
 app.listen(PORT, () => console.log(`Budomatch draait op poort ${PORT}`));
