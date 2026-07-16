@@ -45,17 +45,17 @@ function mailWrap(title, inner) {
 <body style="margin:0;padding:0;background-color:#EFECE2">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#EFECE2"><tr><td align="center" style="padding:30px 12px">
   <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
-    <tr><td bgcolor="#13110B" style="border-radius:16px 16px 0 0;padding:26px 36px;text-align:center">
+    <tr><td bgcolor="#13110B" style="border-radius:16px 16px 0 0;padding:24px 16px;text-align:center">
       <a href="${SITE_URL}" style="text-decoration:none">
-        <span style="font-family:Georgia,'Times New Roman',serif;font-size:23px;letter-spacing:5px;color:#D4AF37">BUDOMATCH</span><br>
-        <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:3px;color:#A89C7E">VAKMANSCHAP&nbsp;DICHTBIJ</span>
+        <span style="font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:4px;color:#D4AF37;white-space:nowrap">BUDOMATCH</span><br>
+        <span style="font-family:Arial,Helvetica,sans-serif;font-size:9px;letter-spacing:2px;color:#A89C7E;white-space:nowrap">VAKMANSCHAP&nbsp;DICHTBIJ</span>
       </a>
     </td></tr>
-    <tr><td bgcolor="#FFFFFF" style="padding:32px 36px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#2B2820;border-left:1px solid #E7E1D2;border-right:1px solid #E7E1D2">
+    <tr><td bgcolor="#FFFFFF" style="padding:30px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#2B2820;border-left:1px solid #E7E1D2;border-right:1px solid #E7E1D2">
       ${title ? `<h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:22px;color:#13110B">${title}</h1>` : ''}
       ${inner}
     </td></tr>
-    <tr><td bgcolor="#FBFAF6" style="border:1px solid #E7E1D2;border-top:0;border-radius:0 0 16px 16px;padding:18px 36px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#8A8270">
+    <tr><td bgcolor="#FBFAF6" style="border:1px solid #E7E1D2;border-top:0;border-radius:0 0 16px 16px;padding:18px 26px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#8A8270">
       Budomatch — betrouwbare vakmensen in heel Nederland<br>
       <a href="${SITE_URL}" style="color:#A8842B;text-decoration:none">budomatch.nl</a> &nbsp;·&nbsp; <a href="mailto:${SELLER.email}" style="color:#A8842B;text-decoration:none">${SELLER.email}</a>
     </td></tr>
