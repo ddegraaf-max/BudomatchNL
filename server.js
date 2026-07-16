@@ -1049,7 +1049,14 @@ async function fxlPost(path, xml) {
   return { status: r.status, body, tag: t => (body.match(new RegExp(`<${t}>([^<]*)</${t}>`)) || [])[1] };
 }
 async function fakturaXlExport(claim, pro, request) {
-  if (!process.env.FAKTURAXL_API_KEY || !pro) return;
+  if (!pro) return;
+  if (!process.env.FAKTURAXL_API_KEY) {
+    // Geen sleutel op het moment van verkoop: markeren zodat de export later
+    // alsnog kan (beheerpaneel → "Mislukte exports opnieuw proberen").
+    console.log('[fakturaxl] FAKTURAXL_API_KEY ontbreekt — export gemarkeerd om later opnieuw te proberen');
+    try { await store.updateClaim(claim.id, { fxlError: 'not_configured' }); } catch (e) {}
+    return;
+  }
   // Testaccount slaat de boekhouding normaal over. FAKTURAXL_TEST_EXPORT=1
   // schakelt de export voor het testaccount aan — alleen gebruiken met LIVE
   // Stripe (echte € 1-betaling), anders komt er een factuur zonder echte betaling
@@ -1859,7 +1866,9 @@ app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
 app.post('/api/admin/fakturaxl/retry', requireAdmin, async (req, res) => {
   try {
     if (!process.env.FAKTURAXL_API_KEY) return res.json({ ok: false, configured: false });
-    const failed = (await store.listClaims()).filter(c => c.fxlError && !c.fxlId && !c.free && c.paid);
+    // Alle betaalde verkopen zonder Faktura XL-factuur — óók historische zonder
+    // foutmarkering (bijv. verkocht toen de API-sleutel nog niet was ingesteld).
+    const failed = (await store.listClaims()).filter(c => !c.free && c.paid && !c.fxlId);
     let done = 0;
     for (const c of failed) {
       const pro = await store.findUserById(c.proId);
@@ -1870,6 +1879,27 @@ app.post('/api/admin/fakturaxl/retry', requireAdmin, async (req, res) => {
       await new Promise(rs => setTimeout(rs, 1100));
     }
     res.json({ ok: true, retried: failed.length, success: done });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Facturen-overzicht: alle betaalde verkopen met hun Faktura XL/KSeF-status,
+// zodat de beheerder per verkoop ziet of de factuur in de boekhouding staat.
+app.get('/api/admin/invoices', requireAdmin, async (req, res) => {
+  try {
+    const claims = (await store.listClaims()).filter(c => !c.free && c.paid)
+      .sort((a, b) => b.createdAt - a.createdAt).slice(0, 100);
+    const items = [];
+    for (const c of claims) {
+      const pro = await store.findUserById(c.proId);
+      const r = await store.findRequest(c.requestId);
+      items.push({
+        id: c.id, createdAt: c.invoiceDate || c.createdAt, gross: c.amountGross,
+        company: pro ? (pro.company || pro.name) : '?', email: pro ? pro.email : '',
+        testAccount: !!(pro && pro.testAccount),
+        service: r ? r.service : '', invoiceNo: c.invoiceNo || '',
+        fxlId: c.fxlId || '', fxlNr: c.fxlNr || '', fxlKsef: c.fxlKsef || '', fxlError: c.fxlError || '',
+      });
+    }
+    res.json({ configured: !!process.env.FAKTURAXL_API_KEY, items });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 // Faktura XL: afdelingen (działy) ophalen, zodat de beheerder het juiste

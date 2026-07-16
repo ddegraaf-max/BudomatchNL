@@ -101,6 +101,7 @@ function shell(){
       <button class="ptab" data-k="overzicht" onclick="showTab('overzicht')">Overzicht</button>
       <button class="ptab" data-k="gebruikers" onclick="showTab('gebruikers')">Gebruikers</button>
       <button class="ptab" data-k="support" onclick="showTab('support')">Support <span id="supBadge"></span></button>
+      <button class="ptab" data-k="facturen" onclick="showTab('facturen')">Facturen</button>
       <button class="ptab" data-k="instellingen" onclick="showTab('instellingen')">Instellingen</button>
     </div>
     <div id="tab"></div>`;
@@ -113,7 +114,28 @@ function showTab(k){
     <div style="margin:-6px 0 12px"><button class="btn btn-ghost btn-sm" id="uPending" onclick="togglePending()">Alleen te verifiëren vakmensen</button></div>
     <div class="tblwrap" id="uList"><p class="empty">Laden…</p></div></div>`;loadUsers();}
   else if(k==='support')renderSupport();
+  else if(k==='facturen')renderInvoices();
   else if(k==='instellingen')renderSettings();
+}
+async function renderInvoices(){
+  $('#tab').innerHTML='<div class="card"><h2>Facturen (betaalde leads)</h2><div id="invBody"><p class="empty">Laden…</p></div></div>';
+  let r;try{r=await api('/api/admin/invoices');}catch(e){return;}
+  const el=$('#invBody');
+  const pending=r.items.filter(i=>!i.fxlId&&!i.testAccount).length;
+  let head='';
+  if(!r.configured) head='<p class="meta" style="color:#e2a0aa;margin-bottom:12px">⚠ FAKTURAXL_API_KEY is niet ingesteld — er gaan nu géén facturen naar Faktura XL/KSeF.</p>';
+  else if(pending) head=`<p class="meta" style="color:#e2c08a;margin-bottom:12px">⚠ ${pending} verkochte lead(s) staan nog niet in Faktura XL. <button class="btn btn-gold btn-sm" onclick="retryFxl(this)" style="margin-left:8px">Nu alsnog exporteren</button></p>`;
+  if(!r.items.length){el.innerHTML=head+'<p class="empty">Nog geen betaalde leads.</p>';return;}
+  el.innerHTML=head+`<div class="tblwrap"><table class="tbl"><thead><tr><th>Datum</th><th>Bedrijf</th><th>Dienst</th><th>Bedrag</th><th>Factuurnr</th><th>Faktura XL</th><th>KSeF</th></tr></thead><tbody>
+    ${r.items.map(i=>`<tr>
+      <td style="white-space:nowrap">${fmtDate(i.createdAt)}</td>
+      <td><b>${esc(i.company)}</b>${i.testAccount?' <span class="tag">test</span>':''}<br><span style="color:var(--muted);font-size:.8rem">${esc(i.email)}</span></td>
+      <td>${esc(i.service)}</td>
+      <td style="white-space:nowrap">${money(i.gross)}</td>
+      <td style="white-space:nowrap">${esc(i.invoiceNo)}</td>
+      <td>${i.fxlId?`<span class="tag green">✓ ${esc(i.fxlNr||i.fxlId)}</span>`:(i.testAccount?'<span class="tag">overgeslagen (test)</span>':(i.fxlError?`<span class="tag red">${esc(i.fxlError)}</span>`:'<span class="tag red">niet geëxporteerd</span>'))}</td>
+      <td>${i.fxlKsef==='ok'?'<span class="tag green">✓</span>':(i.fxlKsef?`<span class="tag red">${esc(i.fxlKsef)}</span>`:'—')}</td>
+    </tr>`).join('')}</tbody></table></div>`;
 }
 let PENDING_ONLY=false;
 function togglePending(){
