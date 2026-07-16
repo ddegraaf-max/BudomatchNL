@@ -15,7 +15,7 @@ const INVOICE_FONT = path.join(__dirname, 'assets', 'DejaVuSans.ttf');
 const SELLER = {
   name: process.env.SELLER_NAME || 'Budomatch DANIËL DE GRAAF',
   addr: process.env.SELLER_ADDR || 'Białka 15',
-  zipcity: process.env.SELLER_ZIPCITY || '09-550 Białka',
+  zipcity: process.env.SELLER_ZIPCITY || '09-550 Szczawin Kościelny',
   country: process.env.SELLER_COUNTRY || 'Polska',
   nip: process.env.SELLER_NIP || '7010869430',
   regon: process.env.SELLER_REGON || '381430120',
