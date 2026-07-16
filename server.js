@@ -1039,6 +1039,14 @@ app.get('/api/match', requireRole('customer'), async (req, res) => {
 const FAKTURAXL_URL = process.env.FAKTURAXL_URL || 'https://program.fakturaxl.pl/api';
 const xmlEsc = s => String(s == null ? '' : s).replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 const cdata = s => `<![CDATA[${String(s == null ? '' : s).replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
+// Bestaande Faktura XL-factuur (dokument_id) naar KSeF sturen; geeft 'ok' of 'error_<kod>'
+async function fxlKsefSend(dokumentId) {
+  const k = await fxlPost('dokument_ksef_wyslanie.php',
+    `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token><dokument_id>${dokumentId}</dokument_id></dokument>`);
+  const kk = k.tag('kod');
+  if (kk !== '49') console.error('[fakturaxl] KSeF-verzending mislukt, kod:', kk, String(k.body).slice(0, 300));
+  return kk === '49' ? 'ok' : 'error_' + (kk || k.status);
+}
 async function fxlPost(path, xml) {
   const r = await fetch(`${FAKTURAXL_URL}/${path}`, {
     method: 'POST',
@@ -1121,13 +1129,8 @@ async function fakturaXlExport(claim, pro, request) {
     const patch = { fxlId: id, fxlNr: nr || '', fxlError: '' };
     if (nr) patch.invoiceNo = nr; // Faktura XL / KSeF-nummer is leidend
     if (process.env.FAKTURAXL_KSEF !== '0') {
-      try {
-        const k = await fxlPost('dokument_ksef_wyslanie.php',
-          `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token><dokument_id>${id}</dokument_id></dokument>`);
-        const kk = k.tag('kod');
-        patch.fxlKsef = kk === '49' ? 'ok' : 'error_' + (kk || k.status);
-        if (kk !== '49') console.error('[fakturaxl] KSeF-verzending mislukt, kod:', kk, String(k.body).slice(0, 300));
-      } catch (e) { patch.fxlKsef = 'error'; console.error('[fakturaxl] KSeF:', e.message); }
+      try { patch.fxlKsef = await fxlKsefSend(id); }
+      catch (e) { patch.fxlKsef = 'error'; console.error('[fakturaxl] KSeF:', e.message); }
     }
     await store.updateClaim(claim.id, patch);
     console.log(`[fakturaxl] factuur ${nr || id} aangemaakt${patch.fxlKsef === 'ok' ? ' + naar KSeF verstuurd' : ''}`);
@@ -1879,6 +1882,31 @@ app.post('/api/admin/fakturaxl/retry', requireAdmin, async (req, res) => {
       await new Promise(rs => setTimeout(rs, 1100));
     }
     res.json({ ok: true, retried: failed.length, success: done });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+// Eén factuur (opnieuw) versturen: bestaat de factuur nog niet in Faktura XL,
+// dan wordt hij aangemaakt (+ KSeF); bestaat hij al maar is KSeF niet gelukt,
+// dan gaat alleen de KSeF-verzending opnieuw (geen dubbele facturen).
+app.post('/api/admin/invoices/:id/export', requireAdmin, async (req, res) => {
+  try {
+    if (!process.env.FAKTURAXL_API_KEY) return res.json({ ok: false, configured: false });
+    const c = (await store.listClaims()).find(x => x.id === req.params.id);
+    if (!c || c.free || !c.paid) return res.status(404).json({ error: 'not_found' });
+    if (c.fxlId) {
+      if (c.fxlKsef === 'ok') return res.json({ ok: true, already: true, fxlNr: c.fxlNr, fxlKsef: 'ok' });
+      const st = await fxlKsefSend(c.fxlId);
+      await store.updateClaim(c.id, { fxlKsef: st });
+      return res.json({ ok: st === 'ok', fxlNr: c.fxlNr, fxlKsef: st });
+    }
+    const pro = await store.findUserById(c.proId);
+    const r = await store.findRequest(c.requestId);
+    await fakturaXlExport(c, pro, r);
+    const after = (await store.claimsByPro(c.proId)).find(x => x.id === c.id);
+    res.json({
+      ok: !!(after && after.fxlId),
+      fxlNr: (after && after.fxlNr) || '', fxlKsef: (after && after.fxlKsef) || '',
+      fxlError: (after && after.fxlError) || '',
+    });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 // Facturen-overzicht: alle betaalde verkopen met hun Faktura XL/KSeF-status,

@@ -126,8 +126,14 @@ async function renderInvoices(){
   if(!r.configured) head='<p class="meta" style="color:#e2a0aa;margin-bottom:12px">⚠ FAKTURAXL_API_KEY is niet ingesteld — er gaan nu géén facturen naar Faktura XL/KSeF.</p>';
   else if(pending) head=`<p class="meta" style="color:#e2c08a;margin-bottom:12px">⚠ ${pending} verkochte lead(s) staan nog niet in Faktura XL. <button class="btn btn-gold btn-sm" onclick="retryFxl(this)" style="margin-left:8px">Nu alsnog exporteren</button></p>`;
   if(!r.items.length){el.innerHTML=head+'<p class="empty">Nog geen betaalde leads.</p>';return;}
-  el.innerHTML=head+`<div class="tblwrap"><table class="tbl"><thead><tr><th>Datum</th><th>Bedrijf</th><th>Dienst</th><th>Bedrag</th><th>Factuurnr</th><th>Faktura XL</th><th>KSeF</th></tr></thead><tbody>
-    ${r.items.map(i=>`<tr>
+  el.innerHTML=head+`<div class="tblwrap"><table class="tbl"><thead><tr><th>Datum</th><th>Bedrijf</th><th>Dienst</th><th>Bedrag</th><th>Factuurnr</th><th>Faktura XL</th><th>KSeF</th><th></th></tr></thead><tbody>
+    ${r.items.map(i=>{
+      let act='';
+      if(!i.testAccount){
+        if(!i.fxlId) act=`<button class="btn btn-gold btn-sm" onclick="exportOne('${i.id}',this)">Verstuur</button>`;
+        else if(i.fxlKsef!=='ok') act=`<button class="btn btn-ghost btn-sm" onclick="exportOne('${i.id}',this)">KSeF opnieuw</button>`;
+      }
+      return `<tr>
       <td style="white-space:nowrap">${fmtDate(i.createdAt)}</td>
       <td><b>${esc(i.company)}</b>${i.testAccount?' <span class="tag">test</span>':''}<br><span style="color:var(--muted);font-size:.8rem">${esc(i.email)}</span></td>
       <td>${esc(i.service)}</td>
@@ -135,7 +141,18 @@ async function renderInvoices(){
       <td style="white-space:nowrap">${esc(i.invoiceNo)}</td>
       <td>${i.fxlId?`<span class="tag green">✓ ${esc(i.fxlNr||i.fxlId)}</span>`:(i.testAccount?'<span class="tag">overgeslagen (test)</span>':(i.fxlError?`<span class="tag red">${esc(i.fxlError)}</span>`:'<span class="tag red">niet geëxporteerd</span>'))}</td>
       <td>${i.fxlKsef==='ok'?'<span class="tag green">✓</span>':(i.fxlKsef?`<span class="tag red">${esc(i.fxlKsef)}</span>`:'—')}</td>
-    </tr>`).join('')}</tbody></table></div>`;
+      <td style="white-space:nowrap">${act}</td>
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+async function exportOne(id,btn){
+  btn.disabled=true;btn.textContent='Bezig…';
+  try{
+    const r=await api('/api/admin/invoices/'+id+'/export',{method:'POST',body:'{}'});
+    if(r.ok)toast(r.already?'Stond al in Faktura XL + KSeF.':('Verstuurd: '+(r.fxlNr||'')+(r.fxlKsef==='ok'?' + KSeF ✓':(r.fxlKsef?' (KSeF: '+r.fxlKsef+')':''))));
+    else if(r.configured===false)toast('FAKTURAXL_API_KEY is niet ingesteld.');
+    else toast('Mislukt: '+(r.fxlError||r.fxlKsef||'onbekend'));
+  }catch(e){}
+  renderInvoices();
 }
 let PENDING_ONLY=false;
 function togglePending(){
