@@ -346,7 +346,7 @@ const T = {
     leads:'Available leads', leadsEmpty:'There are no open jobs yet.',
     match:'matches you', unlocked:'unlocked',
     freeUnlock:'Unlock for free', unlock:'Unlock', incl:'reverse charge', over:'left',
-    busy:'Working…', redirect:'Redirecting to payment…', retry:'Try again',
+    busy:'Working…', redirect:'Redirecting to payment…', retry:'Try again', payStartErr:'Could not start the payment. Check in the Stripe dashboard that your account is activated and try again.',
     billing:'Billing', bFree:'free left', bPaid:'paid total', bNone:'No unlocks yet.',
     free:'free', exclVat:'net {net} · VAT reverse-charged', receipt:'Invoice',
     paidOk:'Payment successful — the lead will be unlocked.', payCancel:'Payment cancelled.',
@@ -399,7 +399,7 @@ const T = {
     leads:'Beschikbare leads', leadsEmpty:'Er staan nog geen open aanvragen.',
     match:'past bij jou', unlocked:'ontgrendeld',
     freeUnlock:'Gratis ontgrendelen', unlock:'Ontgrendelen', incl:'btw verlegd', over:'over',
-    busy:'Bezig…', redirect:'Doorsturen naar betaling…', retry:'Opnieuw proberen',
+    busy:'Bezig…', redirect:'Doorsturen naar betaling…', retry:'Opnieuw proberen', payStartErr:'De betaling kon niet worden gestart. Controleer in het Stripe-dashboard of je account geactiveerd is en probeer het opnieuw.',
     billing:'Facturatie', bFree:'gratis over', bPaid:'betaald totaal', bNone:'Nog geen ontgrendelingen.',
     free:'gratis', exclVat:'netto {net} · btw verlegd', receipt:'Factuur',
     paidOk:'Betaling gelukt — de lead wordt ontgrendeld.', payCancel:'Betaling geannuleerd.',
@@ -427,7 +427,8 @@ function applyChrome(){
 async function api(url, opt={}){
   const r = await fetch(url, { headers:{'content-type':'application/json'}, ...opt });
   if (r.status === 401) { location.href='/?login=1'; throw new Error('auth'); }
-  return r.json();
+  try { return await r.json(); }
+  catch(e){ return { error:'server', status:r.status }; } // bijv. proxy-foutpagina i.p.v. JSON
 }
 async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
 
@@ -1695,17 +1696,20 @@ function leadHtml(l, creditsLeft){
 }
 async function claim(id, btn){
   btn.disabled=true; btn.textContent=t('busy');
-  const r = await api('/api/leads/'+id+'/claim', { method:'POST', body:'{}' });
-  if (r.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
-  if (r.ok){ refreshLead(id, r.lead); loadBilling(); reloadKpi(); return; }
-  if (r.paymentRequired){
-    btn.textContent=t('redirect');
-    const c = await api('/api/leads/'+id+'/checkout', { method:'POST', body:'{}' });
-    if (c.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
-    if (c.url){ location.href = c.url; return; }
-    if (c.ok){ refreshLead(id, c.lead); loadBilling(); reloadKpi(); return; }
-    btn.disabled=false; btn.textContent=t('retry');
-  }
+  try{
+    const r = await api('/api/leads/'+id+'/claim', { method:'POST', body:'{}' });
+    if (r.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
+    if (r.ok){ refreshLead(id, r.lead); loadBilling(); reloadKpi(); return; }
+    if (r.paymentRequired){
+      btn.textContent=t('redirect');
+      const c = await api('/api/leads/'+id+'/checkout', { method:'POST', body:'{}' });
+      if (c.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
+      if (c.url){ location.href = c.url; return; }
+      if (c.ok){ refreshLead(id, c.lead); loadBilling(); reloadKpi(); return; }
+      if (c.error){ alert(t('payStartErr')+(c.message?'\n\n('+c.message+')':'')); }
+    }
+  }catch(e){}
+  btn.disabled=false; btn.textContent=t('retry');
 }
 function refreshLead(id, lead){ const n=$('#lead-'+id); if(n) n.outerHTML=leadHtml(lead, 0); }
 async function reloadKpi(){ const r=await api('/api/leads'); $('#kpi').innerHTML=kpiHtml(r); }

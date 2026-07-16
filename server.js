@@ -776,9 +776,12 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
     const p = proLeadPrice(r, pro);
     const proto = (req.headers['x-forwarded-proto'] || req.protocol).split(',')[0];
     const base = process.env.BASE_URL || `${proto}://${req.headers.host}`;
+    // Geen vaste payment_method_types: Checkout gebruikt automatisch de methoden
+    // die in het Stripe-dashboard aanstaan (kaart werkt altijd; iDEAL/Bancontact
+    // verschijnen zodra ze geactiveerd zijn) — een niet-geactiveerde methode kan
+    // de betaling dan nooit meer blokkeren.
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['ideal', 'card', 'bancontact'], // iDEAL = standaard in NL
       line_items: [{
         quantity: 1,
         price_data: {
@@ -794,7 +797,9 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
     res.json({ url: session.url });
   } catch (e) {
     console.error('Stripe checkout-fout:', e.message);
-    res.status(502).json({ error: 'stripe' });
+    // 400 (niet 502): Cloudflare vervangt 5xx-bodies door een eigen foutpagina,
+    // waardoor de frontend geen JSON meer kan lezen.
+    res.status(400).json({ error: 'stripe', message: String(e.message || '').slice(0, 200) });
   }
 });
 
