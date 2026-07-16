@@ -1109,13 +1109,12 @@ async function fakturaXlExport(claim, pro, request) {
     <email>${xmlEsc(pro.email || '')}</email>
   </nabywca>
   <faktura_pozycje>
-    <pozycja>
-      <nazwa>${cdata(`Budomatch lead: ${(request && request.service) || 'aanvraag'} — odblokowanie zapytania / ontgrendeling aanvraag`)}</nazwa>
-      <ilosc>1</ilosc>
-      <jm>szt.</jm>
-      <cena_netto>${bedrag}</cena_netto>
-      <vat>${xmlEsc(process.env.FAKTURAXL_VAT || 'np')}</vat>
-    </pozycja>
+    <nazwa>${cdata(`Budomatch lead: ${(request && request.service) || 'aanvraag'} — odblokowanie zapytania / ontgrendeling aanvraag`)}</nazwa>
+    <ilosc>1</ilosc>
+    <jm>szt.</jm>
+    <cena_netto>${bedrag}</cena_netto>
+    <wartosc_brutto>${bedrag}</wartosc_brutto>
+    <vat>${xmlEsc(process.env.FAKTURAXL_VAT || 'np')}</vat>
   </faktura_pozycje>
   <uwagi>${cdata(`Odwrotne obciążenie / reverse charge (btw verlegd) — art. 28b ustawy o VAT; podatek VAT rozlicza nabywca. Ref: Budomatch ${claim.invoiceNo || claim.id}`)}</uwagi>
 </dokument>`;
