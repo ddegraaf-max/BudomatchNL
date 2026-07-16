@@ -1050,7 +1050,14 @@ async function fxlPost(path, xml) {
 }
 async function fakturaXlExport(claim, pro, request) {
   if (!process.env.FAKTURAXL_API_KEY || !pro) return;
-  if (pro.testAccount) { console.log('[fakturaxl] testaccount — export overgeslagen'); return; }
+  // Testaccount slaat de boekhouding normaal over. FAKTURAXL_TEST_EXPORT=1
+  // schakelt de export voor het testaccount aan — alleen gebruiken met LIVE
+  // Stripe (echte € 1-betaling), anders komt er een factuur zonder echte betaling
+  // in de administratie/KSeF terecht.
+  if (pro.testAccount && process.env.FAKTURAXL_TEST_EXPORT !== '1') {
+    console.log('[fakturaxl] testaccount — export overgeslagen (zet FAKTURAXL_TEST_EXPORT=1 om te testen)');
+    return;
+  }
   try {
     const d = new Date(claim.invoiceDate || claim.createdAt);
     const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
