@@ -1939,16 +1939,21 @@ seedDemo();
 async function seedTestPayment() {
   if (!process.env.SEED_TEST_PAYMENT) return;
   try {
+    const proFields = {
+      role: 'pro', name: 'Stripe Test', company: 'Stripe Test BV', spec: 'Schilderwerk',
+      city: 'Amsterdam', workRadius: 30, workCategories: ['Schilderwerk'],
+      kvk: '99999999', verifiedKvk: '99999999', kvkName: 'Stripe Test BV',
+      emailVerified: true, testAccount: true, testPriceGross: 1,
+    };
     let pro = await store.findUserByEmail('asdf@gmail.com');
     if (!pro) {
-      pro = await store.addUser({
-        role: 'pro', name: 'Stripe Test', email: 'asdf@gmail.com', passHash: A.hashPassword('admin1234'),
-        company: 'Stripe Test BV', spec: 'Schilderwerk', city: 'Amsterdam', workRadius: 30,
-        workCategories: ['Schilderwerk'], kvk: '99999999', verifiedKvk: '99999999', kvkName: 'Stripe Test BV',
-        emailVerified: true, testAccount: true, testPriceGross: 1,
-      });
-      const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
+      pro = await store.addUser({ email: 'asdf@gmail.com', passHash: A.hashPassword('admin1234'), ...proFields });
+    } else if (pro.role !== 'pro' || !pro.testAccount) {
+      // bestond al (bijv. eerder als klant geregistreerd) → omzetten naar het test-vakmanaccount
+      pro = await store.updateUser(pro.id, { ...proFields, passHash: A.hashPassword('admin1234') });
+      console.log('[seed] bestaand account asdf@gmail.com omgezet naar test-vakman');
     }
+    if (pro.lat == null) { const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng }); }
     let klant = await store.findUserByEmail('asdf-klant@gmail.com');
     if (!klant) {
       klant = await store.addUser({ role: 'customer', name: 'Stripe Testklant', email: 'asdf-klant@gmail.com', passHash: A.hashPassword('admin1234'), customerType: 'particulier', emailVerified: true, testAccount: true });
