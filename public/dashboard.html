@@ -330,7 +330,7 @@ const T = {
     acDetails:'Account', acTier:'Your level', acCredits:'Free leads left', logoutBtn:'Log out', helpTitle:'Help & FAQ', rvNone:'No reviews yet',
     hq1:'How does Budomatch work?', ha1:'Customers post a job for free. You see matching requests, unlock the ones you want (first {FREE} free, then paid; orientation requests are 50% off) and chat directly with the customer.',
     hq2:'What does it cost?', ha2:'Unlocking a lead costs {PRICE} (orientation leads only {ORIENT} — 50% off). Posting colleague jobs and chatting is free.',
-    hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score and gives extra free leads per month: Bronze +1, Silver +2, Gold +3.',
+    hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score (out of 10) and gives extra free leads per month: Bronze +{TB}, Silver (score ≥ {TZS}) +{TZ}, Gold (score ≥ {TGS}) +{TG}.',
     hq4:'How do I get reviews?', ha4:'After contact, customers can rate you. More and better reviews raise your level and visibility.',
     hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
@@ -383,7 +383,7 @@ const T = {
     acDetails:'Account', acTier:'Jouw niveau', acCredits:'Gratis leads over', logoutBtn:'Uitloggen', helpTitle:'Helpdesk & FAQ', rvNone:'Nog geen reviews',
     hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste {FREE} gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
     hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost {PRICE} (oriëntatie slechts {ORIENT} — 50% korting). Collega-klussen plaatsen en chatten is gratis.',
-    hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore en geeft extra gratis leads per maand: Brons +1, Zilver +2, Goud +3.',
+    hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore (op 10) en geeft extra gratis leads per maand: Brons +{TB}, Zilver (score ≥ {TZS}) +{TZ}, Goud (score ≥ {TGS}) +{TG}.',
     hq4:'Hoe krijg ik reviews?', ha4:'Na contact kan de klant je beoordelen. Meer en betere reviews verhogen je niveau en zichtbaarheid.',
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
@@ -410,9 +410,12 @@ const T = {
     vatCheck:'Controleren', vatVerified:'Btw-nummer geverifieerd (EU VIES)', vatInvalid:'Ongeldig of onbekend btw-nummer.', vatNotSet:'Btw-controle is nog niet ingesteld — je kunt je nummer handmatig opslaan.', vatDown:'De EU-controledienst is tijdelijk niet bereikbaar — probeer het later opnieuw.',
   }
 };
-/* actuele prijzen (van /api/pricing) — vullen {PRICE}/{ORIENT}/{FREE} in de teksten */
-let PRICEV={price:'€ 18,15',orient:'€ 9,08',free:'5'};
-const t = k => String(T[LANG][k]!=null?T[LANG][k]:k).replace(/\{PRICE\}/g,PRICEV.price).replace(/\{ORIENT\}/g,PRICEV.orient).replace(/\{FREE\}/g,PRICEV.free);
+/* actuele prijzen en niveaus (van /api/pricing) — vullen de placeholders in de teksten */
+let PRICEV={price:'€ 18,15',orient:'€ 9,08',free:'5',tb:'1',tz:'2',tg:'3',tzs:'4',tgs:'7'};
+const t = k => String(T[LANG][k]!=null?T[LANG][k]:k)
+  .replace(/\{PRICE\}/g,PRICEV.price).replace(/\{ORIENT\}/g,PRICEV.orient).replace(/\{FREE\}/g,PRICEV.free)
+  .replace(/\{TB\}/g,PRICEV.tb).replace(/\{TZ\}/g,PRICEV.tz).replace(/\{TG\}/g,PRICEV.tg)
+  .replace(/\{TZS\}/g,PRICEV.tzs).replace(/\{TGS\}/g,PRICEV.tgs);
 function setLang(l){
   LANG=l;
   document.cookie='bm_lang='+l+'; Path=/; Max-Age='+(365*86400)+'; SameSite=Lax';
@@ -434,7 +437,7 @@ async function logout(){ await fetch('/api/logout',{method:'POST'}); location.hr
 
 (async function init(){
   $('#lnNL').classList.toggle('on',LANG==='nl'); $('#lnEN').classList.toggle('on',LANG==='en');
-  try{const p=await (await fetch('/api/pricing')).json();const eur=n=>'€ '+Number(n).toFixed(2).replace('.',',');PRICEV={price:eur(p.gross),orient:eur(p.orient),free:String(p.freeLeads)};}catch(e){}
+  try{const p=await (await fetch('/api/pricing')).json();const eur=n=>'€ '+Number(n).toFixed(2).replace('.',',');const tr=p.tiers||{};PRICEV={price:eur(p.gross),orient:eur(p.orient),free:String(p.freeLeads),tb:String(tr.bonusBrons??1),tz:String(tr.bonusZilver??2),tg:String(tr.bonusGoud??3),tzs:String(tr.zilverFrom??4),tgs:String(tr.goudFrom??7)};}catch(e){}
   try { ME = (await api('/api/me')).user; } catch { return; }
   applyChrome();
   $('#loading').remove();

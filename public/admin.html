@@ -206,6 +206,18 @@ async function renderSettings(){
       <p class="meta" style="margin:-8px 0 14px;font-size:.82rem">Oriëntatie-leads (automatisch 50%): <b id="setOrient">€ ${Number(s.orientPriceGross).toFixed(2).replace('.',',')}</b></p>
       <label>Gratis welkomstleads (eenmalig per nieuw bedrijf)</label>
       <input class="inp" id="setFree" type="number" step="1" min="0" max="100" value="${s.freeLeads}">
+      <h3 style="font-size:1.05rem;margin:18px 0 10px">Niveaus &amp; badges</h3>
+      <p class="meta" style="font-size:.82rem;margin:0 0 12px">Score = gemiddelde reviewsterren × 2 (schaal 0-10). Onder de Zilver-drempel is het bedrijf Brons.</p>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><label>Zilver vanaf score</label><input class="inp" id="setTzs" type="number" step="0.5" min="0" max="10" value="${s.tiers.zilverFrom}"></div>
+        <div style="flex:1"><label>Goud vanaf score</label><input class="inp" id="setTgs" type="number" step="0.5" min="0" max="10" value="${s.tiers.goudFrom}"></div>
+      </div>
+      <label>Gratis leads per maand per niveau</label>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><label style="font-size:.75rem">Brons</label><input class="inp" id="setTb" type="number" step="1" min="0" max="100" value="${s.tiers.bonusBrons}"></div>
+        <div style="flex:1"><label style="font-size:.75rem">Zilver</label><input class="inp" id="setTz" type="number" step="1" min="0" max="100" value="${s.tiers.bonusZilver}"></div>
+        <div style="flex:1"><label style="font-size:.75rem">Goud</label><input class="inp" id="setTg" type="number" step="1" min="0" max="100" value="${s.tiers.bonusGoud}"></div>
+      </div>
       <button class="btn btn-gold" onclick="saveSettings()">Opslaan — direct actief</button>
       <p class="meta" style="margin-top:14px;font-size:.82rem">Werkt direct door in: leads, ontgrendelen/afrekenen, facturen, dashboard-KPI's, de AI-assistent én de teksten op de homepage, FAQ en algemene voorwaarden.</p>
       <p class="meta" style="margin-top:6px;font-size:.82rem">Standaard: € ${Number(s.defaults.leadPriceGross).toFixed(2).replace('.',',')} · ${s.defaults.freeLeads} gratis leads.</p>
@@ -227,11 +239,21 @@ async function retryFxl(btn){
   updateBadge();
 }
 async function saveSettings(){
-  const price=parseFloat($('#setPrice').value), free=parseInt($('#setFree').value,10);
+  const body={
+    leadPriceGross:parseFloat($('#setPrice').value),
+    freeLeads:parseInt($('#setFree').value,10),
+    tierZilverFrom:parseFloat($('#setTzs').value),
+    tierGoudFrom:parseFloat($('#setTgs').value),
+    tierBonusBrons:parseInt($('#setTb').value,10),
+    tierBonusZilver:parseInt($('#setTz').value,10),
+    tierBonusGoud:parseInt($('#setTg').value,10),
+  };
   try{
-    const r=await api('/api/admin/settings',{method:'POST',body:JSON.stringify({leadPriceGross:price,freeLeads:free})});
-    if(r.ok){toast('Opgeslagen — nieuwe prijzen zijn direct actief.');renderSettings();}
-    else toast(r.error==='invalid_price'?'Ongeldige prijs (€ 1 – € 500).':'Ongeldige invoer.');
+    const r=await api('/api/admin/settings',{method:'POST',body:JSON.stringify(body)});
+    if(r.ok){toast('Opgeslagen — direct actief.');renderSettings();}
+    else if(r.error==='invalid_price')toast('Ongeldige prijs (€ 1 – € 500).');
+    else if(r.error==='invalid_tiers')toast('Ongeldige drempels: Zilver moet lager zijn dan Goud (0-10).');
+    else toast('Ongeldige invoer.');
   }catch(e){}
 }
 async function renderSupport(){

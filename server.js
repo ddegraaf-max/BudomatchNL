@@ -73,12 +73,22 @@ const VAT_RATE = 0;                      // 0% — btw verlegd (reverse charge, 
 const CURRENCY = 'eur';
 
 const PRICING = { gross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS };
+// Niveaus/badges: score-drempels (op 10) en gratis maandleads per niveau —
+// aanpasbaar in het beheerpaneel, net als de prijzen.
+const TIERS_DEFAULT = { zilverFrom: 4, goudFrom: 7, bonusBrons: 1, bonusZilver: 2, bonusGoud: 3 };
+const TIERS = { ...TIERS_DEFAULT };
 async function loadPricing() {
   try {
     const s = await store.getSettings();
     if (Number(s.leadPriceGross) > 0) PRICING.gross = Math.round(Number(s.leadPriceGross) * 100) / 100;
     if (Number.isFinite(Number(s.freeLeads)) && Number(s.freeLeads) >= 0) PRICING.freeLeads = Math.round(Number(s.freeLeads));
-    console.log(`[pricing] leadprijs € ${PRICING.gross.toFixed(2)} · ${PRICING.freeLeads} gratis welkomstleads`);
+    const num = (v, min, max) => Number.isFinite(Number(v)) && Number(v) >= min && Number(v) <= max ? Number(v) : undefined;
+    if (num(s.tierZilverFrom, 0, 10) !== undefined) TIERS.zilverFrom = Number(s.tierZilverFrom);
+    if (num(s.tierGoudFrom, 0, 10) !== undefined) TIERS.goudFrom = Number(s.tierGoudFrom);
+    if (num(s.tierBonusBrons, 0, 100) !== undefined) TIERS.bonusBrons = Math.round(Number(s.tierBonusBrons));
+    if (num(s.tierBonusZilver, 0, 100) !== undefined) TIERS.bonusZilver = Math.round(Number(s.tierBonusZilver));
+    if (num(s.tierBonusGoud, 0, 100) !== undefined) TIERS.bonusGoud = Math.round(Number(s.tierBonusGoud));
+    console.log(`[pricing] leadprijs € ${PRICING.gross.toFixed(2)} · ${PRICING.freeLeads} welkomstleads · niveaus Z≥${TIERS.zilverFrom}/G≥${TIERS.goudFrom} · bonus ${TIERS.bonusBrons}/${TIERS.bonusZilver}/${TIERS.bonusGoud}`);
   } catch (e) { console.error('[pricing] instellingen laden mislukt:', e.message); }
 }
 loadPricing();
@@ -1220,9 +1230,9 @@ async function proRating(proId) {
 // Tier op basis van reviews (score op /10 = gemiddelde × 2). Geeft extra gratis leads per maand.
 function tierInfo(rating) {
   const score = rating.count ? rating.avg * 2 : 0;
-  let key = 'brons', label = 'Brons', bonus = 1;
-  if (rating.count && score >= 7) { key = 'goud'; label = 'Goud'; bonus = 3; }
-  else if (rating.count && score >= 4) { key = 'zilver'; label = 'Zilver'; bonus = 2; }
+  let key = 'brons', label = 'Brons', bonus = TIERS.bonusBrons;
+  if (rating.count && score >= TIERS.goudFrom) { key = 'goud'; label = 'Goud'; bonus = TIERS.bonusGoud; }
+  else if (rating.count && score >= TIERS.zilverFrom) { key = 'zilver'; label = 'Zilver'; bonus = TIERS.bonusZilver; }
   return { key, label, bonus, score: Math.round(score * 10) / 10 };
 }
 const monthKey = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
@@ -1583,7 +1593,7 @@ VOOR VAKMENSEN (professionals)
 - Het profiel wordt pas ACTIEF na KvK-verificatie (Bedrijfsprofiel → KvK-controle): zonder verificatie is het bedrijf niet zichtbaar en kan het niet op aanvragen reageren. Eén KvK-nummer kan maar bij één account horen. De geverifieerde KvK-gegevens (naam + adres) komen op de factuur.
 - Kosten: de eerste ${PRICING.freeLeads} leads zijn gratis (welkomsttegoed). Daarna kost het ontgrendelen van een aanvraag ${eur(PRICING.gross)} per lead; oriëntatie-aanvragen kosten de helft: ${eur(orient)}. Plaatsen van collega-klussen, chatten en het profiel zijn gratis. Betalen kan met iDEAL, creditcard of Bancontact.
 - Btw: de btw wordt verlegd naar de afnemer (reverse charge, 0% op de factuur). De vakman vult zijn btw-nummer (btw-id) in bij Bedrijfsprofiel → Gegevens; dat komt op de factuur. Facturen (PDF) staan onder Account → Facturatie.
-- Niveaus op basis van reviewscore (score op 10 = gemiddelde sterren × 2): Brons (score < 4) geeft +1 gratis lead per maand, Zilver (4-6) +2, Goud (7-10) +3 — bovenop het eenmalige welkomsttegoed. GOUD betekent ook: klanten kunnen je direct een opdracht sturen — extra zichtbaarheid.
+- Niveaus op basis van reviewscore (score op 10 = gemiddelde sterren × 2): Brons (score < ${TIERS.zilverFrom}) geeft +${TIERS.bonusBrons} gratis lead(s) per maand, Zilver (vanaf ${TIERS.zilverFrom}) +${TIERS.bonusZilver}, Goud (vanaf ${TIERS.goudFrom}) +${TIERS.bonusGoud} — bovenop het eenmalige welkomsttegoed. GOUD betekent ook: klanten kunnen je direct een opdracht sturen — extra zichtbaarheid.
 - Collega-klussen (gratis USP): werk dat blijft liggen deel je gratis met collega-vakmensen; een collega pakt de klus op en er opent automatisch een vakman⇆vakman chat. Zo ontstaan samenwerkingen.
 - Werkgebied: plaats/postcode + straal (km) + vinkjes voor alle vakgebieden die het bedrijf doet — dit bepaalt welke aanvragen je ziet en of klanten je vinden.
 
@@ -1873,7 +1883,8 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
     leadPriceGross: PRICING.gross,
     orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
     freeLeads: PRICING.freeLeads,
-    defaults: { leadPriceGross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS },
+    tiers: { ...TIERS },
+    defaults: { leadPriceGross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS, tiers: { ...TIERS_DEFAULT } },
   });
 });
 app.post('/api/admin/settings', requireAdmin, async (req, res) => {
@@ -1889,6 +1900,20 @@ app.post('/api/admin/settings', requireAdmin, async (req, res) => {
       if (!(v >= 0 && v <= 100)) return res.status(400).json({ error: 'invalid_free' });
       patch.freeLeads = v;
     }
+    // niveaus/badges: drempels (score op 10) en gratis maandleads per niveau
+    if (b.tierZilverFrom !== undefined || b.tierGoudFrom !== undefined) {
+      const z = Number(b.tierZilverFrom !== undefined ? b.tierZilverFrom : TIERS.zilverFrom);
+      const g = Number(b.tierGoudFrom !== undefined ? b.tierGoudFrom : TIERS.goudFrom);
+      if (!(z >= 0 && z <= 10 && g >= 0 && g <= 10 && z < g)) return res.status(400).json({ error: 'invalid_tiers' });
+      patch.tierZilverFrom = z; patch.tierGoudFrom = g;
+    }
+    for (const [key, field] of [['tierBonusBrons', 'bonusBrons'], ['tierBonusZilver', 'bonusZilver'], ['tierBonusGoud', 'bonusGoud']]) {
+      if (b[key] !== undefined) {
+        const v = Math.round(Number(b[key]));
+        if (!(v >= 0 && v <= 100)) return res.status(400).json({ error: 'invalid_bonus' });
+        patch[key] = v;
+      }
+    }
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty' });
     await store.updateSettings(patch);
     await loadPricing();
@@ -1897,6 +1922,7 @@ app.post('/api/admin/settings', requireAdmin, async (req, res) => {
       leadPriceGross: PRICING.gross,
       orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
       freeLeads: PRICING.freeLeads,
+      tiers: { ...TIERS },
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -1904,7 +1930,10 @@ app.post('/api/admin/settings', requireAdmin, async (req, res) => {
 // Publieke prijsinfo — homepage, FAQ en voorwaarden vullen hiermee hun vaste
 // teksten, zodat een prijswijziging in het beheerpaneel overal direct zichtbaar is.
 app.get('/api/pricing', (req, res) => {
-  res.json({ gross: PRICING.gross, orient: leadPrice({ intent: 'orientatie' }).gross, freeLeads: PRICING.freeLeads });
+  res.json({
+    gross: PRICING.gross, orient: leadPrice({ intent: 'orientatie' }).gross, freeLeads: PRICING.freeLeads,
+    tiers: { ...TIERS },
+  });
 });
 
 app.get('/healthz', (_, res) => res.send('ok'));
