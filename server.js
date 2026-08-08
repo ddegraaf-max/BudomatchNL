@@ -1221,6 +1221,32 @@ app.get('/api/reviews/mine', requireRole('pro'), async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
+// ---------------- VvE-opdrachten via VvEdeal (tweede leadkanaal) ----------------
+function sampleVveTenders() {
+  const day = 86400000, now = Date.now();
+  return [
+    { id: 'demo1', demo: true, title: 'Buitenschilderwerk 48 appartementen', vve: 'VvE Parkzicht', city: 'Utrecht', postcode: '3512', category: 'Schilderwerk', scope: 'Buitenschilderwerk kozijnen en galerijen, onderdeel van het MJOP.', units: 48, budget: '€ 60.000 – € 90.000', deadline: new Date(now + 14 * day).toISOString(), url: 'https://vvedeal.nl' },
+    { id: 'demo2', demo: true, title: 'Vervangen 12 dakkapellen', vve: 'VvE De Hoven', city: 'Amersfoort', postcode: '3811', category: 'Dakkapel', scope: 'Vervangen bestaande dakkapellen incl. vergunning en steiger.', units: 24, budget: '€ 45.000 – € 70.000', deadline: new Date(now + 21 * day).toISOString(), url: 'https://vvedeal.nl' },
+  ];
+}
+app.get('/api/vve', requireRole('pro'), async (req, res) => {
+  try {
+    if (process.env.VVEDEAL_API_URL) {
+      const u = new URL(process.env.VVEDEAL_API_URL);
+      const cats = (req.user.workCategories || []).join(',');
+      if (req.user.city) u.searchParams.set('city', req.user.city);
+      if (cats) u.searchParams.set('categories', cats);
+      const headers = {}; if (process.env.VVEDEAL_API_KEY) headers.apikey = process.env.VVEDEAL_API_KEY;
+      const r = await fetch(u.href, { headers });
+      if (!r.ok) return res.json({ configured: true, error: 'fetch', tenders: [] });
+      const d = await r.json();
+      const tenders = (Array.isArray(d) ? d : (d.tenders || [])).slice(0, 50);
+      return res.json({ configured: true, tenders });
+    }
+    return res.json({ configured: false, tenders: sampleVveTenders() });
+  } catch (e) { console.error('vve:', e.message); res.json({ configured: false, tenders: sampleVveTenders(), error: 'server' }); }
+});
+
 // Klus oppakken (gratis) → opent vakman⇆vakman gesprek
 app.post('/api/projobs/:id/take', requireRole('pro'), async (req, res) => {
   try {
