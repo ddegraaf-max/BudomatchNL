@@ -300,7 +300,7 @@ let LANG=(document.cookie.match(/(?:^|; )bm_lang=(nl|en)/)||[])[1]||'nl';
 const fmtDate = ms => new Date(ms).toLocaleDateString(LANG==='nl'?'nl-NL':'en-GB', { day:'numeric', month:'short', year:'numeric' });
 let ME = null;
 
-const SELLER = { name:'Budomatch DANIËL DE GRAAF', addr:'Białka 15, 09-550 Szczawin Kościelny, Polska', nip:'7010869430', regon:'381430120', email:'info@budomatch.nl' };
+const SELLER = { name:'Budomatch DANIËL DE GRAAF', addr:'15, 09-550 Białka, Polska', nip:'7010869430', regon:'381430120', email:'info@budomatch.pl' };
 
 const T = {
   en: {
@@ -328,33 +328,30 @@ const T = {
     save:'Save', saved:'Saved.', prBio:'Company description', prWebsite:'Website', prLogo:'Change logo', prPhotos:'Project photos (max 6)',
     arTitle:'Choose your work area', arZip:'Base postcode', arRadius:'Radius', arCats:'Which jobs do you do?',
     acDetails:'Account', acTier:'Your level', acCredits:'Free leads left', logoutBtn:'Log out', helpTitle:'Help & FAQ', rvNone:'No reviews yet',
-    hq1:'How does Budomatch work?', ha1:'Customers post a job for free. You see matching requests, unlock the ones you want (first {FREE} free, then paid; orientation requests are 50% off) and chat directly with the customer.',
-    hq2:'What does it cost?', ha2:'Unlocking a lead costs {PRICE} (orientation leads only {ORIENT} — 50% off). Posting colleague jobs and chatting is free.',
-    hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score (out of 10) and gives extra free leads per month: Bronze +{TB}, Silver (score ≥ {TZS}) +{TZ}, Gold (score ≥ {TGS}) +{TG}.',
+    hq1:'How does Budomatch work?', ha1:'Customers post a job for free. You see matching requests, unlock the ones you want (first 5 free, then paid; orientation requests are 50% off) and chat directly with the customer.',
+    hq2:'What does it cost?', ha2:'Unlocking a lead costs € 18,15 (orientation leads only € 9,08 — 50% off). Posting colleague jobs and chatting is free.',
+    hq3:'How do the Bronze/Silver/Gold levels work?', ha3:'Your level follows your review score and gives extra free leads per month: Bronze +1, Silver +2, Gold +3.',
     hq4:'How do I get reviews?', ha4:'After contact, customers can rate you. More and better reviews raise your level and visibility.',
     hq5:'What are colleague jobs?', ha5:'Too busy? Pass overflow work to a colleague for free, or pick up work from other tradesmen — only for registered tradesmen.',
     hq6:'How do I get more requests?', ha6:'Complete your company profile, choose your work area and categories, and respond fast in the chat.',
     pjTitle:'Colleague jobs (free)', pjIntro:'Too busy or work left over? Pass a job to a colleague for free — or pick up work from others. Free, always.', pjNew:'Post a job', pjOpen:'Available from colleagues', pjNote:'Note for the colleague (optional)', pjPost:'Post (free)', pjTake:'Pick up', pjEmpty:'No colleague jobs right now.', pjBy:'by', tagColleague:'Colleague',
     dirTitle:'Companies', dirIntro:'Choose the type of work and your city — you only see tradesmen who do that work AND whose service radius covers you. The company only pays when it unlocks your request.', dirGolden:'New: tradespeople with a Gold badge can be contacted directly — the highest-rated companies, reachable right away.', dirCat:'Type of work', dirCity:'Your city', dirSearch2:'Find matching tradesmen', dirPrompt:'Choose the type of work and your city to see matching tradesmen.', dirNone:'No matching tradesmen in your area yet.', dirView:'View profile', dirEmpty:'No companies yet.', pjPhotos:'Add photos (max 3)', pjMine:'My posted jobs', pjMineEmpty:'You have not posted any jobs yet.', stActueel:'Active', stOpgelost:'Resolved', stOpgepakt:'Taken', pjResolve:'Mark resolved', pjReopen:'Reopen', pjDelete:'Delete', pjDelConfirm:'Delete this job? This cannot be undone.', tagDirect:'Direct request', invPdf:'Invoice (PDF)',
-    prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'Your KvK number has been saved — we verify it manually, usually within 24 hours. You will get an e-mail once your profile is active.', kvkInvalid:'Enter a valid 8-digit KvK number.', kvkInactive:'Your profile is not active yet. Verify your Chamber of Commerce (KvK) number to become visible and receive requests.', kvkActivate:'Verify KvK', kvkDuplicate:'This company (KvK number) is already registered on Budomatch.', kvkRequiredClaim:'Verify your KvK number first (Company profile) to respond to requests.',
+    prCompany:'Company name', prSpec:'Main specialism', prCity:'City', prPhone:'Phone', arNote:'Your work area is based on your city.', aiGreetPro:'Hi! I help you as a tradesman — e.g. drafting a reply or quote to a customer, deciding what to ask, or tips to win the job. What can I help with?', aiIntroPro:'Your assistant for winning and handling jobs.', aiPhPro:'Ask something or paste a request…', aiDraft:'Suggest a reply (AI)', kvkNum:'Chamber of Commerce (KvK) number', kvkCheck:'Look up & verify', kvkVerified:'Registered company (verified)', kvkNotFound:'KvK number not found', kvkNotSet:'KvK lookup is not configured yet — you can enter your details manually.', kvkInvalid:'Enter a valid 8-digit KvK number.', kvkInactive:'Your profile is not active yet. Verify your Chamber of Commerce (KvK) number to become visible and receive requests.', kvkActivate:'Verify KvK', kvkDuplicate:'This company (KvK number) is already registered on Budomatch.', kvkRequiredClaim:'Verify your KvK number first (Company profile) to respond to requests.',
     aiTitle:'AI assistant', aiIntro:'Let me help you describe the job clearly.',
     aiGreet:'Hi! Tell me briefly what you want done and I will help you write a clear job description. For example: "bathroom renovation" or "solar panels on a pitched roof".',
     aiPh:'Type here…', aiUse:'Use as description ↓', aiErr:'Sorry, something went wrong.',
     myReq:'My jobs', myEmpty:'You have not posted any jobs yet.', reaction:'response', reactions:'responses',
     pWelcome:'Welcome', pIntro:'Available jobs near you. Unlock a lead to see the contact details.',
-    kFree:'free jobs left', kUsed:'unlocked total', kPrice:'per lead after your free credit (VAT reverse-charged)',
+    kFree:'free jobs left', kUsed:'unlocked total', kPrice:'per lead after 5 free (VAT reverse-charged)',
     leads:'Available leads', leadsEmpty:'There are no open jobs yet.',
     match:'matches you', unlocked:'unlocked',
     freeUnlock:'Unlock for free', unlock:'Unlock', incl:'reverse charge', over:'left',
-    busy:'Working…', redirect:'Redirecting to payment…', retry:'Try again', payStartErr:'Could not start the payment. Check in the Stripe dashboard that your account is activated and try again.',
+    busy:'Working…', redirect:'Redirecting to payment…', retry:'Try again',
     billing:'Billing', bFree:'free left', bPaid:'paid total', bNone:'No unlocks yet.',
     free:'free', exclVat:'net {net} · VAT reverse-charged', receipt:'Invoice',
     paidOk:'Payment successful — the lead will be unlocked.', payCancel:'Payment cancelled.',
     rcTitle:'Invoice', rcSeller:'Seller', rcBuyer:'Buyer', rcDesc:'Description', rcLead:'Lead unlock',
     rcNet:'Net', rcVat:'VAT (reverse charge, 0%)', rcGross:'Total', rcDate:'Date', rcPrint:'Print / save as PDF', rcNip:'VAT number',
-    evBanner:'Please confirm your e-mail address — check your inbox for the confirmation link.', evResend:'Resend e-mail', evSent:'Sent! Check your inbox (and spam).', evDone:'✓ E-mail address confirmed',
-    prNip:'VAT number (btw-id)', prNipHint:'Appears on your lead invoices (VAT reverse-charged) — e.g. NL123456789B01.',
-    vatCheck:'Validate', vatVerified:'VAT number verified (EU VIES)', vatInvalid:'Invalid or unknown VAT number.', vatNotSet:'VAT validation is not configured yet — you can save your number manually.', vatDown:'The EU validation service is temporarily unavailable — try again later.',
   },
   nl: {
     toSite:'Site', logout:'Uitloggen', loading:'Laden…',
@@ -381,41 +378,33 @@ const T = {
     save:'Opslaan', saved:'Opgeslagen.', prBio:'Bedrijfsomschrijving', prWebsite:'Website', prLogo:'Logo wijzigen', prPhotos:'Projectfoto\'s (max 6)',
     arTitle:'Kies je werkgebied', arZip:'Postcode (basis)', arRadius:'Straal', arCats:'Welke klussen doe je?',
     acDetails:'Account', acTier:'Jouw niveau', acCredits:'Gratis leads over', logoutBtn:'Uitloggen', helpTitle:'Helpdesk & FAQ', rvNone:'Nog geen reviews',
-    hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste {FREE} gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
-    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost {PRICE} (oriëntatie slechts {ORIENT} — 50% korting). Collega-klussen plaatsen en chatten is gratis.',
-    hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore (op 10) en geeft extra gratis leads per maand: Brons +{TB}, Zilver (score ≥ {TZS}) +{TZ}, Goud (score ≥ {TGS}) +{TG}.',
+    hq1:'Hoe werkt Budomatch?', ha1:'Klanten plaatsen gratis een klus. Jij ziet passende aanvragen, ontgrendelt de klussen die je wilt (eerste 5 gratis, daarna betaald; oriëntatie-aanvragen 50% korting) en chat direct met de klant.',
+    hq2:'Wat kost het?', ha2:'Een lead ontgrendelen kost € 18,15 (oriëntatie slechts € 9,08 — 50% korting). Collega-klussen plaatsen en chatten is gratis.',
+    hq3:'Hoe werken de niveaus Brons/Zilver/Goud?', ha3:'Je niveau volgt je reviewscore en geeft extra gratis leads per maand: Brons +1, Zilver +2, Goud +3.',
     hq4:'Hoe krijg ik reviews?', ha4:'Na contact kan de klant je beoordelen. Meer en betere reviews verhogen je niveau en zichtbaarheid.',
     hq5:'Wat zijn collega-klussen?', ha5:'Te druk? Geef werk dat blijft liggen gratis door aan een collega, of pak werk van andere vakmensen op — alleen voor aangemelde vakmensen.',
     hq6:'Hoe krijg ik meer aanvragen?', ha6:'Maak je bedrijfsprofiel compleet, kies je werkgebied en categorieën, en reageer snel in de chat.',
     pjTitle:'Collega-klussen (gratis)', pjIntro:'Te druk of werk blijft liggen? Geef een klus gratis door aan een collega — of pak werk van anderen op. Altijd gratis.', pjNew:'Klus plaatsen', pjOpen:'Beschikbaar van collega-vakmensen', pjNote:'Notitie voor de collega (optioneel)', pjPost:'Plaatsen (gratis)', pjTake:'Oppakken', pjEmpty:'Nu geen collega-klussen.', pjBy:'van', tagColleague:'Collega',
     dirTitle:'Bedrijven', dirIntro:'Kies soort werk en je plaats — je ziet alleen vakmensen die dat werk doen én binnen wiens straal je valt. Het bedrijf betaalt pas bij het ontgrendelen van je aanvraag.', dirGolden:'Nieuw: vakmensen met een gouden badge kun je direct benaderen — de best beoordeelde bedrijven, meteen bereikbaar.', dirCat:'Soort werk', dirCity:'Jouw plaats', dirSearch2:'Zoek passende vakmensen', dirPrompt:'Kies soort werk en je plaats om passende vakmensen te zien.', dirNone:'Nog geen passende vakmensen in jouw omgeving.', dirView:'Bekijk profiel', dirEmpty:'Nog geen bedrijven.', pjPhotos:'Foto toevoegen (max 3)', pjMine:'Mijn geplaatste klussen', pjMineEmpty:'Je hebt nog geen klussen geplaatst.', stActueel:'Actueel', stOpgelost:'Opgelost', stOpgepakt:'Opgepakt', pjResolve:'Markeer opgelost', pjReopen:'Heropenen', pjDelete:'Verwijderen', pjDelConfirm:'Deze klus verwijderen? Dit kan niet ongedaan worden gemaakt.', tagDirect:'Direct aan jou', invPdf:'Factuur (PDF)',
-    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'Je KvK-nummer is opgeslagen — we verifiëren het handmatig, meestal binnen 24 uur. Je krijgt een e-mail zodra je profiel actief is.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.', kvkInactive:'Je profiel is nog niet actief. Verifieer je KvK-nummer om zichtbaar te worden en aanvragen te ontvangen.', kvkActivate:'KvK verifi\u00ebren', kvkDuplicate:'Dit bedrijf (KvK-nummer) is al geregistreerd op Budomatch.', kvkRequiredClaim:'Verifieer eerst je KvK-nummer (Bedrijfsprofiel) om op aanvragen te reageren.',
+    prCompany:'Bedrijfsnaam', prSpec:'Hoofdspecialisme', prCity:'Plaats', prPhone:'Telefoon', arNote:'Je werkgebied is gebaseerd op je plaats.', aiGreetPro:'Hoi! Ik help je als vakman — bijvoorbeeld met het opstellen van een reactie of offerte aan een klant, bedenken wat je moet vragen, of tips om de klus binnen te halen. Waarmee kan ik helpen?', aiIntroPro:'Jouw assistent om opdrachten binnen te halen en af te handelen.', aiPhPro:'Stel een vraag of plak een aanvraag…', aiDraft:'Reactie voorstellen (AI)', kvkNum:'KvK-nummer', kvkCheck:'Ophalen & controleren', kvkVerified:'Geregistreerd bedrijf (geverifieerd)', kvkNotFound:'KvK-nummer niet gevonden', kvkNotSet:'KvK-controle is nog niet ingesteld — je kunt je gegevens handmatig invullen.', kvkInvalid:'Voer een geldig KvK-nummer van 8 cijfers in.', kvkInactive:'Je profiel is nog niet actief. Verifieer je KvK-nummer om zichtbaar te worden en aanvragen te ontvangen.', kvkActivate:'KvK verifi\u00ebren', kvkDuplicate:'Dit bedrijf (KvK-nummer) is al geregistreerd op Budomatch.', kvkRequiredClaim:'Verifieer eerst je KvK-nummer (Bedrijfsprofiel) om op aanvragen te reageren.',
     aiTitle:'AI-assistent', aiIntro:'Laat me je helpen de klus scherp te omschrijven.',
     aiGreet:'Hoi! Vertel kort wat je wilt laten doen, dan help ik je tot een heldere klusomschrijving te komen. Bijvoorbeeld: "badkamer renoveren" of "zonnepanelen op schuin dak".',
     aiPh:'Typ hier…', aiUse:'Gebruik als omschrijving ↓', aiErr:'Sorry, er ging iets mis.',
     myReq:'Mijn aanvragen', myEmpty:'Je hebt nog geen aanvragen geplaatst.', reaction:'reactie', reactions:'reacties',
     pWelcome:'Welkom', pIntro:'Beschikbare aanvragen bij jou in de buurt. Ontgrendel een lead om de contactgegevens te zien.',
-    kFree:'gratis aanvragen over', kUsed:'ontgrendeld totaal', kPrice:'per lead na je gratis tegoed (btw verlegd)',
+    kFree:'gratis aanvragen over', kUsed:'ontgrendeld totaal', kPrice:'per lead na 5 gratis (btw verlegd)',
     leads:'Beschikbare leads', leadsEmpty:'Er staan nog geen open aanvragen.',
     match:'past bij jou', unlocked:'ontgrendeld',
     freeUnlock:'Gratis ontgrendelen', unlock:'Ontgrendelen', incl:'btw verlegd', over:'over',
-    busy:'Bezig…', redirect:'Doorsturen naar betaling…', retry:'Opnieuw proberen', payStartErr:'De betaling kon niet worden gestart. Controleer in het Stripe-dashboard of je account geactiveerd is en probeer het opnieuw.',
+    busy:'Bezig…', redirect:'Doorsturen naar betaling…', retry:'Opnieuw proberen',
     billing:'Facturatie', bFree:'gratis over', bPaid:'betaald totaal', bNone:'Nog geen ontgrendelingen.',
     free:'gratis', exclVat:'netto {net} · btw verlegd', receipt:'Factuur',
     paidOk:'Betaling gelukt — de lead wordt ontgrendeld.', payCancel:'Betaling geannuleerd.',
     rcTitle:'Factuur', rcSeller:'Verkoper', rcBuyer:'Koper', rcDesc:'Omschrijving', rcLead:'Ontgrendeling lead',
     rcNet:'Netto', rcVat:'Btw (verlegd, 0%)', rcGross:'Totaal', rcDate:'Datum', rcPrint:'Afdrukken / opslaan als PDF', rcNip:'Btw-nummer',
-    evBanner:'Bevestig je e-mailadres — check je inbox voor de bevestigingslink.', evResend:'E-mail opnieuw sturen', evSent:'Verstuurd! Check je inbox (en spam).', evDone:'✓ E-mailadres bevestigd',
-    prNip:'Btw-nummer (btw-id)', prNipHint:'Komt op je lead-facturen (btw verlegd) — bijv. NL123456789B01.',
-    vatCheck:'Controleren', vatVerified:'Btw-nummer geverifieerd (EU VIES)', vatInvalid:'Ongeldig of onbekend btw-nummer.', vatNotSet:'Btw-controle is nog niet ingesteld — je kunt je nummer handmatig opslaan.', vatDown:'De EU-controledienst is tijdelijk niet bereikbaar — probeer het later opnieuw.',
   }
 };
-/* actuele prijzen en niveaus (van /api/pricing) — vullen de placeholders in de teksten */
-let PRICEV={price:'€ 18,15',orient:'€ 9,08',free:'5',tb:'1',tz:'2',tg:'3',tzs:'4',tgs:'7'};
-const t = k => String(T[LANG][k]!=null?T[LANG][k]:k)
-  .replace(/\{PRICE\}/g,PRICEV.price).replace(/\{ORIENT\}/g,PRICEV.orient).replace(/\{FREE\}/g,PRICEV.free)
-  .replace(/\{TB\}/g,PRICEV.tb).replace(/\{TZ\}/g,PRICEV.tz).replace(/\{TG\}/g,PRICEV.tg)
-  .replace(/\{TZS\}/g,PRICEV.tzs).replace(/\{TGS\}/g,PRICEV.tgs);
+const t = k => (T[LANG][k]!=null?T[LANG][k]:k);
 function setLang(l){
   LANG=l;
   document.cookie='bm_lang='+l+'; Path=/; Max-Age='+(365*86400)+'; SameSite=Lax';
@@ -430,38 +419,17 @@ function applyChrome(){
 async function api(url, opt={}){
   const r = await fetch(url, { headers:{'content-type':'application/json'}, ...opt });
   if (r.status === 401) { location.href='/?login=1'; throw new Error('auth'); }
-  try { return await r.json(); }
-  catch(e){ return { error:'server', status:r.status }; } // bijv. proxy-foutpagina i.p.v. JSON
+  return r.json();
 }
 async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
 
 (async function init(){
   $('#lnNL').classList.toggle('on',LANG==='nl'); $('#lnEN').classList.toggle('on',LANG==='en');
-  try{const p=await (await fetch('/api/pricing')).json();const eur=n=>'€ '+Number(n).toFixed(2).replace('.',',');const tr=p.tiers||{};PRICEV={price:eur(p.gross),orient:eur(p.orient),free:String(p.freeLeads),tb:String(tr.bonusBrons??1),tz:String(tr.bonusZilver??2),tg:String(tr.bonusGoud??3),tzs:String(tr.zilverFrom??4),tgs:String(tr.goudFrom??7)};}catch(e){}
   try { ME = (await api('/api/me')).user; } catch { return; }
   applyChrome();
   $('#loading').remove();
   ME.role==='pro' ? renderPro() : renderCustomer();
-  if(location.search.indexOf('everified=1')>=0){
-    history.replaceState(null,'','/dashboard');
-    ME.emailVerified=true;
-    const d=document.createElement('div');d.className='kvk-banner';
-    d.style.borderColor='rgba(63,166,106,.5)';d.style.background='rgba(63,166,106,.1)';d.style.color='#bfe6cf';
-    d.textContent=t('evDone');
-    const m=$('#main');m.insertBefore(d,m.firstChild);
-    setTimeout(()=>d.remove(),6000);
-  }
 })();
-
-/* banner: e-mailadres nog niet bevestigd */
-function everifyBannerHtml(){
-  if(ME.emailVerified)return '';
-  return `<div class="kvk-banner" id="evBanner"><span>✉ ${t('evBanner')}</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="resendVerify()">${t('evResend')}</button></div>`;
-}
-async function resendVerify(){
-  try{ await api('/api/verify-email/resend',{method:'POST',body:'{}'}); }catch(e){ return; }
-  const b=document.getElementById('evBanner'); if(b)b.innerHTML=`<span>${t('evSent')}</span>`;
-}
 
 const CATS_EN = "Extension,Bump-out extension,Storey addition,Air conditioning,Architect,Asbestos removal,Bathroom,Paving,Boiler (CH),Roofing,Dormer,Roof window,Electrician,Garage door,Facade cleaning,Glazing,Fencing,Burglary protection,Insulation,Kitchen,Window frames,EV charging,Plumber,Pest control,Roller shutters,Painting,Sliding doors,Conservatory,Plastering,Tiling,Home battery,Stairs,Landscaping,Garden maintenance,Ventilation,Renovation,Flooring,Underfloor heating,Damp proofing,Heat pump,Wellness & sauna,Solar panels,Awnings & sun protection".split(',');
 const CATS_NL = "Aanbouw,Uitbouw,Opbouw,Airco,Architect,Asbest verwijderen,Badkamerspecialist,Bestraten,Cv-ketel,Dakbedekking,Dakkapel,Dakraam,Elektricien,Garagedeur,Gevelreiniging,Glas,Hekwerken,Inbraakbeveiliging,Isolatie,Keukenspecialist,Kozijnen,Laadpalen,Loodgieter,Ongediertebestrijding,Rolluiken,Schilderwerk,Schuifpui,Serre,Stucwerk,Tegels zetten,Thuisbatterij,Trap,Tuinaanleg,Tuinonderhoud,Ventilatie,Verbouwing,Vloeren,Vloerverwarming,Vochtbestrijding,Warmtepomp,Wellness,Zonnepanelen,Zonwering".split(',');
@@ -784,7 +752,7 @@ async function matchPros(){
   el.innerHTML=r.pros.map(p=>`<div class="item"><div class="top">
       <span style="display:inline-flex;align-items:center;gap:8px">${tierBadge(p.tier.key,26)}<span class="svc">${htmlesc(p.company)}</span>${p.kvkVerified?' <span title="KvK geverifieerd" style="color:#7fd6a0">\u2713</span>':''}</span>
       ${p.rating.count?`<span class="stars-view" style="font-size:.8rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:`<span class="meta">${t('rvNone')}</span>`}
-      <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf?id=${p.id}">${t('dirView')}</a></div>
+      <a class="btn btn-gold btn-sm" style="margin-left:auto;text-decoration:none" href="/bedrijf.html?id=${p.id}">${t('dirView')}</a></div>
       <div class="meta">${htmlesc(p.spec||'')}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}</div>
     </div>`).join('');
 }
@@ -891,7 +859,6 @@ function custAiHtml(){
 function renderCustomer(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('cWelcome')}, ${ME.name}</h1><p>${t('cIntro')}</p></div>
-    ${everifyBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showCustTab('nieuw')">${t('cTabNew')}</button>
       <button class="ptab" data-k="aanvragen" onclick="showCustTab('aanvragen')">${t('myReq')}</button>
@@ -1248,7 +1215,7 @@ function renderGolden(){
   box.style.display='block';
   box.innerHTML=`<div class="golden-box"><div class="golden-h">${tierBadge('goud',22)} ${t('goldenTitle')}</div>
     <p class="hint">${t('goldenIntro')}</p>
-    ${GOLDEN_LIST.map(p=>`<div class="golden-item ${GOLDEN_TARGET===p.id?'on':''}" onclick="selectGolden('${p.id}')"><span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span>${p.rating&&p.rating.count?`<span class="stars-view" style="font-size:.78rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:''}<a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf?id=${p.id}" target="_blank" onclick="event.stopPropagation()">${t('dirView')}</a></div>`).join('')}
+    ${GOLDEN_LIST.map(p=>`<div class="golden-item ${GOLDEN_TARGET===p.id?'on':''}" onclick="selectGolden('${p.id}')"><span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.distanceKm!=null?' \u00b7 ~'+p.distanceKm+' km':''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span>${p.rating&&p.rating.count?`<span class="stars-view" style="font-size:.78rem">${starsHtml(p.rating.avg,p.rating.count)}</span>`:''}<a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank" onclick="event.stopPropagation()">${t('dirView')}</a></div>`).join('')}
     <div class="golden-item ${!GOLDEN_TARGET?'on':''}" onclick="selectGolden('')">${t('goldenNone')}</div></div>`;
 }
 function selectGolden(id){ GOLDEN_TARGET=(GOLDEN_TARGET===id?'':id); renderGolden(); }
@@ -1293,7 +1260,7 @@ function reqCardHtml(q){
   const st=reqStatus(q);
   const responders=(q.status==='open'&&q.responders&&q.responders.length)?`
     <div class="resp-box"><div class="resp-h">${t('reqResponders')} (${q.responders.length}/3)</div>
-    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf?id=${p.id}" target="_blank">${t('dirView')}</a><button class="btn btn-gold btn-sm" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
+    ${q.responders.map(p=>`<div class="resp-item">${tierBadge(p.tier.key,22)}<span style="flex:1">${htmlesc(p.company)}${p.city?' \u00b7 '+htmlesc(p.city):''}${p.kvkVerified?' <span style="color:#7fd6a0">\u2713</span>':''}</span><a class="btn btn-ghost btn-sm" style="text-decoration:none" href="/bedrijf.html?id=${p.id}" target="_blank">${t('dirView')}</a><button class="btn btn-gold btn-sm" onclick="assignReq('${q.id}','${p.id}')">${t('reqAssign')}</button></div>`).join('')}</div>`:'';
   return `<div class="item" id="req-${q.id}"><div class="top"><span class="svc">${htmlesc(q.service)}</span>
     <span class="tag ${st[0]}">${st[1]}</span>
     <span class="tag">${q.claims} ${q.claims===1?t('reaction'):t('reactions')}</span>
@@ -1359,7 +1326,6 @@ function proBannerHtml(){
 async function renderPro(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1></div>
-    ${everifyBannerHtml()}
     ${ME.kvkVerified?'':proBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showProTab('nieuw')">${t('tabNew')}</button>
@@ -1451,10 +1417,6 @@ function pfInfoHtml(){ const u=ME; return `<div class="pf-grid">
     <div><label>${t('prSpec')}</label><input class="inp" id="pfSpec" value="${htmlesc(u.spec||'')}"></div>
     <div><label>${t('prCity')}</label><input class="inp" id="pfCity" value="${htmlesc(u.city||'')}"></div>
     <div><label>${t('prPhone')}</label><input class="inp" id="pfPhone" value="${htmlesc(u.phone||'')}"></div>
-    <div><label>${t('prNip')}</label>
-      <div class="kvk-row"><input class="inp" id="pfNip" value="${htmlesc(u.nip||'')}" placeholder="NL123456789B01" style="margin-bottom:4px"><button class="btn btn-gold btn-sm" onclick="checkVat()">${t('vatCheck')}</button></div>
-      <div class="kvk-status" id="vatStatus">${u.vatVerified?('✓ '+t('vatVerified')+(u.vatName?' — '+htmlesc(u.vatName):'')):''}</div>
-      <p class="meta" style="margin:0 0 10px;font-size:.78rem">${t('prNipHint')}</p></div>
     <div style="grid-column:1/-1"><label>${t('prWebsite')}</label><input class="inp" id="pfWebsite" value="${htmlesc(u.website||'')}">${u.websitePreview?siteCardHtml(u.websitePreview,u.website):''}</div>
   </div>
   <label>${t('prBio')} <span style="color:var(--muted);font-weight:400">(${t('optional')})</span></label><textarea class="inp" id="pfBio" rows="4" placeholder="${u.websitePreview?'':''}">${htmlesc(u.bio||'')}</textarea>
@@ -1469,7 +1431,7 @@ function pfKvkHtml(){ const u=ME; const verified=u.kvkVerified; return `<div cla
   ${u.kvkVerified?`<div class="kvk-box" style="margin-top:12px"><div class="cfg-h" style="font-size:.95rem">${t('kvkVerifiedData')}</div>
     <p style="margin:2px 0"><b>${htmlesc(u.kvkName||u.company||'')}</b></p>
     ${u.kvkAddress?`<p class="meta" style="margin:2px 0">${htmlesc(((u.kvkAddress.street||'')+' '+(u.kvkAddress.houseNumber||'')).trim())}</p><p class="meta" style="margin:2px 0">${htmlesc([u.kvkAddress.postcode,u.kvkAddress.city].filter(Boolean).join(' '))}</p>`:''}
-    <p class="meta" style="margin:2px 0">KvK: ${htmlesc(u.kvk||'')}${u.nip?` \u00b7 BTW: ${htmlesc(u.nip)}`:''}</p>
+    <p class="meta" style="margin:2px 0">KvK: ${htmlesc(u.kvk||'')}</p>
     <p class="hint" style="color:#7fd6a0">\u2713 ${t('kvkInvoiceNote')}</p></div>`:`<p class="hint">${t('kvkInactive')}</p>`}`;
 }
 async function loadMyReviews(){
@@ -1492,7 +1454,7 @@ function pfPhotosHtml(){ return `<div class="pf-logo-wrap" style="margin-bottom:
   <div class="note" id="pfNote2">${t('saved')}</div>`;
 }
 async function saveProfileInfo(){
-  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,nip:$('#pfNip').value,website:$('#pfWebsite').value,bio:$('#pfBio').value};
+  const body={company:$('#pfCompany').value,spec:$('#pfSpec').value,city:$('#pfCity').value,phone:$('#pfPhone').value,website:$('#pfWebsite').value,bio:$('#pfBio').value};
   const r=await api('/api/profile',{method:'POST',body:JSON.stringify(body)});
   if(r.user){ ME=r.user; const n=$('#pfNote'); if(n)n.classList.add('show'); if(typeof applyChrome==='function')applyChrome(); }
 }
@@ -1538,24 +1500,6 @@ function profileHtml(){
     <div class="photo-thumbs" id="pfThumbs"></div>
     <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="saveProfile()">${t('save')}</button>
     <div class="note" id="pfNote">${t('saved')}</div></div>`;
-}
-async function checkVat(){
-  const raw=(document.getElementById('pfNip').value||'').toUpperCase().replace(/[^A-Z0-9]/g,''); const st=document.getElementById('vatStatus');
-  if(raw.length<8){ st.textContent=t('vatInvalid'); st.style.color='#e2708a'; return; }
-  st.textContent='…'; st.style.color='var(--muted)';
-  let r; try{ r=await api('/api/vat/'+encodeURIComponent(raw)); }catch(e){ st.textContent=t('vatInvalid'); st.style.color='#e2708a'; return; }
-  if(r.ok){
-    document.getElementById('pfNip').value=r.vat;
-    // officiële naam (en plaats) uit VIES overnemen en direct opslaan
-    if(r.name){ const c=document.getElementById('pfCompany'); if(c)c.value=r.name; }
-    if(r.city){ const ct=document.getElementById('pfCity'); if(ct&&!ct.value)ct.value=r.city; }
-    if(ME){ ME.nip=r.vat; ME.vatVerified=true; ME.vatName=r.name||''; }
-    try{ await saveProfileInfo(); }catch(e){}
-    st.innerHTML='✓ '+t('vatVerified')+(r.name?' — '+htmlesc(r.name):''); st.style.color='#7fd6a0';
-  }
-  else if(r.configured===false){ st.textContent=t('vatNotSet'); st.style.color='var(--muted)'; }
-  else if(r.error==='unavailable'){ st.textContent=t('vatDown'); st.style.color='var(--muted)'; }
-  else { st.textContent=t('vatInvalid'); st.style.color='#e2708a'; }
 }
 async function checkKvk(){
   const num=(document.getElementById('pfKvk').value||'').replace(/\D/g,''); const st=document.getElementById('kvkStatus');
@@ -1699,20 +1643,17 @@ function leadHtml(l, creditsLeft){
 }
 async function claim(id, btn){
   btn.disabled=true; btn.textContent=t('busy');
-  try{
-    const r = await api('/api/leads/'+id+'/claim', { method:'POST', body:'{}' });
-    if (r.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
-    if (r.ok){ refreshLead(id, r.lead); loadBilling(); reloadKpi(); return; }
-    if (r.paymentRequired){
-      btn.textContent=t('redirect');
-      const c = await api('/api/leads/'+id+'/checkout', { method:'POST', body:'{}' });
-      if (c.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
-      if (c.url){ location.href = c.url; return; }
-      if (c.ok){ refreshLead(id, c.lead); loadBilling(); reloadKpi(); return; }
-      if (c.error){ alert(t('payStartErr')+(c.message?'\n\n('+c.message+')':'')); }
-    }
-  }catch(e){}
-  btn.disabled=false; btn.textContent=t('retry');
+  const r = await api('/api/leads/'+id+'/claim', { method:'POST', body:'{}' });
+  if (r.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
+  if (r.ok){ refreshLead(id, r.lead); loadBilling(); reloadKpi(); return; }
+  if (r.paymentRequired){
+    btn.textContent=t('redirect');
+    const c = await api('/api/leads/'+id+'/checkout', { method:'POST', body:'{}' });
+    if (c.error==='kvk_required'){ alert(t('kvkRequiredClaim')); btn.disabled=false; btn.textContent=t('retry'); showProTab('profiel'); return; }
+    if (c.url){ location.href = c.url; return; }
+    if (c.ok){ refreshLead(id, c.lead); loadBilling(); reloadKpi(); return; }
+    btn.disabled=false; btn.textContent=t('retry');
+  }
 }
 function refreshLead(id, lead){ const n=$('#lead-'+id); if(n) n.outerHTML=leadHtml(lead, 0); }
 async function reloadKpi(){ const r=await api('/api/leads'); $('#kpi').innerHTML=kpiHtml(r); }
@@ -1793,7 +1734,7 @@ function handleReturn(){
   const q=new URLSearchParams(location.search);
   if(q.get('paid')){ showProTab('leads'); toast(t('paidOk')); let n=0; const iv=setInterval(()=>{ loadLeads(); if(++n>=3)clearInterval(iv); },1500); }
   else if(q.get('cancel')){ toast(t('payCancel')); }
-  if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard');
+  if(q.has('paid')||q.has('cancel')) history.replaceState({},'','/dashboard.html');
 }
 
 let FB_ADMIN_ME=false;

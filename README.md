@@ -33,17 +33,14 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Hoe het werkt
 - **Klanten** maken gratis een account aan en plaatsen **gratis** een aanvraag.
 - **Professionals** zien aanvragen; contactgegevens zijn afgeschermd tot ze een lead
-  **ontgrendelen**. Eerste **5 gratis**; daarna **€ 18,15 per lead** (oriëntatie-leads 50%: € 9,08; btw verlegd / reverse charge).
+  **ontgrendelen**. Eerste **5 gratis**; daarna **€ 12,50 per lead** (btw verlegd / reverse charge).
 - De **AI-assistent** helpt klanten hun klus scherp te omschrijven.
 
 ## Endpoints
 | Route | Doel |
 |---|---|
-| `GET /` · `GET /dashboard` · `GET /admin` | site, dashboard & beheerpaneel (nette URL's; oude `.html`-links krijgen een 301) |
+| `GET /` · `GET /dashboard.html` | site & dashboard |
 | `POST /api/register` · `/api/login` · `/api/logout` · `GET /api/me` | accounts |
-| `POST /api/password/forgot` · `/api/password/reset` | wachtwoord vergeten (herstel-link per e-mail) |
-| `GET /api/verify-email` · `POST /api/verify-email/resend` | e-mailadres bevestigen |
-| `GET/POST /api/admin/*` | beheer: statistieken, gebruikers, handmatige KvK-verificatie, blokkeren, support-inbox |
 | `POST /api/requests` · `GET /api/requests/mine` | klant: plaatsen / overzicht |
 | `GET /api/leads` · `POST /api/leads/:id/claim` · `POST /api/leads/:id/checkout` | pro: leads / gratis ontgrendelen / betalen (Stripe) |
 | `POST /api/stripe/webhook` | Stripe-bevestiging (maakt de claim aan) |
@@ -68,13 +65,10 @@ worden gelogd i.p.v. gemaild. Accounts/leads werken altijd.
 ## Stripe instellen
 1. Maak in het Stripe-dashboard een account (test-modus eerst). Kopieer de **Secret key** → `STRIPE_SECRET_KEY`.
 2. Zet voor Nederland de betaalmethoden **iDEAL**, **creditcard** en **Bancontact** aan (Settings → Payment methods).
-   EUR is de valuta; € 18,15 per lead, btw verlegd naar de afnemer (reverse charge, B2B).
+   EUR is de valuta; € 12,50 per lead, btw verlegd naar de afnemer (reverse charge, B2B).
 3. Webhook: Developers → Webhooks → **Add endpoint** → URL `https://<jouw-domein>/api/stripe/webhook`,
    event `checkout.session.completed`. Kopieer de **Signing secret** → `STRIPE_WEBHOOK_SECRET`.
 4. De claim wordt **via de webhook** aangemaakt (betrouwbaar), niet alleen bij terugkeer op de site.
-
-### Stripe end-to-end testen op productie (€ 1, veilig geïsoleerd)
-Zet `SEED_TEST_PAYMENT=1` op Railway. Bij de start ontstaat een testaccount **asdf@gmail.com / admin1234**: KvK-geverifieerd, **geen gratis tegoed** (betalen dus direct), betaalt **€ 1 per lead** (de globale prijs blijft voor iedereen anders gelden), ziet en ontgrendelt **uitsluitend zijn eigen directe testaanvraag** (onzichtbaar voor echte vakmensen, kan geen echte aanvragen claimen — 403) en wordt **overgeslagen door de Faktura XL/KSeF-export**. Bij elke herstart staat er weer een verse testaanvraag klaar. Flow: inloggen → lead ontgrendelen → Stripe Checkout € 1 → terug → lead open + factuur zichtbaar → webhook in Stripe op 200. Na het testen: variabele verwijderen en het account blokkeren in het beheerpaneel.
 
 ### Lokaal testen met de Stripe CLI
 ```bash
@@ -93,36 +87,9 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook   # toont de whsec_
 ## Productie-aandachtspunten
 - **Opslag:** JSON is prima voor de start; voor schaal/meerdere instances is PostgreSQL beter.
 - **Taal:** de site en het dashboard staan standaard op **Nederlands**; de taalkeuze (NL/PL) wordt onthouden via een cookie en is gedeeld tussen site en dashboard.
-- **Beveiliging:** inlog-cookies krijgen automatisch de `Secure`-vlag achter HTTPS (Railway), zijn `HttpOnly` en `SameSite=Lax`. Login, registratie, wachtwoord-reset, chat en gastformulieren hebben **rate limiting** (per IP). Na een **wachtwoordwijziging vervallen alle oude sessies**. Geblokkeerde accounts (beheerpaneel) zijn direct overal uitgelogd.
-- **Wachtwoord vergeten:** klanten en vakmensen kunnen via "Wachtwoord vergeten?" een herstel-link per e-mail aanvragen (1 uur geldig, eenmalig te gebruiken; vereist `RESEND_API_KEY`).
-- **E-mailverificatie:** na registratie krijgt de gebruiker een bevestigingslink per e-mail; tot die tijd staat er een banner in het dashboard. Zonder `RESEND_API_KEY` (lokaal ontwikkelen) wordt het adres direct als bevestigd gemarkeerd.
-- **Backups & monitoring:** zet op Railway database-backups aan (PostgreSQL-plugin → Backups) en bewaak `GET /healthz` extern (bijv. UptimeRobot, gratis).
-- **Foto's:** worden als base64 in de database opgeslagen — prima voor de start; verhuis bij groei naar objectopslag (S3/R2).
-
-## Faktura XL + KSeF (Poolse administratie)
-Met `FAKTURAXL_API_KEY` (Faktura XL → Ustawienia → API) wordt **elke betaalde lead-ontgrendeling** automatisch ook als factuur aangemaakt in [Faktura XL](https://fakturaxl.pl) — koper = het NL-bedrijf (naam, adres, btw-nummer), EUR, betaald, met de vermelding *odwrotne obciążenie / reverse charge (art. 28b)* — en direct **naar KSeF** gestuurd. Het Faktura XL-nummer wordt daarna het leidende factuurnummer in de app (zelfde nummer op de PDF die de vakman downloadt). Mislukt de export, dan blijft het interne nummer staan en wordt de fout gelogd (`fxlError` op de claim; het beheerpaneel toont een teller). Opties: `FAKTURAXL_KSEF=0` (niet automatisch naar KSeF), `FAKTURAXL_VAT` (standaard `np`).
-
-**Eigen nummerserie (standaard aan).** De app nummert de Faktura XL-facturen zelf: **`BM/nr/jaar`**, afgeleid van de interne gapless teller — zo mengt Budomatch niet met andere bedrijven op hetzelfde Faktura XL-account en hoef je in Faktura XL **niets** in te stellen. Andere prefix: `FAKTURAXL_SERIA` (leeg = Faktura XL nummert zelf). Mislukte exports kun je opnieuw draaien via **Instellingen → "Mislukte exports opnieuw proberen"** (zelfde nummer, dus geen gaten in de serie). Optioneel kun je facturen ook aan een Faktura XL-afdeling koppelen via `FAKTURAXL_DZIAL_ID` (ID-lijst staat in het beheerpaneel).
-
-## Beheerpaneel (`/admin`)
-Zet `ADMIN_EMAIL` op het e-mailadres van je eigen account. Dat account krijgt toegang tot het beheerpaneel met:
-- **Overzicht** — klanten/vakmensen, aanvragen, ontgrendelingen, omzet, reviews, open supportverzoeken.
-- **Gebruikers** — zoeken, **handmatige KvK-verificatie** (handig zolang er geen `KVK_API_KEY` is; dubbele KvK-nummers worden geweigerd) en **blokkeren/deblokkeren**.
-- **Support** — inbox van supportverzoeken uit het dashboard (met status Nieuw/Bezig/Afgerond en een knop om per e-mail te antwoorden). Supportverzoeken komen daarnaast nog steeds per e-mail binnen.
-- **Instellingen** — pas de **leadprijs** en het aantal **gratis welkomstleads** aan; direct actief zonder herstart. De oriëntatieprijs volgt automatisch (50%). Werkt overal door: leads, afrekenen, facturen, KPI's, de AI-assistent én de prijsvermeldingen op de **homepage, FAQ en algemene voorwaarden** (die halen de actuele prijs op via `GET /api/pricing`, met de standaardprijs als fallback).
-
-### Handmatige KvK-verificatie (zolang er geen `KVK_API_KEY` is)
-De flow werkt end-to-end zonder KvK-API: **(1)** een nieuwe vakman registreert → de beheerder krijgt een e-mail; **(2)** de vakman vult zijn KvK-nummer in en klikt "Ophalen & controleren" → het nummer wordt opgeslagen en de beheerder krijgt opnieuw een e-mail; **(3)** de beheerder verifieert in het paneel (Gebruikers → filter "Alleen te verifiëren" → *Verifieer KvK*) → de vakman krijgt een e-mail dat zijn profiel actief is. Zodra `KVK_API_KEY` is gezet verloopt de verificatie automatisch via de KvK-API; de handmatige knop blijft daarnaast gewoon werken.
-
+- **Beveiliging:** inlog-cookies krijgen automatisch de `Secure`-vlag achter HTTPS (Railway), zijn `HttpOnly` en `SameSite=Lax`.
 - **Juridisch:** `voorwaarden.html` en `privacy.html` bevatten je bedrijfsgegevens (KvK/btw-nummer) en zijn opgesteld als degelijke basis — laat ze vóór livegang nog juridisch nakijken.
 - **Facturen:** voor elke betaalde lead wordt automatisch een **factuur** aangemaakt met doorlopende nummering (jaar-volgnummer), verkoper- (KvK/btw-nummer) en kopergegevens (NIP/adres indien ingevuld) en de netto/btw/bruto-opbouw. Professionals downloaden de factuur (afdrukken of opslaan als PDF) vanuit hun facturatie-overzicht. De nummering reset per kalenderjaar.
-
-## Registratie & btw-nummer
-De vakman-registratie is bewust kort: bedrijfsnaam, **één hoofdspecialisme** (dropdown) en plaats. Het hoofdspecialisme wordt direct het werkgebied en de plaats wordt gegeocodeerd, zodat het bedrijf na KvK-verificatie meteen matchbaar is; extra vakgebieden voegt het bedrijf later toe onder **Werkgebied**. In **Bedrijfsprofiel → Gegevens** vult de vakman zijn **btw-nummer (btw-id)** in — dat is nodig op de lead-facturen (btw verlegd / reverse charge; de KvK-API levert geen btw-nummers, dus dit vult het bedrijf zelf in).
-
-Met `EUVAT_API_KEY` (sleutel van [euvatapi.com](https://euvatapi.com)) kan de vakman zijn btw-nummer laten **controleren tegen de EU VIES-databases** (knop *Controleren* naast het veld): het nummer wordt gevalideerd, genormaliseerd opgeslagen en gemarkeerd als geverifieerd, inclusief de officiële bedrijfsnaam. Zonder landcode wordt `NL` aangenomen. Zonder sleutel blijft handmatig invullen gewoon werken.
-
-**Autofill bij registratie:** het vakman-registratieformulier heeft een btw-veld met een *Zoeken*-knop. Die zoekt het bedrijf op in VIES en vult **bedrijfsnaam en plaats automatisch in**; het nummer wordt bij het aanmaken van het account direct als geverifieerd opgeslagen (via een kortlevend ondertekend token — geen tweede API-call, niet te vervalsen). Zonder `EUVAT_API_KEY` verschijnt een nette melding en blijft handmatig invullen werken.
 
 ## Database (PostgreSQL)
 
@@ -144,16 +111,13 @@ Het vakman-portaal heeft tabbladen: **Nieuw** (5 recente aanvragen + KPI's), **O
 **Niveaus op basis van reviews** (extra gratis leads per maand): **Brons** +1, **Zilver** +2, **Goud** +3. Naast de eenmalige 5 welkomstleads. Het niveau volgt de reviewscore (op /10 = gemiddelde × 2): <4 Brons, 4-6 Zilver, 7-10 Goud.
 
 ## Openbare bedrijfsprofielen + directe aanvraag (USP)
-Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.
+Elk vakbedrijf heeft een **openbare profielpagina** (`/bedrijf.html?id=...`) met logo, omschrijving, projectfoto's, reviews, werkgebied en een **Budomatch-badge in brons/zilver/goud** (op basis van reviews). Klanten zien in hun portaal een **bedrijvenlijst** (gesorteerd op score) en kunnen bij een betrouwbaar bedrijf **direct een offerte aanvragen**. Zo'n gerichte aanvraag is alleen zichtbaar voor dat bedrijf; er worden **pas kosten in rekening gebracht bij ontgrendelen** — een USP voor zowel klant als vakman.
 
 ## PDF-factuur (Poolse verkoper, zonder btw)
 Elke betaalde ontgrendeling levert een **downloadbare PDF-factuur** op (`GET /api/invoice/:claimId`), via de knop **Factuur (PDF)** onder Account → facturatie. De factuur wordt uitgegeven door de Poolse onderneming **Budomatch (NIP 7010869430, REGON 381430120, Białka, Polska)**, is tweetalig (PL/NL), **zonder btw** met de vermelding *odwrotne obciążenie / btw verlegd (reverse charge)*, en gebruikt een Unicode-lettertype (`assets/DejaVuSans.ttf`) zodat Poolse tekens correct weergegeven worden. Verkopergegevens zijn overschrijfbaar via env (`SELLER_NAME`, `SELLER_NIP`, enz.).
 
 ## Bedrijfsprofiel + KvK-controle
 Het bedrijfsprofiel is heringedeeld (logo, reviews, tweekoloms velden). Vakmensen kunnen hun **KvK-nummer** invoeren en op **Ophalen & controleren** klikken: de server haalt via de KvK-API de officiele bedrijfsnaam/plaats op en markeert het profiel als **geregistreerd/geverifieerd** (vinkje op profiel, in de bedrijvenlijst en op de openbare pagina). Vereist `KVK_API_KEY`; zonder sleutel is handmatig invullen mogelijk. Alle pagina's staan op `lang=nl` met `notranslate` zodat browsers de eigen NL/EN-teksten niet meer automatisch (verkeerd) vertalen.
-
-## AI-assistent kent het hele platform
-Het system prompt van de assistent bevat een **kennisbank met alle platformfeiten** (prijzen, gratis leads, niveaus Brons/Zilver/Goud, KvK-verificatie, collega-klussen, btw verlegd, wachtwoord vergeten, support, …), zodat hij vragen over Budomatch feitelijk juist beantwoordt en niets verzint. De prijzen in de kennisbank komen uit de servervariabelen en bewegen automatisch mee met prijswijzigingen. Het statische deel wordt via **prompt caching** gecached (±90% goedkoper per vervolgvraag); het gebruikersspecifieke deel staat er als apart blok achter zodat de cache tussen alle gebruikers gedeeld wordt.
 
 ## AI-assistent voor de vakman
 De AI-assistent in het vakman-portaal draait nu in **vakman-modus**: hij helpt opdrachten binnenhalen en afhandelen — een professionele **reactie of offertetekst aan de klant** opstellen, bedenken welke vragen je moet stellen, en tips geven. In elk klantgesprek (Berichten) staat een knop **"Reactie voorstellen (AI)"** die op basis van de klus en het gesprek een kant-en-klare reactie in het invoerveld zet, die de vakman kan aanpassen en versturen. (Vereist `ANTHROPIC_API_KEY`.) De klant-assistent blijft de klant helpen met een heldere klusomschrijving.

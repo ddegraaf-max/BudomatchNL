@@ -15,105 +15,33 @@ const INVOICE_FONT = path.join(__dirname, 'assets', 'DejaVuSans.ttf');
 const SELLER = {
   name: process.env.SELLER_NAME || 'Budomatch DANIËL DE GRAAF',
   addr: process.env.SELLER_ADDR || 'Białka 15',
-  zipcity: process.env.SELLER_ZIPCITY || '09-550 Szczawin Kościelny',
+  zipcity: process.env.SELLER_ZIPCITY || '09-550 Białka',
   country: process.env.SELLER_COUNTRY || 'Polska',
   nip: process.env.SELLER_NIP || '7010869430',
   regon: process.env.SELLER_REGON || '381430120',
-  email: process.env.SELLER_EMAIL || 'info@budomatch.nl',
+  email: process.env.SELLER_EMAIL || 'info@budomatch.pl',
 };
 
 const PORT = process.env.PORT || 3000;
 const MODEL = process.env.MODEL || 'claude-sonnet-4-6';
 
-// ---------------- e-mailhuisstijl ----------------
-// Tabel-layout + inline styles (betrouwbaar in Gmail/Outlook/Apple Mail):
-// donkere kop met goudkleurig woordmerk, lichte kaart, gouden knoppen.
-const SITE_URL = (process.env.BASE_URL || 'https://budomatch.nl').replace(/\/$/, '');
-const mailBtn = (url, label) =>
-  `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto"><tr>
-     <td bgcolor="#C9A227" style="border-radius:50px">
-       <a href="${url}" style="display:inline-block;padding:13px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#13110B;text-decoration:none">${label}</a>
-     </td></tr></table>`;
-const mailCode = code =>
-  `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto"><tr>
-     <td bgcolor="#13110B" style="border-radius:14px;padding:16px 34px">
-       <span style="font-family:'Courier New',Courier,monospace;font-size:30px;letter-spacing:10px;font-weight:bold;color:#E3C158">${code}</span>
-     </td></tr></table>`;
-const mailMuted = s => `<p style="color:#8A8270;font-size:13px;margin:18px 0 0">${s}</p>`;
-function mailWrap(title, inner) {
-  return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:0;background-color:#EFECE2">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#EFECE2"><tr><td align="center" style="padding:30px 12px">
-  <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
-    <tr><td bgcolor="#13110B" style="border-radius:16px 16px 0 0;padding:24px 16px;text-align:center">
-      <a href="${SITE_URL}" style="text-decoration:none">
-        <span style="font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:4px;color:#D4AF37;white-space:nowrap">BUDOMATCH</span><br>
-        <span style="font-family:Arial,Helvetica,sans-serif;font-size:9px;letter-spacing:2px;color:#A89C7E;white-space:nowrap">VAKMANSCHAP&nbsp;DICHTBIJ</span>
-      </a>
-    </td></tr>
-    <tr><td bgcolor="#FFFFFF" style="padding:30px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#2B2820;border-left:1px solid #E7E1D2;border-right:1px solid #E7E1D2">
-      ${title ? `<h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:22px;color:#13110B">${title}</h1>` : ''}
-      ${inner}
-    </td></tr>
-    <tr><td bgcolor="#FBFAF6" style="border:1px solid #E7E1D2;border-top:0;border-radius:0 0 16px 16px;padding:18px 26px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#8A8270">
-      Budomatch — betrouwbare vakmensen in heel Nederland<br>
-      <a href="${SITE_URL}" style="color:#A8842B;text-decoration:none">budomatch.nl</a> &nbsp;·&nbsp; <a href="mailto:${SELLER.email}" style="color:#A8842B;text-decoration:none">${SELLER.email}</a>
-    </td></tr>
-  </table>
-</td></tr></table></body></html>`;
-}
-
 // ----- Pricing -----
-// Standaardwaarden; de actuele waarden staan in de database (beheerpaneel →
-// Instellingen) en worden bij het opstarten in PRICING geladen. Wijzigen kan
-// zonder herstart via POST /api/admin/settings.
 const FREE_LEADS = 5;
 const LEAD_PRICE_GROSS = 18.15;         // euro (btw verlegd)
 const VAT_RATE = 0;                      // 0% — btw verlegd (reverse charge, B2B NL)
+const LEAD_PRICE_NET = +(LEAD_PRICE_GROSS / (1 + VAT_RATE)).toFixed(2);   // 12.50 (btw verlegd)
+const LEAD_PRICE_VAT = +(LEAD_PRICE_GROSS - LEAD_PRICE_NET).toFixed(2);   // 0.00 (verlegd)
 const CURRENCY = 'eur';
-
-const PRICING = { gross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS };
-// Niveaus/badges: score-drempels (op 10) en gratis maandleads per niveau —
-// aanpasbaar in het beheerpaneel, net als de prijzen.
-const TIERS_DEFAULT = { zilverFrom: 4, goudFrom: 7, bonusBrons: 1, bonusZilver: 2, bonusGoud: 3 };
-const TIERS = { ...TIERS_DEFAULT };
-async function loadPricing() {
-  try {
-    const s = await store.getSettings();
-    if (Number(s.leadPriceGross) > 0) PRICING.gross = Math.round(Number(s.leadPriceGross) * 100) / 100;
-    if (Number.isFinite(Number(s.freeLeads)) && Number(s.freeLeads) >= 0) PRICING.freeLeads = Math.round(Number(s.freeLeads));
-    const num = (v, min, max) => Number.isFinite(Number(v)) && Number(v) >= min && Number(v) <= max ? Number(v) : undefined;
-    if (num(s.tierZilverFrom, 0, 10) !== undefined) TIERS.zilverFrom = Number(s.tierZilverFrom);
-    if (num(s.tierGoudFrom, 0, 10) !== undefined) TIERS.goudFrom = Number(s.tierGoudFrom);
-    if (num(s.tierBonusBrons, 0, 100) !== undefined) TIERS.bonusBrons = Math.round(Number(s.tierBonusBrons));
-    if (num(s.tierBonusZilver, 0, 100) !== undefined) TIERS.bonusZilver = Math.round(Number(s.tierBonusZilver));
-    if (num(s.tierBonusGoud, 0, 100) !== undefined) TIERS.bonusGoud = Math.round(Number(s.tierBonusGoud));
-    console.log(`[pricing] leadprijs € ${PRICING.gross.toFixed(2)} · ${PRICING.freeLeads} welkomstleads · niveaus Z≥${TIERS.zilverFrom}/G≥${TIERS.goudFrom} · bonus ${TIERS.bonusBrons}/${TIERS.bonusZilver}/${TIERS.bonusGoud}`);
-  } catch (e) { console.error('[pricing] instellingen laden mislukt:', e.message); }
-}
-loadPricing();
-// Samenvatting voor API-antwoorden (btw verlegd → netto = bruto, btw = 0)
-const priceInfo = () => ({ gross: PRICING.gross, net: PRICING.gross, vat: 0, vatRate: VAT_RATE });
 
 // Prijs per lead hangt af van het type aanvraag:
 // - 'opdracht' (echte klus): volle prijs
 // - 'orientatie' (klant oriënteert / wil iets kopen): 50% ontgrendelprijs
 function leadPrice(r) {
   const factor = (r && r.intent === 'orientatie') ? 0.5 : 1;
-  // in centen rekenen: 1815 × 0,5 = 907,5 → 908 → € 9,08 (geen float-afronding naar 9,07)
-  const gross = Math.round(Math.round(PRICING.gross * 100) * factor) / 100;
+  const gross = +(LEAD_PRICE_GROSS * factor).toFixed(2);
   const net = +(gross / (1 + VAT_RATE)).toFixed(2);
   const vat = +(gross - net).toFixed(2);
   return { gross, net, vat, vatRate: VAT_RATE, orientation: factor !== 1 };
-}
-// Testaccount (SEED_TEST_PAYMENT) betaalt een vaste testprijs (bijv. € 1) —
-// de globale prijs blijft voor iedereen anders gelden.
-function proLeadPrice(r, pro) {
-  if (pro && Number(pro.testPriceGross) > 0) {
-    const gross = Math.round(Number(pro.testPriceGross) * 100) / 100;
-    return { gross, net: gross, vat: 0, vatRate: VAT_RATE, orientation: false };
-  }
-  return leadPrice(r);
 }
 
 // ----- Stripe (alleen geladen als er een sleutel is) -----
@@ -140,16 +68,13 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       // idempotent: alleen claim aanmaken als die nog niet bestaat
       if (proId && requestId && !(await store.claimExists(proId, requestId))) {
         const r = await store.findRequest(requestId);
-        const proU = await store.findUserById(proId);
-        const p = proLeadPrice(r, proU);
-        const claim = await store.addClaim({
+        const p = leadPrice(r);
+        await store.addClaim({
           proId, requestId, free: false, paid: true,
           amountGross: p.gross, amountNet: p.net, amountVat: p.vat,
           invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online',
           stripeSession: s.id, paymentIntent: s.payment_intent || null,
         });
-        // factuur ook in Faktura XL (+ KSeF) zetten — Poolse administratie
-        fakturaXlExport(claim, proU, r).catch(() => {});
       }
     }
   } catch (e) { console.error('Webhook-verwerking mislukt:', e.message); }
@@ -157,18 +82,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 app.use(express.json({ limit: '20mb' }));
-// Nette URL's: /dashboard i.p.v. /dashboard.html. Oude .html-links krijgen een
-// 301-redirect (bookmarks en zoekmachines blijven werken), de static-server
-// probeert daarna automatisch <pad>.html (optie "extensions").
-app.use((req, res, next) => {
-  if (req.method === 'GET' && /^\/[a-z0-9-]+\.html$/i.test(req.path)) {
-    const clean = req.path === '/index.html' ? '/' : req.path.slice(0, -5);
-    const q = req.originalUrl.indexOf('?');
-    return res.redirect(301, clean + (q >= 0 ? req.originalUrl.slice(q) : ''));
-  }
-  next();
-});
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ----- 41 specialisaties -----
 const CATS_NL = "Aanbouw, Uitbouw, Opbouw, Airco, Architect, Asbest verwijderen, Badkamerspecialist, Bestraten, Cv-ketel, Dakbedekking, Dakkapel, Dakraam, Elektricien, Garagedeur, Gevelreiniging, Glas, Hekwerken, Inbraakbeveiliging, Isolatie, Keukenspecialist, Kozijnen, Laadpalen, Loodgieter, Ongediertebestrijding, Rolluiken, Schilderwerk, Schuifpui, Serre, Stucwerk, Tegels zetten, Thuisbatterij, Trap, Tuinaanleg, Tuinonderhoud, Ventilatie, Verbouwing, Vloeren, Vloerverwarming, Vochtbestrijding, Warmtepomp, Wellness, Zonnepanelen, Zonwering";
@@ -176,26 +90,18 @@ const CATS_EN = "Extension, Bump-out extension, Storey addition, Air conditionin
 
 // ---------------- helpers ----------------
 const isHttps = req => (req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
-// Sessietoken bevat een vingerafdruk van het wachtwoord (ph): na een wachtwoord-
-// wijziging/reset vervallen alle oude sessies. Tokens zonder ph (van vóór deze
-// wijziging) blijven geldig tot ze verlopen.
-const passFp = u => String(u.passHash || '').slice(-8);
-const sessionToken = u => A.sign({ uid: u.id, role: u.role, ph: passFp(u) });
 async function getUser(req) {
   const t = A.parseCookies(req).bm_token;
   const p = A.verify(t);
   if (!p) return null;
   const u = await store.findUserById(p.uid);
-  if (!u || u.blocked) return null; // geblokkeerde accounts zijn overal uitgelogd
-  if (p.ph !== undefined && p.ph !== passFp(u)) return null; // wachtwoord gewijzigd → oude sessie vervalt
-  return u;
+  return u || null;
 }
 async function publicUser(u) {
   if (!u) return null;
-  const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, regCode, regCodeExp, regCodeTries, ...rest } = u;
+  const { passHash, twofaSecret, twofaTempSecret, twofaRecovery, ...rest } = u;
   rest.twofaEnabled = !!u.twofaEnabled;
   rest.twofaRecoveryLeft = (u.twofaRecovery || []).length;
-  rest.emailVerified = u.emailVerified !== false; // bestaande accounts (zonder veld) gelden als bevestigd
   if (u.role === 'pro') {
     const ci = await creditInfo(u);
     rest.creditsUsed = ci.usedTotal;
@@ -210,7 +116,6 @@ async function publicUser(u) {
     rest.workCategories = u.workCategories || [];
     rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
     rest.kvkAddress = u.kvkAddress || null;
-    rest.vatVerified = !!(u.nip && u.verifiedVat && u.nip === u.verifiedVat); rest.vatName = u.vatName || '';
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -228,26 +133,8 @@ const requireRole = role => async (req, res, next) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 };
 
-// ---------------- rate limiting (in-memory, per IP) ----------------
-// Beschermt login/registratie/reset tegen brute force en misbruik van formulieren.
-const RL_BUCKETS = new Map();
-setInterval(() => { const now = Date.now(); for (const [k, e] of RL_BUCKETS) if (now > e.reset) RL_BUCKETS.delete(k); }, 60000).unref();
-const rateLimit = (name, max, windowMs) => (req, res, next) => {
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
-  const key = `${name}|${ip}`;
-  const now = Date.now();
-  let e = RL_BUCKETS.get(key);
-  if (!e || now > e.reset) { e = { n: 0, reset: now + windowMs }; RL_BUCKETS.set(key, e); }
-  if (++e.n > max) {
-    res.set('Retry-After', String(Math.ceil((e.reset - now) / 1000)));
-    return res.status(429).json({ error: 'rate_limited' });
-  }
-  next();
-};
-const baseUrl = req => process.env.BASE_URL || `${String(req.headers['x-forwarded-proto'] || req.protocol || 'http').split(',')[0]}://${req.headers.host}`;
-
 // ---------------- 2FA (TOTP) ----------------
-app.post('/api/login/2fa', rateLimit('2fa', 10, 15 * 60e3), async (req, res) => {
+app.post('/api/login/2fa', async (req, res) => {
   try {
     const b = req.body || {};
     const p = A.verify(String(b.challenge || ''));
@@ -261,7 +148,7 @@ app.post('/api/login/2fa', rateLimit('2fa', 10, 15 * 60e3), async (req, res) => 
       if (idx >= 0) { list.splice(idx, 1); await store.updateUser(u.id, { twofaRecovery: list }); ok = true; }
     }
     if (!ok) return res.status(401).json({ error: 'bad_code' });
-    A.setAuthCookie(res, sessionToken(u), isHttps(req));
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -317,14 +204,14 @@ app.post('/api/feedback', requireRole(), async (req, res) => {
     const type = ['idee', 'probleem', 'verbetering'].includes(b.type) ? b.type : 'idee';
     const f = await store.addFeedback({ userId: req.user.id, role: req.user.role, name: req.user.company || req.user.name, type, title, message });
     sendMail(`Nieuwe feedback (${type}) — ${title}`,
-      mailWrap('Nieuwe feedback', `<p><b>${esc(title)}</b> — <i>${type}</i></p><p>${esc(message) || '(geen toelichting)'}</p>${mailMuted(`Van ${esc(f.name)} · ${req.user.role === 'pro' ? 'vakman' : 'klant'} · ${esc(req.user.email)}`)}`),
+      `<p><b>${esc(title)}</b> — <i>${type}</i></p><p>${esc(message) || '(geen toelichting)'}</p><p style="color:#888">Van ${esc(f.name)} · ${req.user.role === 'pro' ? 'vakman' : 'klant'} · ${esc(req.user.email)}</p>`,
       null, FB_ADMIN || undefined).catch(() => {});
     res.json({ feedback: f });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 app.get('/api/feedback', requireRole(), async (req, res) => {
   try {
-    const items = (await store.listFeedback()).filter(f => f.kind !== 'support').map(f => ({
+    const items = (await store.listFeedback()).map(f => ({
       id: f.id, type: f.type, title: f.title, message: f.message, name: f.name, role: f.role,
       status: f.status || 'nieuw', votes: (f.votes || []).length, voted: (f.votes || []).includes(req.user.id),
       mine: f.userId === req.user.id, createdAt: f.createdAt,
@@ -353,43 +240,42 @@ app.post('/api/feedback/:id/status', requireRole(), async (req, res) => {
 });
 
 // ---------------- auth ----------------
-app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res) => {
+app.post('/api/register', async (req, res) => {
   try {
     const b = req.body || {};
     const role = b.role === 'pro' ? 'pro' : 'customer';
     const email = String(b.email || '').trim().toLowerCase();
-    if (!email || !b.password || String(b.password).length < 6 || !b.name)
+    const nameInput = String(b.name || '').trim();
+    const name = nameInput || (role === 'pro' ? String(b.company || '').trim() : '');
+    if (!email || !b.password || String(b.password).length < 6 || (role === 'customer' && !name))
       return res.status(400).json({ error: 'invalid' });
     if (await store.findUserByEmail(email)) return res.status(409).json({ error: 'exists' });
 
     const u = {
-      role, name: String(b.name).trim(), email,
+      role, name: name || 'Vakman', email,
       passHash: A.hashPassword(String(b.password)),
-      // zonder mail-integratie valt er niets te bevestigen → direct als bevestigd markeren
-      emailVerified: !process.env.RESEND_API_KEY,
     };
     if (role === 'pro') {
       u.company = String(b.company || '').trim();
       u.spec = String(b.spec || '').trim();
       u.city = String(b.city || '').trim();
       u.phone = String(b.phone || '').trim();
-      u.nip = String(b.nip || '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 20);
+      u.nip = String(b.nip || '').trim();
       u.address = String(b.address || '').trim();
-      // btw-nummer al gevalideerd via /api/vat-lookup? Het ondertekende token
-      // bewijst dat — dan direct als geverifieerd opslaan (naam uit VIES).
-      if (b.vatToken) {
-        const vp = A.verify(String(b.vatToken));
-        if (vp && vp.t === 'vatreg' && vp.vat && vp.vat === u.nip.replace(/[^A-Z0-9]/g, '')) {
-          u.nip = vp.vat; u.verifiedVat = vp.vat; u.vatName = String(vp.name || '');
+      const kvknum = String(b.kvk || '').replace(/\D/g, '');
+      if (kvknum.length === 8) {
+        if (process.env.KVK_API_KEY) {
+          const info = await kvkLookup(kvknum);
+          if (!info.ok) return res.status(400).json({ error: info.error === 'not_found' ? 'kvk_not_found' : 'kvk_lookup' });
+          if ((await store.listPros()).find(p => p.verifiedKvk === kvknum)) return res.status(409).json({ error: 'kvk_duplicate' });
+          u.kvk = kvknum; u.verifiedKvk = kvknum; u.kvkName = info.name; u.kvkAddress = info.address;
+          if (!u.company) u.company = info.name;
+          if (!u.city) u.city = info.city;
+          if (!nameInput) u.name = u.company || 'Vakman';
+        } else {
+          u.kvk = kvknum; // nog niet geverifieerd (geen KVK_API_KEY ingesteld)
         }
       }
-      // werkcategorieën: expliciet meegegeven, anders het hoofdspecialisme —
-      // zo is het bedrijf na KvK-verificatie direct matchbaar (meer vakken: tab Werkgebied)
-      const cats = Array.isArray(b.workCategories)
-        ? [...new Set(b.workCategories.map(x => String(x).trim().slice(0, 60)).filter(Boolean))].slice(0, 41)
-        : [];
-      if (!u.spec && cats.length) u.spec = cats[0];
-      u.workCategories = cats.length ? cats : (u.spec ? [u.spec] : []);
       if (u.city) { const g = await geocodeNL(u.city); if (g) { u.lat = g.lat; u.lng = g.lng; } }
     } else {
       // Particulier of zakelijk (bedrijf)
@@ -400,42 +286,21 @@ app.post('/api/register', rateLimit('register', 20, 60 * 60e3), async (req, res)
       }
     }
     await store.addUser(u);
-    if (role === 'pro') {
-      // beheerder informeren: nieuw bedrijf wacht (handmatige) KvK-verificatie
-      sendMail(`Nieuwe vakman-registratie — ${esc(u.company || u.name)}`,
-        mailWrap('Nieuwe vakman-registratie',
-          `<p><b>${esc(u.company || u.name)}</b> (${esc(u.name)}, ${esc(u.email)}${u.city ? ', ' + esc(u.city) : ''}) heeft zich aangemeld.</p>
-           <p>Het profiel wordt pas actief na KvK-verificatie. Zolang de KvK-API niet gekoppeld is: verifieer handmatig zodra het KvK-nummer bekend is.</p>
-           ${mailBtn(`${SITE_URL}/admin`, 'Open beheerpaneel')}`),
-        null, FB_ADMIN || undefined).catch(() => {});
-    }
-    // E-mail eerst bevestigen met een 6-cijferige code — pas daarna is het
-    // account ingelogd. Mislukt de mail, dan blokkeren we de registratie niet
-    // (anders zou een mailstoring alle registraties tegenhouden).
-    if (process.env.RESEND_API_KEY) {
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      await store.updateUser(u.id, { regCode: A.hashRecovery(code), regCodeExp: Date.now() + 10 * 60e3, regCodeTries: 0 });
-      try {
-        await sendMail('Je bevestigingscode — Budomatch', regCodeMailHtml(u, code), null, u.email);
-        return res.json({ codeRequired: true, challenge: A.sign({ t: 'regcode', uid: u.id }, 0.02) });
-      } catch (e) { console.error('regcode-mail:', e.message); }
-    }
-    A.setAuthCookie(res, sessionToken(u), isHttps(req));
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
-app.post('/api/login', rateLimit('login', 10, 15 * 60e3), async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const b = req.body || {};
     const u = await store.findUserByEmail(String(b.email || ''));
     if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
       return res.status(401).json({ error: 'bad_credentials' });
-    if (u.blocked) return res.status(403).json({ error: 'blocked' });
     if (u.twofaEnabled) {
       return res.json({ twofaRequired: true, challenge: A.sign({ t: '2fa', uid: u.id }, 0.02) });
     }
-    A.setAuthCookie(res, sessionToken(u), isHttps(req));
+    A.setAuthCookie(res, A.sign({ uid: u.id, role: u.role }), isHttps(req));
     res.json({ user: await publicUser(u) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -448,133 +313,24 @@ app.get('/api/me', async (req, res) => {
   res.json({ user: await publicUser(u) });
 });
 
-// ---------------- e-mailverificatie ----------------
-// Bevestigingscode bij registratie (6 cijfers, 10 minuten geldig, max 5 pogingen)
-const regCodeMailHtml = (u, code) => mailWrap(`Welkom bij Budomatch, ${esc(u.name)}!`,
-  `<p>Vul deze bevestigingscode in op de website om je account te activeren:</p>
-   ${mailCode(code)}
-   ${mailMuted('De code is 10 minuten geldig. Heb jij je niet aangemeld? Negeer deze e-mail dan.')}`);
-app.post('/api/register/verify', rateLimit('regverify', 15, 15 * 60e3), async (req, res) => {
-  try {
-    const b = req.body || {};
-    const p = A.verify(String(b.challenge || ''));
-    if (!p || p.t !== 'regcode') return res.status(401).json({ error: 'challenge' });
-    const u = await store.findUserById(p.uid);
-    if (!u || u.blocked) return res.status(401).json({ error: 'auth' });
-    if (!u.regCode || Date.now() > (u.regCodeExp || 0)) return res.status(401).json({ error: 'expired' });
-    if ((u.regCodeTries || 0) >= 5) return res.status(401).json({ error: 'too_many' });
-    const code = String(b.code || '').replace(/\D/g, '');
-    if (!code || A.hashRecovery(code) !== u.regCode) {
-      await store.updateUser(u.id, { regCodeTries: (u.regCodeTries || 0) + 1 });
-      return res.status(401).json({ error: 'bad_code' });
-    }
-    await store.updateUser(u.id, { regCode: '', regCodeExp: 0, regCodeTries: 0, emailVerified: true });
-    A.setAuthCookie(res, sessionToken(u), isHttps(req));
-    res.json({ user: await publicUser(u) });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-app.post('/api/register/resend', rateLimit('regresend', 5, 15 * 60e3), async (req, res) => {
-  try {
-    const p = A.verify(String((req.body || {}).challenge || ''));
-    if (!p || p.t !== 'regcode') return res.status(401).json({ error: 'challenge' });
-    const u = await store.findUserById(p.uid);
-    if (!u || u.blocked || u.emailVerified) return res.status(401).json({ error: 'auth' });
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    await store.updateUser(u.id, { regCode: A.hashRecovery(code), regCodeExp: Date.now() + 10 * 60e3, regCodeTries: 0 });
-    await sendMail('Je bevestigingscode — Budomatch', regCodeMailHtml(u, code), null, u.email);
-    res.json({ ok: true });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-
-async function sendVerifyMail(u, req) {
-  if (u.emailVerified) return;
-  const token = A.sign({ t: 'everify', uid: u.id }, 3); // 3 dagen geldig
-  const link = `${baseUrl(req)}/api/verify-email?token=${encodeURIComponent(token)}`;
-  await sendMail('Bevestig je e-mailadres — Budomatch',
-    mailWrap(`Welkom bij Budomatch, ${esc(u.name)}!`,
-      `<p>Bevestig je e-mailadres door op de knop te klikken:</p>
-       ${mailBtn(link, 'E-mailadres bevestigen')}
-       ${mailMuted(`Of open deze link: <a href="${link}" style="color:#A8842B">${link}</a><br>De link is 3 dagen geldig.`)}`),
-    null, u.email);
-}
-app.get('/api/verify-email', async (req, res) => {
-  try {
-    const p = A.verify(String(req.query.token || ''));
-    if (!p || p.t !== 'everify') return res.redirect('/?everify=invalid');
-    await store.updateUser(p.uid, { emailVerified: true });
-    res.redirect('/dashboard?everified=1');
-  } catch (e) { console.error(e); res.redirect('/?everify=invalid'); }
-});
-app.post('/api/verify-email/resend', rateLimit('everesend', 5, 60 * 60e3), requireRole(), async (req, res) => {
-  try {
-    if (req.user.emailVerified) return res.json({ ok: true, already: true });
-    if (!process.env.RESEND_API_KEY) { await store.updateUser(req.user.id, { emailVerified: true }); return res.json({ ok: true, already: true }); }
-    await sendVerifyMail(req.user, req);
-    res.json({ ok: true });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-
-// ---------------- wachtwoord vergeten / opnieuw instellen ----------------
-// Antwoordt altijd ok — verraadt niet of een e-mailadres bestaat (geen enumeratie).
-app.post('/api/password/forgot', rateLimit('pwforgot', 5, 60 * 60e3), async (req, res) => {
-  res.json({ ok: true });
-  try {
-    const email = String((req.body || {}).email || '').trim().toLowerCase();
-    if (!email) return;
-    const u = await store.findUserByEmail(email);
-    if (!u || u.blocked) return;
-    // v = vingerafdruk van het huidige wachtwoord → de link werkt maar één keer
-    const token = A.sign({ t: 'pwreset', uid: u.id, v: String(u.passHash || '').slice(-12) }, 1 / 24); // 1 uur
-    const link = `${baseUrl(req)}/?reset=${encodeURIComponent(token)}`;
-    await sendMail('Wachtwoord opnieuw instellen — Budomatch',
-      mailWrap('Wachtwoord opnieuw instellen',
-        `<p>Hoi ${esc(u.name)}, klik op de knop om een nieuw wachtwoord in te stellen:</p>
-         ${mailBtn(link, 'Nieuw wachtwoord instellen')}
-         ${mailMuted(`Of open deze link: <a href="${link}" style="color:#A8842B">${link}</a><br>De link is 1 uur geldig. Niets aangevraagd? Negeer deze e-mail.`)}`),
-      null, u.email);
-  } catch (e) { console.error('pwforgot:', e.message); }
-});
-app.post('/api/password/reset', rateLimit('pwreset', 10, 60 * 60e3), async (req, res) => {
-  try {
-    const b = req.body || {};
-    const p = A.verify(String(b.token || ''));
-    if (!p || p.t !== 'pwreset') return res.status(400).json({ error: 'token' });
-    const u = await store.findUserById(p.uid);
-    if (!u || String(u.passHash || '').slice(-12) !== p.v) return res.status(400).json({ error: 'token' });
-    if (!b.password || String(b.password).length < 6) return res.status(400).json({ error: 'invalid' });
-    await store.updateUser(u.id, { passHash: A.hashPassword(String(b.password)) });
-    if (u.twofaEnabled) return res.json({ ok: true, login: true }); // 2FA blijft vereist → opnieuw inloggen
-    A.setAuthCookie(res, sessionToken(u), isHttps(req));
-    res.json({ ok: true });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-
 // ---------------- support (klanten én bedrijven) ----------------
-app.post('/api/support', rateLimit('support', 10, 60 * 60e3), async (req, res) => {
+app.post('/api/support', async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.message) return res.status(400).json({ error: 'invalid' });
     const u = await getUser(req);
-    const business = (u && u.customerType === 'zakelijk') || (b.customerType === 'zakelijk');
-    // opslaan in de support-inbox (beheerpaneel) — de mail is een extra melding
-    await store.addFeedback({
-      kind: 'support', userId: u ? u.id : '', role: u ? u.role : 'gast',
-      name: u ? (u.company || u.name) : String(b.name || 'Gast').slice(0, 80), business: !!business,
-      subject: String(b.subject || '').slice(0, 150), message: String(b.message).slice(0, 4000),
-      email: String(b.email || (u && u.email) || '').slice(0, 120), phone: String(b.phone || '').slice(0, 40),
-    });
     const who = u
       ? `${esc(u.name)} &lt;${esc(u.email)}&gt; (${u.role}${u.role === 'customer' ? '/' + (u.customerType || 'particulier') : ''}${u.company ? ' — ' + esc(u.company) : ''})`
       : 'gast';
-    sendMail(
+    const business = (u && u.customerType === 'zakelijk') || (b.customerType === 'zakelijk');
+    await sendMail(
       `${business ? '[ZAKELIJK] ' : ''}Support: ${esc(b.subject) || '(geen onderwerp)'}`,
-      mailWrap(`Supportverzoek${business ? ' — zakelijke klant' : ''}`,
-        `<p><b>Van:</b> ${who}</p>
-         <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
-         <p><b>Bericht:</b><br>${esc(b.message)}</p>
-         <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>
-         ${mailBtn(`${SITE_URL}/admin`, 'Open support-inbox')}`)
-    ).catch(() => {});
+      `<h2>Supportverzoek${business ? ' — zakelijke klant' : ''}</h2>
+       <p><b>Van:</b> ${who}</p>
+       <p><b>Onderwerp:</b> ${esc(b.subject)}</p>
+       <p><b>Bericht:</b><br>${esc(b.message)}</p>
+       <p><b>Contact:</b> ${esc(b.email || (u && u.email) || '')} ${esc(b.phone || '')}</p>`
+    );
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
@@ -697,7 +453,7 @@ async function leadView(r, pro) {
     customerType: r.customerType || 'particulier',
     intent: r.intent || 'opdracht', timing: r.timing || '',
     direct: !!r.targetProId,
-    price: proLeadPrice(r, pro),
+    price: leadPrice(r),
     photoCount: Array.isArray(r.photos) ? r.photos.length : 0,
     matchesSpec: pro.spec && r.service && r.service.toLowerCase().includes(pro.spec.toLowerCase().split(' ')[0]),
   };
@@ -709,10 +465,7 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
   try {
     const pro = req.user;
     const ci = await creditInfo(pro);
-    const openAll = (await store.openRequests())
-      .filter(r => !r.targetProId || r.targetProId === pro.id)
-      // testaccount ziet uitsluitend zijn eigen (directe) testaanvragen
-      .filter(r => !pro.testAccount || r.targetProId === pro.id);
+    const openAll = (await store.openRequests()).filter(r => !r.targetProId || r.targetProId === pro.id);
     const leads = [];
     for (const r of openAll) {
       const claimed = await store.claimExists(pro.id, r.id);
@@ -728,7 +481,7 @@ app.get('/api/leads', requireRole('pro'), async (req, res) => {
       creditsUsed: ci.usedTotal,
       welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining,
       tier: ci.tier, rating: ci.rating,
-      price: priceInfo(),
+      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -739,7 +492,6 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
     if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
     const r = await store.findRequest(req.params.id);
     if (!r) return res.status(404).json({ error: 'not_found' });
-    if (pro.testAccount && r.targetProId !== pro.id) return res.status(403).json({ error: 'test_account' });
     if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
     if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
     if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
@@ -751,7 +503,7 @@ app.post('/api/leads/:id/claim', requireRole('pro'), async (req, res) => {
       return res.json({ ok: true, free: true, lead: await leadView(r, pro), creditsLeft: ci.freeAvailable - 1 });
     }
     // betaling vereist
-    res.json({ ok: false, paymentRequired: true, price: proLeadPrice(r, pro) });
+    res.json({ ok: false, paymentRequired: true, price: leadPrice(r) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
@@ -763,7 +515,6 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   if (!isVerifiedPro(pro)) return res.status(403).json({ error: 'kvk_required' });
   const r = await store.findRequest(req.params.id);
   if (!r) return res.status(404).json({ error: 'not_found' });
-  if (pro.testAccount && r.targetProId !== pro.id) return res.status(403).json({ error: 'test_account' });
   if (await store.claimExists(pro.id, r.id)) return res.json({ ok: true, lead: await leadView(r, pro) });
   if ((r.status || 'open') !== 'open') return res.status(409).json({ ok: false, error: 'closed' });
   if ((await store.claimsCountByRequest(r.id)) >= 3) return res.status(409).json({ ok: false, error: 'full' });
@@ -776,22 +527,18 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
   }
 
   if (!stripe) { // geen Stripe geconfigureerd → demo
-    const p = proLeadPrice(r, pro);
-    const claim = await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
-    fakturaXlExport(claim, pro, r).catch(() => {});
+    const p = leadPrice(r);
+    await store.addClaim({ proId: pro.id, requestId: r.id, free: false, paid: true, amountGross: p.gross, amountNet: p.net, amountVat: p.vat, invoiceNo: await store.nextInvoiceNo(), invoiceDate: Date.now(), method: 'online' });
     return res.json({ ok: true, demo: true, lead: await leadView(r, pro) });
   }
 
   try {
-    const p = proLeadPrice(r, pro);
+    const p = leadPrice(r);
     const proto = (req.headers['x-forwarded-proto'] || req.protocol).split(',')[0];
     const base = process.env.BASE_URL || `${proto}://${req.headers.host}`;
-    // Geen vaste payment_method_types: Checkout gebruikt automatisch de methoden
-    // die in het Stripe-dashboard aanstaan (kaart werkt altijd; iDEAL/Bancontact
-    // verschijnen zodra ze geactiveerd zijn) — een niet-geactiveerde methode kan
-    // de betaling dan nooit meer blokkeren.
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      payment_method_types: ['ideal', 'card', 'bancontact'], // iDEAL = standaard in NL
       line_items: [{
         quantity: 1,
         price_data: {
@@ -801,15 +548,13 @@ app.post('/api/leads/:id/checkout', requireRole('pro'), async (req, res) => {
         },
       }],
       metadata: { proId: pro.id, requestId: r.id },
-      success_url: `${base}/dashboard?paid=${encodeURIComponent(r.id)}`,
-      cancel_url: `${base}/dashboard?cancel=1`,
+      success_url: `${base}/dashboard.html?paid=${encodeURIComponent(r.id)}`,
+      cancel_url: `${base}/dashboard.html?cancel=1`,
     });
     res.json({ url: session.url });
   } catch (e) {
     console.error('Stripe checkout-fout:', e.message);
-    // 400 (niet 502): Cloudflare vervangt 5xx-bodies door een eigen foutpagina,
-    // waardoor de frontend geen JSON meer kan lezen.
-    res.status(400).json({ error: 'stripe', message: String(e.message || '').slice(0, 200) });
+    res.status(502).json({ error: 'stripe' });
   }
 });
 
@@ -826,8 +571,8 @@ app.get('/api/billing', requireRole('pro'), async (req, res) => {
     res.json({
       claims, creditsUsed: ci.usedTotal, creditsLeft: ci.freeAvailable,
       welcomeLeft: ci.welcomeRemaining, monthlyLeft: ci.monthlyRemaining, tier: ci.tier, rating: ci.rating,
-      freeLeads: PRICING.freeLeads, paidTotalGross: +paidTotal.toFixed(2),
-      price: priceInfo(),
+      freeLeads: FREE_LEADS, paidTotalGross: +paidTotal.toFixed(2),
+      price: { gross: LEAD_PRICE_GROSS, net: LEAD_PRICE_NET, vat: LEAD_PRICE_VAT, vatRate: VAT_RATE },
     });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
@@ -857,7 +602,6 @@ app.post('/api/profile', requireRole('pro'), async (req, res) => {
     if (b.phone !== undefined) patch.phone = String(b.phone).slice(0, 40);
     if (b.city !== undefined) patch.city = String(b.city).slice(0, 80);
     if (b.spec !== undefined) patch.spec = String(b.spec).slice(0, 80);
-    if (b.nip !== undefined) patch.nip = String(b.nip).toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 20); // btw-nummer (bijv. NL123456789B01) — komt op de factuur
     if (b.workZip !== undefined) patch.workZip = String(b.workZip).slice(0, 20);
     if (b.kvk !== undefined) patch.kvk = String(b.kvk).replace(/\D/g, '').slice(0, 8);
     if (b.workRadius !== undefined) patch.workRadius = Math.min(500, Math.max(0, parseInt(b.workRadius, 10) || 0));
@@ -890,10 +634,7 @@ async function fetchSitePreview(url) {
     let desc = meta('og:description') || meta('description') || '';
     let img = meta('og:image') || meta('og:image:url') || '';
     try { if (img && !/^https?:\/\//i.test(img)) img = new URL(img, u).href; } catch (e) {}
-    const dec = s => String(s)
-      .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-      .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n))
-      .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    const dec = s => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
     return { url: u, title: dec(title).slice(0, 140), description: dec(desc).slice(0, 240), image: img.slice(0, 500) };
   } catch (e) { return { url: String(url) }; }
 }
@@ -908,80 +649,48 @@ async function publicProfile(u) {
     rating, tier: tierInfo(rating), createdAt: u.createdAt || 0,
   };
 }
+// Herbruikbare KvK-opzoeker (Zoeken-API v2). Zonder KVK_API_KEY: {ok:false,configured:false}
+async function kvkLookup(number) {
+  const num = String(number || '').replace(/\D/g, '');
+  if (num.length !== 8) return { ok: false, error: 'invalid' };
+  if (!process.env.KVK_API_KEY) return { ok: false, configured: false };
+  const KVK_URL = process.env.KVK_API_BASE || 'https://api.kvk.nl/api/v2/zoeken';
+  const r = await fetch(`${KVK_URL}?kvkNummer=${num}`, { headers: { apikey: process.env.KVK_API_KEY } });
+  if (!r.ok) return { ok: false, error: 'lookup', status: r.status };
+  const d = await r.json();
+  const item = (d.resultaten || [])[0];
+  if (!item) return { ok: false, error: 'not_found' };
+  const city = item.plaats || (item.adres && item.adres.binnenlandsAdres && item.adres.binnenlandsAdres.plaats) || '';
+  const adr = (item.adres && item.adres.binnenlandsAdres) || {};
+  return {
+    ok: true, num, name: item.naam || '', city, type: item.type || '',
+    address: { street: adr.straatnaam || '', houseNumber: [adr.huisnummer, adr.huisletter].filter(Boolean).join(''), postcode: adr.postcode || '', city: adr.plaats || city },
+  };
+}
+// Publieke opzoek (voor het aanmeldformulier) — licht rate-limited, slaat niets op
+const _kvkRate = {};
+app.get('/api/kvk-public/:number', async (req, res) => {
+  try {
+    const ip = String(req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || '').split(',')[0];
+    const now = Date.now(); const w = _kvkRate[ip] || { n: 0, t: now };
+    if (now - w.t > 60000) { w.n = 0; w.t = now; } w.n++; _kvkRate[ip] = w;
+    if (w.n > 25) return res.status(429).json({ ok: false, error: 'rate' });
+    const info = await kvkLookup(req.params.number);
+    if (!info.ok) return res.json({ ok: false, configured: info.configured, error: info.error });
+    res.json({ ok: true, name: info.name, city: info.city, address: info.address });
+  } catch (e) { res.json({ ok: false, error: 'server' }); }
+});
 // KvK-controle: haalt bedrijfsgegevens op en verifieert registratie (vereist KVK_API_KEY).
 app.get('/api/kvk/:number', requireRole('pro'), async (req, res) => {
   try {
     const num = String(req.params.number).replace(/\D/g, '');
-    if (num.length !== 8) return res.json({ ok: false, error: 'invalid' });
-    if (!process.env.KVK_API_KEY) {
-      // Geen API-sleutel: nummer opslaan en de beheerder mailen, zodat het
-      // bedrijf handmatig geverifieerd kan worden (beheerpaneel → Gebruikers).
-      await store.updateUser(req.user.id, { kvk: num });
-      sendMail(`KvK-verificatie aangevraagd — ${esc(req.user.company || req.user.name)}`,
-        mailWrap('KvK-verificatie aangevraagd',
-          `<p><b>${esc(req.user.company || req.user.name)}</b> (${esc(req.user.email)}) heeft KvK-nummer <b>${esc(num)}</b> ingevuld en wacht op handmatige verificatie.</p>
-           ${mailBtn(`${SITE_URL}/admin`, 'Verifieer in beheerpaneel')}`),
-        null, FB_ADMIN || undefined).catch(() => {});
-      return res.json({ ok: false, configured: false, saved: true });
-    }
-    const r = await fetch(`https://api.kvk.nl/api/v2/zoeken?kvkNummer=${num}`, { headers: { apikey: process.env.KVK_API_KEY } });
-    if (!r.ok) return res.json({ ok: false, error: 'lookup', status: r.status });
-    const d = await r.json();
-    const item = (d.resultaten || [])[0];
-    if (!item) return res.json({ ok: false, error: 'not_found' });
-    const name = item.naam || '';
-    const city = item.plaats || (item.adres && item.adres.binnenlandsAdres && item.adres.binnenlandsAdres.plaats) || '';
-    const adr = (item.adres && item.adres.binnenlandsAdres) || {};
-    const kvkAddress = {
-      street: adr.straatnaam || '',
-      houseNumber: [adr.huisnummer, adr.huisletter].filter(Boolean).join(''),
-      postcode: adr.postcode || '',
-      city: adr.plaats || city,
-    };
+    const info = await kvkLookup(num);
+    if (!info.ok) return res.json(info.configured === false ? { ok: false, configured: false } : { ok: false, error: info.error || 'lookup' });
     const dup = (await store.listPros()).find(p => p.id !== req.user.id && p.verifiedKvk === num);
     if (dup) return res.json({ ok: false, error: 'duplicate' });
-    await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: name, kvkAddress });
-    res.json({ ok: true, kvk: num, name, city, type: item.type || '', address: kvkAddress });
+    await store.updateUser(req.user.id, { kvk: num, verifiedKvk: num, kvkName: info.name, kvkAddress: info.address });
+    res.json({ ok: true, kvk: num, name: info.name, city: info.city, type: info.type, address: info.address });
   } catch (e) { console.error('KvK-fout:', e.message); res.json({ ok: false, error: 'server' }); }
-});
-// Btw-nummer-controle via euvatapi.com (EU VIES-databases). Vereist EUVAT_API_KEY.
-// Bij succes wordt het geverifieerde nummer opgeslagen — dat komt op de lead-factuur.
-// Gedeelde VIES-validatie via euvatapi.com. Geeft { ok, vat, name, address, city }
-// of { ok:false, error/configured }.
-async function vatValidate(raw) {
-  let num = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (/^\d/.test(num)) num = 'NL' + num; // zonder landcode → NL aannemen
-  if (num.length < 8 || num.length > 14) return { ok: false, error: 'invalid' };
-  if (!process.env.EUVAT_API_KEY) return { ok: false, configured: false };
-  const r = await fetch(`https://euvatapi.com/api/v1/validate?access_key=${encodeURIComponent(process.env.EUVAT_API_KEY)}&vat_number=${encodeURIComponent(num)}`);
-  if (!r.ok) return { ok: false, error: 'lookup', status: r.status };
-  const d = await r.json();
-  if (!d.success) { console.error('EUVAT-fout:', JSON.stringify(d.error || d)); return { ok: false, error: 'lookup' }; }
-  if (d.database === 'failure') return { ok: false, error: 'unavailable' }; // VIES-lidstaat tijdelijk offline
-  if (!d.valid) return { ok: false, error: d.format_valid === false ? 'invalid' : 'not_found' };
-  const address = d.company_address || '';
-  // NL-adres eindigt op "1234 AB PLAATS" → plaats eruit halen (best effort)
-  const m = address.toUpperCase().match(/\d{4}\s?[A-Z]{2}\s+([A-Z\-\s.'`]+)$/);
-  const city = m ? m[1].trim().toLowerCase().replace(/(^|[\s\-'])\S/g, c => c.toUpperCase()) : '';
-  return { ok: true, vat: num, name: d.company_name || '', address, city };
-}
-app.get('/api/vat/:number', rateLimit('vat', 10, 60 * 60e3), requireRole('pro'), async (req, res) => {
-  try {
-    const v = await vatValidate(req.params.number);
-    if (!v.ok) return res.json(v);
-    await store.updateUser(req.user.id, { nip: v.vat, verifiedVat: v.vat, vatName: v.name, vatAddress: v.address });
-    res.json({ ok: true, vat: v.vat, name: v.name, address: v.address, city: v.city });
-  } catch (e) { console.error('VAT-fout:', e.message); res.json({ ok: false, error: 'server' }); }
-});
-// Publieke lookup voor het registratieformulier: zoekt bedrijfsgegevens op bij het
-// btw-nummer (autofill) en geeft een kortlevend ondertekend token mee, zodat de
-// registratie het nummer als geverifieerd kan opslaan zonder tweede API-call.
-app.get('/api/vat-lookup/:number', rateLimit('vatlookup', 10, 15 * 60e3), async (req, res) => {
-  try {
-    const v = await vatValidate(req.params.number);
-    if (!v.ok) return res.json(v);
-    res.json({ ok: true, vat: v.vat, name: v.name, city: v.city, token: A.sign({ t: 'vatreg', vat: v.vat, name: v.name }, 1 / 24) });
-  } catch (e) { console.error('VAT-lookup-fout:', e.message); res.json({ ok: false, error: 'server' }); }
 });
 app.get('/api/pros', async (req, res) => {
   try {
@@ -1028,116 +737,6 @@ app.get('/api/match', requireRole('customer'), async (req, res) => {
     res.json({ pros: out });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
-
-// ---------------- Faktura XL (Poolse boekhouding + KSeF) ----------------
-// Elke BETAALDE lead-ontgrendeling wordt ook als factuur aangemaakt in
-// Faktura XL (fakturaxl.pl) en doorgestuurd naar KSeF, zodat de verkoop
-// rechtsgeldig in de Poolse administratie staat. Het Faktura XL-nummer wordt
-// daarna het leidende factuurnummer in de app (zelfde nummer op de PDF).
-// Vereist FAKTURAXL_API_KEY. Optioneel: FAKTURAXL_KSEF=0 (niet naar KSeF),
-// FAKTURAXL_VAT (standaard "np" — nie podlega, art. 28b / reverse charge).
-const FAKTURAXL_URL = process.env.FAKTURAXL_URL || 'https://program.fakturaxl.pl/api';
-const xmlEsc = s => String(s == null ? '' : s).replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
-const cdata = s => `<![CDATA[${String(s == null ? '' : s).replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
-// Bestaande Faktura XL-factuur (dokument_id) naar KSeF sturen; geeft 'ok' of 'error_<kod>'
-async function fxlKsefSend(dokumentId) {
-  const k = await fxlPost('dokument_ksef_wyslanie.php',
-    `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token><dokument_id>${dokumentId}</dokument_id></dokument>`);
-  const kk = k.tag('kod');
-  if (kk !== '49') console.error('[fakturaxl] KSeF-verzending mislukt, kod:', kk, String(k.body).slice(0, 300));
-  return kk === '49' ? 'ok' : 'error_' + (kk || k.status);
-}
-async function fxlPost(path, xml) {
-  const r = await fetch(`${FAKTURAXL_URL}/${path}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/xml; charset=utf-8' },
-    body: xml,
-  });
-  const body = await r.text();
-  return { status: r.status, body, tag: t => (body.match(new RegExp(`<${t}>([^<]*)</${t}>`)) || [])[1] };
-}
-async function fakturaXlExport(claim, pro, request) {
-  if (!pro) return;
-  if (!process.env.FAKTURAXL_API_KEY) {
-    // Geen sleutel op het moment van verkoop: markeren zodat de export later
-    // alsnog kan (beheerpaneel → "Mislukte exports opnieuw proberen").
-    console.log('[fakturaxl] FAKTURAXL_API_KEY ontbreekt — export gemarkeerd om later opnieuw te proberen');
-    try { await store.updateClaim(claim.id, { fxlError: 'not_configured' }); } catch (e) {}
-    return;
-  }
-  // Testaccount slaat de boekhouding normaal over. FAKTURAXL_TEST_EXPORT=1
-  // schakelt de export voor het testaccount aan — alleen gebruiken met LIVE
-  // Stripe (echte € 1-betaling), anders komt er een factuur zonder echte betaling
-  // in de administratie/KSeF terecht.
-  if (pro.testAccount && process.env.FAKTURAXL_TEST_EXPORT !== '1') {
-    console.log('[fakturaxl] testaccount — export overgeslagen (zet FAKTURAXL_TEST_EXPORT=1 om te testen)');
-    return;
-  }
-  try {
-    const d = new Date(claim.invoiceDate || claim.createdAt);
-    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const ka = pro.kvkAddress || {};
-    const land = /^[A-Z]{2}/.test(pro.nip || '') ? pro.nip.slice(0, 2) : 'NL';
-    const bedrag = Number(claim.amountGross || 0).toFixed(2);
-    // Eigen nummerserie voor Budomatch (standaard "BM"), afgeleid van de gapless
-    // interne teller — zo mengen de facturen niet met andere bedrijven op
-    // hetzelfde Faktura XL-account. FAKTURAXL_SERIA="" schakelt dit uit
-    // (dan nummert Faktura XL zelf, evt. per afdeling via FAKTURAXL_DZIAL_ID).
-    const seria = process.env.FAKTURAXL_SERIA !== undefined ? process.env.FAKTURAXL_SERIA : 'BM';
-    const im = String(claim.invoiceNo || '').match(/^(\d{4})-(\d+)$/);
-    const eigenNr = (seria && im) ? `${seria}/${parseInt(im[2], 10)}/${im[1]}` : '';
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<dokument>
-  <api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token>
-  <typ_faktury>0</typ_faktury>${eigenNr ? `\n  <numer_faktury>${xmlEsc(eigenNr)}</numer_faktury>` : ''}
-  <data_wystawienia>${date}</data_wystawienia>
-  <data_sprzedazy>${date}</data_sprzedazy>
-  <termin_platnosci_data>${date}</termin_platnosci_data>
-  <waluta>EUR</waluta>${process.env.FAKTURAXL_DZIAL_ID ? `\n  <id_dzialy_firmy>${xmlEsc(process.env.FAKTURAXL_DZIAL_ID)}</id_dzialy_firmy>` : ''}
-  <status>2</status>
-  <data_oplacenia>${date}</data_oplacenia>
-  <kwota_oplacona>${bedrag}</kwota_oplacona>
-  <rodzaj_platnosci>Przelew</rodzaj_platnosci>
-  <nabywca>
-    <firma_lub_osoba_prywatna>0</firma_lub_osoba_prywatna>
-    <nazwa>${cdata(pro.kvkName || pro.company || pro.name)}</nazwa>
-    <nip>${xmlEsc((pro.nip || '').replace(/[^A-Z0-9]/gi, ''))}</nip>
-    <ulica_i_numer>${cdata((ka.street ? (ka.street + ' ' + (ka.houseNumber || '')).trim() : '') || pro.address || '')}</ulica_i_numer>
-    <kod_pocztowy>${xmlEsc(ka.postcode || pro.postcode || '')}</kod_pocztowy>
-    <miejscowosc>${cdata(ka.city || pro.city || '')}</miejscowosc>
-    <kraj>${xmlEsc(land)}</kraj>
-    <email>${xmlEsc(pro.email || '')}</email>
-  </nabywca>
-  <faktura_pozycje>
-    <nazwa>${cdata(`Budomatch lead: ${(request && request.service) || 'aanvraag'} — odblokowanie zapytania / ontgrendeling aanvraag`)}</nazwa>
-    <ilosc>1</ilosc>
-    <jm>szt.</jm>
-    <cena_netto>${bedrag}</cena_netto>
-    <wartosc_brutto>${bedrag}</wartosc_brutto>
-    <vat>${xmlEsc(process.env.FAKTURAXL_VAT || 'np')}</vat>
-  </faktura_pozycje>
-  <uwagi>${cdata(`Odwrotne obciążenie / reverse charge (btw verlegd) — art. 28b ustawy o VAT; podatek VAT rozlicza nabywca. Ref: Budomatch ${claim.invoiceNo || claim.id}`)}</uwagi>
-</dokument>`;
-    const r = await fxlPost('dokument_dodaj.php', xml);
-    const kod = r.tag('kod'), id = r.tag('dokument_id'), nr = r.tag('dokument_nr');
-    if (kod !== '1' || !id) {
-      console.error('[fakturaxl] aanmaken mislukt, kod:', kod || r.status, String(r.body).slice(0, 300));
-      await store.updateClaim(claim.id, { fxlError: 'create_' + (kod || r.status) });
-      return;
-    }
-    const patch = { fxlId: id, fxlNr: nr || '', fxlError: '' };
-    if (nr) patch.invoiceNo = nr; // Faktura XL / KSeF-nummer is leidend
-    if (process.env.FAKTURAXL_KSEF !== '0') {
-      try { patch.fxlKsef = await fxlKsefSend(id); }
-      catch (e) { patch.fxlKsef = 'error'; console.error('[fakturaxl] KSeF:', e.message); }
-    }
-    await store.updateClaim(claim.id, patch);
-    console.log(`[fakturaxl] factuur ${nr || id} aangemaakt${patch.fxlKsef === 'ok' ? ' + naar KSeF verstuurd' : ''}`);
-  } catch (e) {
-    console.error('[fakturaxl] export mislukt:', e.message);
-    try { await store.updateClaim(claim.id, { fxlError: 'network' }); } catch (e2) {}
-  }
-}
 
 // ---------------- PDF-factuur (Poolse verkoper, zonder btw / reverse charge) ----------------
 app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {
@@ -1208,7 +807,7 @@ app.get('/api/invoice/:id', requireRole('pro'), async (req, res) => {
       .text('Odwrotne obci\u0105\u017cenie \u2014 podatek VAT rozlicza nabywca.', 50, ty + 90, { width: 495 })
       .text('Btw verlegd naar de afnemer (reverse charge). Er is geen btw in rekening gebracht.', 50, ty + 104, { width: 495 })
       .text(`Betaalwijze / Sposób p\u0142atno\u015bci: online. Betaald / Zap\u0142acono: ${date}.`, 50, ty + 128, { width: 495 });
-    doc.fontSize(8).fillColor('#999').text(`Budomatch \u00b7 ${SELLER.email}`, 50, 778, { width: 495, align: 'center', lineBreak: false });
+    doc.fontSize(8).fillColor('#999').text(`Budomatch \u00b7 ${SELLER.email}`, 50, 790, { width: 495, align: 'center' });
     doc.end();
   } catch (e) { console.error('Factuur-fout:', e.message); if (!res.headersSent) res.status(500).send('Kon factuur niet maken'); }
 });
@@ -1246,9 +845,9 @@ async function proRating(proId) {
 // Tier op basis van reviews (score op /10 = gemiddelde × 2). Geeft extra gratis leads per maand.
 function tierInfo(rating) {
   const score = rating.count ? rating.avg * 2 : 0;
-  let key = 'brons', label = 'Brons', bonus = TIERS.bonusBrons;
-  if (rating.count && score >= TIERS.goudFrom) { key = 'goud'; label = 'Goud'; bonus = TIERS.bonusGoud; }
-  else if (rating.count && score >= TIERS.zilverFrom) { key = 'zilver'; label = 'Zilver'; bonus = TIERS.bonusZilver; }
+  let key = 'brons', label = 'Brons', bonus = 1;
+  if (rating.count && score >= 7) { key = 'goud'; label = 'Goud'; bonus = 3; }
+  else if (rating.count && score >= 4) { key = 'zilver'; label = 'Zilver'; bonus = 2; }
   return { key, label, bonus, score: Math.round(score * 10) / 10 };
 }
 const monthKey = d => { const x = new Date(d); return x.getFullYear() + '-' + (x.getMonth() + 1); };
@@ -1271,7 +870,7 @@ async function geocodeNL(q) {
   if (NL_CITIES[cityKey]) return { lat: NL_CITIES[cityKey][0], lng: NL_CITIES[cityKey][1] };
   for (const k in NL_CITIES) { if (cityKey.length > 3 && (cityKey.includes(k) || k.includes(cityKey))) return { lat: NL_CITIES[k][0], lng: NL_CITIES[k][1] }; }
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': 'Budomatch/1.0 (info@budomatch.nl)' } });
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=nl&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': 'Budomatch/1.0 (info@budomatch.pl)' } });
     const d = await r.json();
     if (d && d[0]) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
   } catch (e) { /* stil */ }
@@ -1288,13 +887,12 @@ async function creditInfo(pro) {
   const claims = await store.claimsByPro(pro.id);
   const free = claims.filter(c => c.free);
   const welcomeUsed = free.filter(c => c.bucket !== 'monthly').length;
-  let welcomeRemaining = Math.max(0, PRICING.freeLeads - welcomeUsed);
+  const welcomeRemaining = Math.max(0, FREE_LEADS - welcomeUsed);
   const rating = await proRating(pro.id);
   const tier = tierInfo(rating);
   const cm = monthKey(Date.now());
   const monthlyUsed = free.filter(c => c.bucket === 'monthly' && monthKey(c.createdAt) === cm).length;
-  let monthlyRemaining = Math.max(0, tier.bonus - monthlyUsed);
-  if (pro.testAccount) { welcomeRemaining = 0; monthlyRemaining = 0; } // testaccount betaalt altijd
+  const monthlyRemaining = Math.max(0, tier.bonus - monthlyUsed);
   return {
     welcomeRemaining, monthlyRemaining, freeAvailable: welcomeRemaining + monthlyRemaining,
     tier, rating, paidUsed: claims.filter(c => !c.free).length, usedTotal: claims.length,
@@ -1386,9 +984,7 @@ async function notifyMessage(ctx, sender) {
   }
   if (!to) return;
   await sendMail(`Nieuw bericht op Budomatch — ${esc(ctx.service)}`,
-    mailWrap('Je hebt een nieuw bericht',
-      `<p>Er is een nieuw bericht in je gesprek over "<b>${esc(ctx.service)}</b>".</p>
-       ${mailBtn(`${SITE_URL}/dashboard`, 'Bekijk het bericht')}`),
+    `<h2>Je hebt een nieuw bericht</h2><p>Er is een nieuw bericht in je gesprek over "<b>${esc(ctx.service)}</b>".</p><p>Log in op je Budomatch-portaal om te reageren.</p>`,
     null, to);
 }
 
@@ -1586,70 +1182,30 @@ app.post('/api/projobs/:id/take', requireRole('pro'), async (req, res) => {
 });
 
 // ---------------- AI assistant ----------------
-// Kennisbank: alle regels, prijzen en functies van het platform, zodat de assistent
-// vragen over Budomatch feitelijk juist beantwoordt. Prijzen komen live uit
-// PRICING (beheerpaneel → Instellingen) — een prijswijziging werkt direct door.
-function platformKnowledge() {
-  const eur = n => '€ ' + n.toFixed(2).replace('.', ',');
-  const orient = Math.round(Math.round(PRICING.gross * 100) * 0.5) / 100;
-  return `PLATFORMKENNIS BUDOMATCH (feiten — baseer je antwoorden uitsluitend hierop; verzin geen functies of prijzen die hier niet staan):
-
-VOOR KLANTEN (altijd gratis)
-- Een klant maakt gratis een account aan en plaatst gratis een aanvraag: dienst, plaats, omschrijving, gewenste termijn en optioneel foto's (max 3) en adres.
-- Type aanvraag: "opdracht" (moet echt uitgevoerd worden) of "oriëntatie" (klant oriënteert zich nog; vakmensen betalen dan 50% minder voor het contact).
-- Maximaal 3 vakmensen kunnen op een aanvraag reageren. De contactgegevens van de klant zijn afgeschermd tot een vakman de aanvraag ontgrendelt.
-- Zodra een vakman ontgrendelt, opent automatisch een chat in het portaal (tab Berichten). Daar kan de vakman ook een offerte sturen (bedrag + omschrijving) die de klant met één klik accepteert of afwijst, en een afspraak voorstellen die de klant bevestigt.
-- De klant vergelijkt reageerders (bedrijfsnaam, reviews, niveau-badge, profiel via "Bekijk"), kan de klus aan één vakman toewijzen ("Kies deze vakman"), en kan de aanvraag bewerken, annuleren of heropenen.
-- Na contact kan de klant de vakman beoordelen (1-5 sterren + opmerking) — één review per aanvraag.
-- Tab "Vakman zoeken": kies soort werk + plaats en zie alleen KvK-geverifieerde bedrijven die dat werk doen én binnen wiens werkstraal de klant valt. Daar (en bij een nieuwe aanvraag) kan de klant een aanvraag direct naar één bedrijf sturen — alleen dat bedrijf ziet 'm dan. Vakmensen met een GOUDEN badge zijn direct te benaderen.
-- Elk vakbedrijf heeft een openbare profielpagina met logo, omschrijving, projectfoto's, reviews, website-voorbeeld en een badge (Brons/Zilver/Goud).
-
-VOOR VAKMENSEN (professionals)
-- Registratie is kort: bedrijfsnaam, één hoofdspecialisme, plaats. Meer vakgebieden en de werkstraal stel je in onder Werkgebied; telefoon, btw-nummer en KvK vul je in je Bedrijfsprofiel in.
-- Het profiel wordt pas ACTIEF na KvK-verificatie (Bedrijfsprofiel → KvK-controle): zonder verificatie is het bedrijf niet zichtbaar en kan het niet op aanvragen reageren. Eén KvK-nummer kan maar bij één account horen. De geverifieerde KvK-gegevens (naam + adres) komen op de factuur.
-- Kosten: de eerste ${PRICING.freeLeads} leads zijn gratis (welkomsttegoed). Daarna kost het ontgrendelen van een aanvraag ${eur(PRICING.gross)} per lead; oriëntatie-aanvragen kosten de helft: ${eur(orient)}. Plaatsen van collega-klussen, chatten en het profiel zijn gratis. Betalen kan met iDEAL, creditcard of Bancontact.
-- Btw: de btw wordt verlegd naar de afnemer (reverse charge, 0% op de factuur). De vakman vult zijn btw-nummer (btw-id) in bij Bedrijfsprofiel → Gegevens; dat komt op de factuur. Facturen (PDF) staan onder Account → Facturatie.
-- Niveaus op basis van reviewscore (score op 10 = gemiddelde sterren × 2): Brons (score < ${TIERS.zilverFrom}) geeft +${TIERS.bonusBrons} gratis lead(s) per maand, Zilver (vanaf ${TIERS.zilverFrom}) +${TIERS.bonusZilver}, Goud (vanaf ${TIERS.goudFrom}) +${TIERS.bonusGoud} — bovenop het eenmalige welkomsttegoed. GOUD betekent ook: klanten kunnen je direct een opdracht sturen — extra zichtbaarheid.
-- Collega-klussen (gratis USP): werk dat blijft liggen deel je gratis met collega-vakmensen; een collega pakt de klus op en er opent automatisch een vakman⇆vakman chat. Zo ontstaan samenwerkingen.
-- Werkgebied: plaats/postcode + straal (km) + vinkjes voor alle vakgebieden die het bedrijf doet — dit bepaalt welke aanvragen je ziet en of klanten je vinden.
-
-ACCOUNT & VEILIGHEID
-- Wachtwoord vergeten? Op de inlogpagina staat "Wachtwoord vergeten?" — je krijgt een herstel-link per e-mail (1 uur geldig).
-- Na registratie krijg je een bevestigingsmail; bevestig je e-mailadres via de link (banner in het dashboard, met knop om opnieuw te sturen).
-- Twee-stapsverificatie (2FA) met een authenticator-app kan aan via Instellingen/Beveiliging, inclusief herstelcodes.
-
-SUPPORT
-- Vragen of problemen: in het dashboard via Helpdesk het supportformulier invullen — zakelijke klanten krijgen voorrang. Verwijs de gebruiker daarnaar als je een vraag niet met bovenstaande feiten kunt beantwoorden (bijv. over betalingen, een specifiek account of een storing).`;
-}
-
-// Statisch deel van het system prompt (cachebaar): rol + doel + kennisbank.
-function systemPrompt(lang, mode) {
+function systemPrompt(lang, user, mode) {
   const cats = lang === 'en' ? CATS_EN : CATS_NL;
+  const who = user
+    ? (lang === 'en'
+        ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`
+        : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`)
+    : '';
   if (lang === 'en') {
     const goal = mode === 'customer'
       ? 'Your goal is to guide the customer: sharpen the job (scope, location, timing, indicative budget), pick the right trade, and write a clear job description. When complete, summarise it so the customer can paste it into the form.'
       : mode === 'pro'
       ? 'You assist the TRADESMAN (professional). Help them win and handle jobs: draft a professional, friendly reply or quote text to a (potential) customer based on the request, suggest the right questions to ask the customer, and give practical tips. When drafting a reply, write it ready-to-send in the customer\'s language, concise and concrete. Never invent prices or facts — leave placeholders like [price] where needed.'
       : 'Help choose the right trade, describe the job and explain how Budomatch works.';
-    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople.\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. For facts about how the platform works, rely strictly on the platform knowledge below (it is written in Dutch; answer in English).\n\n${platformKnowledge()}`;
+    return `You are the AI assistant of Budomatch — a marketplace connecting residents in the Netherlands with reliable, local tradespeople. ${who}\nSpecialisations (41): ${cats}.\n${goal}\nAnswer in English, short, warm and concrete. Do not invent fixed prices.`;
   }
   const goal = mode === 'customer'
     ? 'Je doel is de klant soepel door het traject loodsen: de klus aanscherpen (omvang, locatie, gewenste termijn, indicatief budget), het juiste vakgebied kiezen, en een heldere klusomschrijving opstellen. Als die compleet is, vat je die kort samen zodat de klant hem in het formulier kan plakken.'
     : mode === 'pro'
     ? 'Je ondersteunt de VAKMAN (professional). Help hem opdrachten binnenhalen en afhandelen: stel een professionele, vriendelijke reactie of offertetekst op aan een (potentiële) klant op basis van de aanvraag, bedenk de juiste vragen om aan de klant te stellen, en geef praktische tips. Als je een reactie opstelt, schrijf die kant-en-klaar zodat de vakman hem direct kan versturen — in de taal van de klant, beknopt en concreet. Verzin nooit prijzen of feiten; gebruik desnoods een plaatshouder als [prijs].'
     : 'Help het juiste vakgebied kiezen, de klus beschrijven en leg uit hoe Budomatch werkt.';
-  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen.\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Baseer feiten over het platform strikt op onderstaande platformkennis.\n\n${platformKnowledge()}`;
-}
-// Dynamisch deel (per gebruiker) — apart blok NÁ het cachebare deel, zodat de
-// kennisbank voor alle gebruikers uit de prompt-cache komt.
-function userContext(lang, user) {
-  if (!user) return '';
-  return lang === 'en'
-    ? `You are talking to a logged-in ${user.role === 'pro' ? 'tradesman' : 'customer'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`
-    : `Je praat met een ingelogde ${user.role === 'pro' ? 'vakman' : 'klant'}: ${user.name}${user.company ? ' (' + user.company + ')' : ''}.`;
+  return `Je bent de AI-assistent van Budomatch — een marktplaats die bewoners in Nederland koppelt aan betrouwbare, lokale bouwvakmensen. ${who}\nVakgebieden (41): ${cats}.\n${goal}\nAntwoord in het Nederlands, kort, warm en concreet. Verzin geen vaste prijzen.`;
 }
 
-app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
+app.post('/api/chat', async (req, res) => {
   try {
     const lang = req.body.lang === 'en' ? 'en' : 'nl';
     const mode = ['customer', 'pro'].includes(req.body.mode) ? req.body.mode : 'site';
@@ -1665,16 +1221,10 @@ app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
         : 'De assistent is nog niet geconfigureerd (geen API-sleutel ingesteld).' });
     }
 
-    // Systeem als blokken: het grote statische deel (rol + kennisbank) met
-    // prompt-caching, het kleine gebruikersdeel erna zodat de cache gedeeld
-    // blijft tussen alle gebruikers.
-    const system = [{ type: 'text', text: systemPrompt(lang, mode), cache_control: { type: 'ephemeral' } }];
-    const who = userContext(lang, user);
-    if (who) system.push({ type: 'text', text: who });
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 700, system, messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 700, system: systemPrompt(lang, user, mode), messages }),
     });
     if (!r.ok) { console.error('Anthropic', r.status, await r.text()); return res.status(502).json({ reply: lang === 'pl' ? 'Asystent chwilowo niedostępny.' : 'De assistent is even niet bereikbaar.' }); }
     const data = await r.json();
@@ -1686,7 +1236,7 @@ app.post('/api/chat', rateLimit('chat', 40, 10 * 60e3), async (req, res) => {
 // ---------------- e-mail (Resend) voor gast-aanvragen / aanmeldingen ----------------
 async function sendMail(subject, html, attachments, to) {
   if (!process.env.RESEND_API_KEY) { console.log('[Resend niet ingesteld]', subject, to ? '→ ' + to : '', attachments ? `(+${attachments.length} bijlage(n))` : ''); return { skipped: true }; }
-  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: to || process.env.MAIL_TO || 'info@budomatch.nl', subject, html };
+  const payload = { from: process.env.MAIL_FROM || 'Budomatch <onboarding@resend.dev>', to: to || process.env.MAIL_TO || 'info@budomatch.pl', subject, html };
   if (attachments && attachments.length) payload.attachments = attachments;
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -1701,10 +1251,7 @@ async function notifyNewRequest(r, customer) {
   try {
     if (customer && customer.email) {
       await sendMail(`Je aanvraag staat online — ${esc(r.service)}`,
-        mailWrap('Je aanvraag staat online',
-          `<p>Hoi ${esc(customer.name)},</p><p>Je aanvraag <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} staat op Budomatch. Passende vakmensen kunnen nu reageren — je krijgt bericht zodra er reacties zijn.</p>
-           <p style="color:#8A8270;border-left:3px solid #E7E1D2;padding-left:12px;margin:16px 0">${esc(r.description).slice(0, 600).replace(/\n/g, '<br>')}</p>
-           ${mailBtn(`${SITE_URL}/dashboard`, 'Naar mijn aanvragen')}`),
+        `<p>Hoi ${esc(customer.name)},</p><p>Je aanvraag <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} staat op Budomatch. Passende vakmensen kunnen nu reageren — je krijgt bericht zodra er reacties zijn.</p><p style="color:#555">${esc(r.description).slice(0, 600).replace(/\n/g, '<br>')}</p>`,
         null, customer.email).catch(() => {});
     }
     let pros = [];
@@ -1724,9 +1271,7 @@ async function notifyNewRequest(r, customer) {
     for (const p of pros.slice(0, 30)) {
       if (!p.email) continue;
       await sendMail(`Nieuwe aanvraag in jouw regio — ${esc(r.service)}`,
-        mailWrap('Nieuwe aanvraag in jouw regio',
-          `<p>Hoi ${esc(p.company || p.name)},</p><p>Er staat een nieuwe aanvraag voor <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} die past bij jouw werkgebied. Wees er snel bij — maximaal 3 vakmensen per aanvraag.</p>
-           ${mailBtn(`${SITE_URL}/dashboard`, 'Bekijk de aanvraag')}`),
+        `<p>Hoi ${esc(p.company || p.name)},</p><p>Er staat een nieuwe aanvraag voor <b>${esc(r.service)}</b>${r.zip ? ` (${esc(r.zip)})` : ''} die past bij jouw werkgebied. Log in op Budomatch om te reageren — wees er snel bij (max. 3 vakmensen per aanvraag).</p>`,
         null, p.email).catch(() => {});
     }
   } catch (e) { console.error('notifyNewRequest:', e.message); }
@@ -1741,263 +1286,19 @@ function photoAttachments(photos) {
     return { filename: `foto${i + 1}.${ext[m[1]] || 'jpg'}`, content: m[2] };
   }).filter(Boolean);
 }
-app.post('/api/quote', rateLimit('quote', 10, 60 * 60e3), async (req, res) => {
+app.post('/api/quote', async (req, res) => {
   try { const b = req.body || {};
     const atts = photoAttachments(b.photos);
     await sendMail(`Offerteaanvraag (gast) — ${esc(b.service) || '-'}`,
-      mailWrap('Offerteaanvraag (gast)',
-        `<p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`),
+      `<h2>Offerteaanvraag</h2><p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`,
       atts);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
 });
-app.post('/api/pro', rateLimit('prosignup', 10, 60 * 60e3), async (req, res) => {
+app.post('/api/pro', async (req, res) => {
   try { const b = req.body || {};
     await sendMail(`Vakman-aanmelding — ${esc(b.company) || '-'}`,
-      mailWrap('Vakman-aanmelding',
-        `<p><b>Bedrijf:</b> ${esc(b.company)}</p><p><b>Specialisatie:</b> ${esc(b.spec)}</p><p><b>Stad:</b> ${esc(b.city)}</p><p><b>E-mail:</b> ${esc(b.email)}</p>`));
+      `<h2>Vakman-aanmelding</h2><p><b>Bedrijf:</b> ${esc(b.company)}</p><p><b>Specialisatie:</b> ${esc(b.spec)}</p><p><b>Stad:</b> ${esc(b.city)}</p><p><b>E-mail:</b> ${esc(b.email)}</p>`);
     res.json({ ok: true }); } catch (e) { console.error(e); res.status(500).json({ ok: false }); }
-});
-
-// ---------------- beheer (admin) ----------------
-// Toegang: het account waarvan het e-mailadres gelijk is aan ADMIN_EMAIL. Paneel: /admin
-const requireAdmin = async (req, res, next) => {
-  try {
-    const u = await getUser(req);
-    if (!u) return res.status(401).json({ error: 'auth' });
-    if (!FB_ADMIN || u.email.toLowerCase() !== FB_ADMIN) return res.status(403).json({ error: 'forbidden' });
-    req.user = u; next();
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-};
-app.get('/api/admin/overview', requireAdmin, async (req, res) => {
-  try {
-    const users = await store.listUsers();
-    const requests = await store.listRequests();
-    const claims = await store.listClaims();
-    const reviews = await store.listReviews();
-    const pros = users.filter(u => u.role === 'pro');
-    const paid = claims.filter(c => !c.free);
-    res.json({
-      stats: {
-        customers: users.filter(u => u.role === 'customer').length,
-        pros: pros.length,
-        prosVerified: pros.filter(isVerifiedPro).length,
-        blocked: users.filter(u => u.blocked).length,
-        requestsTotal: requests.length,
-        requestsOpen: requests.filter(r => (r.status || 'open') === 'open').length,
-        claimsTotal: claims.length,
-        claimsPaid: paid.length,
-        revenueGross: +paid.reduce((s, c) => s + (c.amountGross || 0), 0).toFixed(2),
-        fxlErrors: claims.filter(c => c.fxlError).length,
-        reviews: reviews.length,
-        supportOpen: (await store.listFeedback()).filter(f => f.kind === 'support' && (f.status || 'nieuw') !== 'afgerond').length,
-      },
-      recentRequests: requests.slice(0, 20).map(r => ({
-        id: r.id, service: r.service, zip: r.zip || '', status: r.status || 'open',
-        createdAt: r.createdAt, name: r.name || '', direct: !!r.targetProId,
-      })),
-    });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-app.get('/api/admin/users', requireAdmin, async (req, res) => {
-  try {
-    const q = String(req.query.q || '').toLowerCase();
-    let users = await store.listUsers();
-    if (q) users = users.filter(u => `${u.email} ${u.name} ${u.company || ''} ${u.kvk || ''} ${u.city || ''}`.toLowerCase().includes(q));
-    users.sort((a, b) => b.createdAt - a.createdAt);
-    res.json({
-      users: users.slice(0, 200).map(u => ({
-        id: u.id, role: u.role, name: u.name, email: u.email, company: u.company || '',
-        city: u.city || '', customerType: u.customerType || '', kvk: u.kvk || '',
-        kvkVerified: isVerifiedPro(u), emailVerified: u.emailVerified !== false,
-        blocked: !!u.blocked, createdAt: u.createdAt,
-      })),
-    });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-// Handmatige KvK-verificatie (bijv. zolang er geen KVK_API_KEY is, of bij twijfelgevallen)
-app.post('/api/admin/users/:id/verify', requireAdmin, async (req, res) => {
-  try {
-    const u = await store.findUserById(req.params.id);
-    if (!u || u.role !== 'pro') return res.status(404).json({ error: 'not_found' });
-    const num = String((req.body || {}).kvk || u.kvk || '').replace(/\D/g, '');
-    if (num.length !== 8) return res.status(400).json({ error: 'invalid_kvk' });
-    const dup = (await store.listPros()).find(p => p.id !== u.id && p.verifiedKvk === num);
-    if (dup) return res.status(409).json({ error: 'duplicate' });
-    await store.updateUser(u.id, { kvk: num, verifiedKvk: num, kvkName: u.kvkName || u.company || u.name });
-    // bedrijf informeren: profiel is nu actief
-    sendMail('Je bedrijf is geverifieerd — Budomatch',
-      mailWrap('Je bedrijf is geverifieerd 🎉',
-        `<p>Goed nieuws, ${esc(u.name)}!</p><p><b>${esc(u.company || u.name)}</b> is geverifieerd (KvK ${esc(num)}). Je profiel is nu actief: je bent zichtbaar voor klanten en kunt op aanvragen reageren.</p>
-         ${mailBtn(`${SITE_URL}/dashboard`, 'Naar je dashboard')}`),
-      null, u.email).catch(() => {});
-    res.json({ ok: true, kvk: num });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-app.post('/api/admin/users/:id/block', requireAdmin, async (req, res) => {
-  try {
-    const u = await store.findUserById(req.params.id);
-    if (!u) return res.status(404).json({ error: 'not_found' });
-    if (u.email.toLowerCase() === FB_ADMIN) return res.status(400).json({ error: 'self' });
-    const blocked = !!(req.body || {}).blocked;
-    await store.updateUser(u.id, { blocked });
-    res.json({ ok: true, blocked });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-app.get('/api/admin/support', requireAdmin, async (req, res) => {
-  try {
-    const items = (await store.listFeedback()).filter(f => f.kind === 'support')
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .map(f => ({
-        id: f.id, name: f.name || '', role: f.role || '', business: !!f.business,
-        subject: f.subject || '', message: f.message || '', email: f.email || '', phone: f.phone || '',
-        status: f.status || 'nieuw', createdAt: f.createdAt,
-      }));
-    res.json({ items });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-app.post('/api/admin/support/:id/status', requireAdmin, async (req, res) => {
-  try {
-    const f = await store.findFeedback(req.params.id);
-    if (!f || f.kind !== 'support') return res.status(404).json({ error: 'not_found' });
-    const status = ['nieuw', 'bezig', 'afgerond'].includes((req.body || {}).status) ? req.body.status : 'nieuw';
-    await store.updateFeedback(f.id, { status });
-    res.json({ ok: true, status });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-// Faktura XL: mislukte exports opnieuw proberen (max 1 request/s bij Faktura XL).
-app.post('/api/admin/fakturaxl/retry', requireAdmin, async (req, res) => {
-  try {
-    if (!process.env.FAKTURAXL_API_KEY) return res.json({ ok: false, configured: false });
-    // Alle betaalde verkopen zonder Faktura XL-factuur — óók historische zonder
-    // foutmarkering (bijv. verkocht toen de API-sleutel nog niet was ingesteld).
-    const failed = (await store.listClaims()).filter(c => !c.free && c.paid && !c.fxlId);
-    let done = 0;
-    for (const c of failed) {
-      const pro = await store.findUserById(c.proId);
-      const r = await store.findRequest(c.requestId);
-      await fakturaXlExport(c, pro, r);
-      const after = (await store.claimsByPro(c.proId)).find(x => x.id === c.id);
-      if (after && after.fxlId) done++;
-      await new Promise(rs => setTimeout(rs, 1100));
-    }
-    res.json({ ok: true, retried: failed.length, success: done });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-// Eén factuur (opnieuw) versturen: bestaat de factuur nog niet in Faktura XL,
-// dan wordt hij aangemaakt (+ KSeF); bestaat hij al maar is KSeF niet gelukt,
-// dan gaat alleen de KSeF-verzending opnieuw (geen dubbele facturen).
-app.post('/api/admin/invoices/:id/export', requireAdmin, async (req, res) => {
-  try {
-    if (!process.env.FAKTURAXL_API_KEY) return res.json({ ok: false, configured: false });
-    const c = (await store.listClaims()).find(x => x.id === req.params.id);
-    if (!c || c.free || !c.paid) return res.status(404).json({ error: 'not_found' });
-    if (c.fxlId) {
-      if (c.fxlKsef === 'ok') return res.json({ ok: true, already: true, fxlNr: c.fxlNr, fxlKsef: 'ok' });
-      const st = await fxlKsefSend(c.fxlId);
-      await store.updateClaim(c.id, { fxlKsef: st });
-      return res.json({ ok: st === 'ok', fxlNr: c.fxlNr, fxlKsef: st });
-    }
-    const pro = await store.findUserById(c.proId);
-    const r = await store.findRequest(c.requestId);
-    await fakturaXlExport(c, pro, r);
-    const after = (await store.claimsByPro(c.proId)).find(x => x.id === c.id);
-    res.json({
-      ok: !!(after && after.fxlId),
-      fxlNr: (after && after.fxlNr) || '', fxlKsef: (after && after.fxlKsef) || '',
-      fxlError: (after && after.fxlError) || '',
-    });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-// Facturen-overzicht: alle betaalde verkopen met hun Faktura XL/KSeF-status,
-// zodat de beheerder per verkoop ziet of de factuur in de boekhouding staat.
-app.get('/api/admin/invoices', requireAdmin, async (req, res) => {
-  try {
-    const claims = (await store.listClaims()).filter(c => !c.free && c.paid)
-      .sort((a, b) => b.createdAt - a.createdAt).slice(0, 100);
-    const items = [];
-    for (const c of claims) {
-      const pro = await store.findUserById(c.proId);
-      const r = await store.findRequest(c.requestId);
-      items.push({
-        id: c.id, createdAt: c.invoiceDate || c.createdAt, gross: c.amountGross,
-        company: pro ? (pro.company || pro.name) : '?', email: pro ? pro.email : '',
-        testAccount: !!(pro && pro.testAccount),
-        service: r ? r.service : '', invoiceNo: c.invoiceNo || '',
-        fxlId: c.fxlId || '', fxlNr: c.fxlNr || '', fxlKsef: c.fxlKsef || '', fxlError: c.fxlError || '',
-      });
-    }
-    res.json({ configured: !!process.env.FAKTURAXL_API_KEY, items });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-// Faktura XL: afdelingen (działy) ophalen, zodat de beheerder het juiste
-// FAKTURAXL_DZIAL_ID kan kiezen (aparte nummering per bedrijfsonderdeel).
-app.get('/api/admin/fakturaxl/dzialy', requireAdmin, async (req, res) => {
-  try {
-    if (!process.env.FAKTURAXL_API_KEY) return res.json({ configured: false, items: [] });
-    const r = await fxlPost('dokument_lista_dzialow.php',
-      `<?xml version="1.0" encoding="UTF-8"?>\n<dokument><api_token>${xmlEsc(process.env.FAKTURAXL_API_KEY)}</api_token></dokument>`);
-    const items = [...String(r.body).matchAll(/<dzial>\s*<id>(\d+)<\/id>\s*<nazwa>(?:<!\[CDATA\[)?([^<\]]*)/g)]
-      .map(m => ({ id: m[1], nazwa: m[2].trim() }));
-    res.json({ configured: true, dzialId: process.env.FAKTURAXL_DZIAL_ID || '', items });
-  } catch (e) { console.error('[fakturaxl] dzialy:', e.message); res.json({ configured: true, dzialId: process.env.FAKTURAXL_DZIAL_ID || '', items: [], error: 'lookup' }); }
-});
-// Instellingen: leadprijs en gratis welkomstleads — direct actief, zonder herstart.
-app.get('/api/admin/settings', requireAdmin, async (req, res) => {
-  res.json({
-    leadPriceGross: PRICING.gross,
-    orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
-    freeLeads: PRICING.freeLeads,
-    tiers: { ...TIERS },
-    defaults: { leadPriceGross: LEAD_PRICE_GROSS, freeLeads: FREE_LEADS, tiers: { ...TIERS_DEFAULT } },
-  });
-});
-app.post('/api/admin/settings', requireAdmin, async (req, res) => {
-  try {
-    const b = req.body || {}, patch = {};
-    if (b.leadPriceGross !== undefined) {
-      const v = Math.round(Number(b.leadPriceGross) * 100) / 100;
-      if (!(v >= 1 && v <= 500)) return res.status(400).json({ error: 'invalid_price' });
-      patch.leadPriceGross = v;
-    }
-    if (b.freeLeads !== undefined) {
-      const v = Math.round(Number(b.freeLeads));
-      if (!(v >= 0 && v <= 100)) return res.status(400).json({ error: 'invalid_free' });
-      patch.freeLeads = v;
-    }
-    // niveaus/badges: drempels (score op 10) en gratis maandleads per niveau
-    if (b.tierZilverFrom !== undefined || b.tierGoudFrom !== undefined) {
-      const z = Number(b.tierZilverFrom !== undefined ? b.tierZilverFrom : TIERS.zilverFrom);
-      const g = Number(b.tierGoudFrom !== undefined ? b.tierGoudFrom : TIERS.goudFrom);
-      if (!(z >= 0 && z <= 10 && g >= 0 && g <= 10 && z < g)) return res.status(400).json({ error: 'invalid_tiers' });
-      patch.tierZilverFrom = z; patch.tierGoudFrom = g;
-    }
-    for (const [key, field] of [['tierBonusBrons', 'bonusBrons'], ['tierBonusZilver', 'bonusZilver'], ['tierBonusGoud', 'bonusGoud']]) {
-      if (b[key] !== undefined) {
-        const v = Math.round(Number(b[key]));
-        if (!(v >= 0 && v <= 100)) return res.status(400).json({ error: 'invalid_bonus' });
-        patch[key] = v;
-      }
-    }
-    if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty' });
-    await store.updateSettings(patch);
-    await loadPricing();
-    res.json({
-      ok: true,
-      leadPriceGross: PRICING.gross,
-      orientPriceGross: leadPrice({ intent: 'orientatie' }).gross,
-      freeLeads: PRICING.freeLeads,
-      tiers: { ...TIERS },
-    });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
-});
-
-// Publieke prijsinfo — homepage, FAQ en voorwaarden vullen hiermee hun vaste
-// teksten, zodat een prijswijziging in het beheerpaneel overal direct zichtbaar is.
-app.get('/api/pricing', (req, res) => {
-  res.json({
-    gross: PRICING.gross, orient: leadPrice({ intent: 'orientatie' }).gross, freeLeads: PRICING.freeLeads,
-    tiers: { ...TIERS },
-  });
 });
 
 app.get('/healthz', (_, res) => res.send('ok'));
@@ -2007,13 +1308,13 @@ async function seedDemo() {
   try {
     let k = await store.findUserByEmail('klant@budomatch.nl');
     if (!k) {
-      k = await store.addUser({ role: 'customer', name: 'Demo Klant', email: 'klant@budomatch.nl', passHash: A.hashPassword('demo1234'), customerType: 'particulier', emailVerified: true });
+      k = await store.addUser({ role: 'customer', name: 'Demo Klant', email: 'klant@budomatch.nl', passHash: A.hashPassword('demo1234'), customerType: 'particulier' });
       await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'opdracht', timing: 'Binnen 1 maand', service: 'Badkamerspecialist', zip: '1011 AB', description: 'Complete badkamer renoveren, ca. 6 m2 — tegels, douche en meubel.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
       await store.addRequest({ customerId: k.id, customerType: 'particulier', company: '', intent: 'orientatie', timing: 'Meer dan 3 maanden', service: 'Zonnepanelen', zip: '1011 AB', description: 'Orienteren op ca. 10 zonnepanelen op schuin dak.', name: k.name, phone: '0612345678', email: k.email, lang: 'nl', photos: [] });
     }
     const v = await store.findUserByEmail('vakman@budomatch.nl');
     if (!v) {
-      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV', emailVerified: true });
+      const pro = await store.addUser({ role: 'pro', name: 'Demo Vakman', email: 'vakman@budomatch.nl', passHash: A.hashPassword('demo1234'), company: 'Demo Bouw BV', spec: 'Verbouwing', city: 'Amsterdam', phone: '0687654321', bio: 'Demonstratiebedrijf voor Budomatch.', workRadius: 30, workCategories: ['Badkamerspecialist', 'Verbouwing', 'Tegels zetten'], kvk: '12345678', verifiedKvk: '12345678', kvkName: 'Demo Bouw BV' });
       const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng });
     } else if (!(v.kvk && v.verifiedKvk && v.kvk === v.verifiedKvk)) {
       // bestaande demo-vakman alsnog verifieren + coordinaten zetten
@@ -2028,49 +1329,5 @@ async function seedDemo() {
   } catch (e) { console.error('[seed] mislukt:', e.message); }
 }
 seedDemo();
-
-// Stripe-testomgeving (zet SEED_TEST_PAYMENT=1). Maakt een geïsoleerd testaccount:
-// asdf@gmail.com / admin1234 — geverifieerd, GEEN gratis tegoed, betaalt € 1 per
-// lead (globale prijs blijft ongemoeid), wordt overgeslagen door Faktura XL, en
-// krijgt één DIRECTE testaanvraag die andere vakmensen niet zien. Idempotent —
-// bij elke start staat er weer een open testaanvraag klaar.
-async function seedTestPayment() {
-  if (!process.env.SEED_TEST_PAYMENT) return;
-  try {
-    const proFields = {
-      role: 'pro', name: 'Stripe Test', company: 'Stripe Test BV', spec: 'Schilderwerk',
-      city: 'Amsterdam', workRadius: 30, workCategories: ['Schilderwerk'],
-      kvk: '99999999', verifiedKvk: '99999999', kvkName: 'Stripe Test BV',
-      emailVerified: true, testAccount: true, testPriceGross: 1,
-    };
-    let pro = await store.findUserByEmail('asdf@gmail.com');
-    if (!pro) {
-      pro = await store.addUser({ email: 'asdf@gmail.com', passHash: A.hashPassword('admin1234'), ...proFields });
-    } else if (pro.role !== 'pro' || !pro.testAccount) {
-      // bestond al (bijv. eerder als klant geregistreerd) → omzetten naar het test-vakmanaccount
-      pro = await store.updateUser(pro.id, { ...proFields, passHash: A.hashPassword('admin1234') });
-      console.log('[seed] bestaand account asdf@gmail.com omgezet naar test-vakman');
-    }
-    if (pro.lat == null) { const g = await geocodeNL('Amsterdam'); if (g) await store.updateUser(pro.id, { lat: g.lat, lng: g.lng }); }
-    let klant = await store.findUserByEmail('asdf-klant@gmail.com');
-    if (!klant) {
-      klant = await store.addUser({ role: 'customer', name: 'Stripe Testklant', email: 'asdf-klant@gmail.com', passHash: A.hashPassword('admin1234'), customerType: 'particulier', emailVerified: true, testAccount: true });
-    }
-    // zorg dat er altijd één open, nog niet ontgrendelde testaanvraag klaarstaat
-    const open = (await store.openRequests()).find(r => r.targetProId === pro.id && !(r.status && r.status !== 'open'));
-    const unlocked = open ? await store.claimExists(pro.id, open.id) : true;
-    if (!open || unlocked) {
-      await store.addRequest({
-        customerId: klant.id, customerType: 'particulier', company: '', intent: 'opdracht',
-        timing: 'Binnen 1 maand', service: 'Schilderwerk', zip: '1011 AB',
-        description: 'Stripe-testaanvraag — ontgrendelen kost € 1 (alleen zichtbaar voor het testaccount).',
-        name: klant.name, phone: '0600000000', email: klant.email, lang: 'nl', photos: [],
-        targetProId: pro.id, targetProName: pro.company, direct: true,
-      });
-    }
-    console.log('[seed] Stripe-testomgeving gereed — asdf@gmail.com / admin1234 (lead kost € 1)');
-  } catch (e) { console.error('[seed] testbetaling mislukt:', e.message); }
-}
-seedTestPayment();
 
 app.listen(PORT, () => console.log(`Budomatch draait op poort ${PORT}`));
