@@ -90,6 +90,19 @@ const CATS_EN = "Extension, Bump-out extension, Storey addition, Air conditionin
 
 // ---------------- helpers ----------------
 const isHttps = req => (req.headers['x-forwarded-proto'] || '').split(',')[0] === 'https';
+const APP_VERSION = '1.0.0';
+const clientIp = req => String(req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || '').split(',')[0].trim();
+// Cloudflare Turnstile — verifieert het token; overslaan als niet geconfigureerd
+async function verifyTurnstile(token, ip) {
+  if (!process.env.TURNSTILE_SECRET_KEY) return true;
+  try {
+    const body = new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: String(token || '') });
+    if (ip) body.append('remoteip', ip);
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body });
+    const d = await r.json(); return !!d.success;
+  } catch (e) { return false; }
+}
+const _loginRate = {};
 async function getUser(req) {
   const t = A.parseCookies(req).bm_token;
   const p = A.verify(t);
@@ -243,6 +256,7 @@ app.post('/api/feedback/:id/status', requireRole(), async (req, res) => {
 app.post('/api/register', async (req, res) => {
   try {
     const b = req.body || {};
+    if (!(await verifyTurnstile(b.turnstileToken, clientIp(req)))) return res.status(400).json({ error: 'captcha' });
     const role = b.role === 'pro' ? 'pro' : 'customer';
     const email = String(b.email || '').trim().toLowerCase();
     const nameInput = String(b.name || '').trim();
@@ -291,12 +305,21 @@ app.post('/api/register', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
+app.get('/api/config', (req, res) => res.json({ version: APP_VERSION, turnstile: process.env.TURNSTILE_SITE_KEY || '' }));
+
 app.post('/api/login', async (req, res) => {
   try {
     const b = req.body || {};
+    const ip = clientIp(req); const now = Date.now();
+    const w = _loginRate[ip] || { n: 0, t: now };
+    if (now - w.t > 600000) { w.n = 0; w.t = now; }
+    if (w.n >= 15) return res.status(429).json({ error: 'rate' });
     const u = await store.findUserByEmail(String(b.email || ''));
-    if (!u || !A.verifyPassword(String(b.password || ''), u.passHash))
+    if (!u || !A.verifyPassword(String(b.password || ''), u.passHash)) {
+      w.n++; _loginRate[ip] = w;
       return res.status(401).json({ error: 'bad_credentials' });
+    }
+    delete _loginRate[ip];
     if (u.twofaEnabled) {
       return res.json({ twofaRequired: true, challenge: A.sign({ t: '2fa', uid: u.id }, 0.02) });
     }
@@ -634,6 +657,7 @@ async function fetchSitePreview(url) {
     let desc = meta('og:description') || meta('description') || '';
     let img = meta('og:image') || meta('og:image:url') || '';
     try { if (img && !/^https?:\/\//i.test(img)) img = new URL(img, u).href; } catch (e) {}
+    if (!/^https?:\/\/[^\s'"()<>]+$/i.test(img)) img = ''; // alleen schone http(s)-URL toestaan
     const dec = s => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
     return { url: u, title: dec(title).slice(0, 140), description: dec(desc).slice(0, 240), image: img.slice(0, 500) };
   } catch (e) { return { url: String(url) }; }
@@ -1288,6 +1312,7 @@ function photoAttachments(photos) {
 }
 app.post('/api/quote', async (req, res) => {
   try { const b = req.body || {};
+    if (!(await verifyTurnstile(b.turnstileToken, clientIp(req)))) return res.status(400).json({ ok: false, error: 'captcha' });
     const atts = photoAttachments(b.photos);
     await sendMail(`Offerteaanvraag (gast) — ${esc(b.service) || '-'}`,
       `<h2>Offerteaanvraag</h2><p><b>Dienst:</b> ${esc(b.service)}</p><p><b>Plaats:</b> ${esc(b.zip)}</p><p><b>Adres:</b> ${esc([[b.street, b.houseNumber].filter(Boolean).join(' '), b.houseAdd].filter(Boolean).join(' '))}</p><p><b>Omschrijving:</b><br>${esc(b.description)}</p><p><b>Naam:</b> ${esc(b.name)}</p><p><b>Tel:</b> ${esc(b.phone)}</p><p><b>E-mail:</b> ${esc(b.email)}</p><p><b>Foto's:</b> ${atts.length}</p>`,

@@ -426,6 +426,7 @@ async function logout(){ await fetch('/api/logout',{method:'POST'}); location.hr
 (async function init(){
   $('#lnNL').classList.toggle('on',LANG==='nl'); $('#lnEN').classList.toggle('on',LANG==='en');
   try { ME = (await api('/api/me')).user; } catch { return; }
+  try { const cfg=await (await fetch('/api/config')).json(); window.__VER=cfg.version||''; } catch(e){}
   applyChrome();
   $('#loading').remove();
   ME.role==='pro' ? renderPro() : renderCustomer();
@@ -796,7 +797,7 @@ function custGegHtml(){ const u=ME; return `<div class="card"><h2>${t('acCustGeg
   </div>
   <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="saveCustAccount()">${t('save')}</button>
   <div class="note" id="caNote">${t('saved')}</div>
-  <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="logout()">${t('logoutBtn')}</button></div>`;
+  <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="logout()">${t('logoutBtn')}</button><p class="meta" style="margin-top:14px;opacity:.7">Budomatch v${window.__VER||''}</p></div>`;
 }
 async function saveCustAccount(){
   const g=id=>document.getElementById(id).value;
@@ -1602,7 +1603,7 @@ function acOverviewHtml(){
       <div class="k"><div class="n">${u.creditsLeft}</div><div class="l">${t('acCredits')}</div></div>
       <div class="k"><div class="n">${u.rating&&u.rating.count?u.rating.avg.toFixed(1)+'\u2605':'\u2014'}</div><div class="l">${t('kRating')}${u.rating&&u.rating.count?` (${u.rating.count})`:''}</div></div>
     </div>
-    <button class="btn btn-ghost" style="margin-top:16px" onclick="logout()">${t('logoutBtn')}</button></div>`;
+    <button class="btn btn-ghost" style="margin-top:16px" onclick="logout()">${t('logoutBtn')}</button><p class="meta" style="margin-top:14px;opacity:.7">Budomatch v${window.__VER||''}</p></div>`;
 }
 function accountHtml(){
   const u=ME; const tier=u.tier||{label:'Brons',bonus:1,key:'brons'};

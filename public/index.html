@@ -292,6 +292,7 @@ img{max-width:100%}
 .pride::before{content:"";position:absolute;inset:0;z-index:0;background-image:linear-gradient(180deg,var(--bg) 0%,rgba(19,17,11,.80) 42%,rgba(19,17,11,.93) 100%),url('https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&w=1500&q=60');background-size:cover;background-position:center}
 .pride .wrap{position:relative;z-index:1}.price-badge{display:flex;align-items:center;gap:10px;background:rgba(232,119,46,.10);border:1px solid rgba(232,119,46,.30);color:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.price-badge svg{width:20px;height:20px;color:var(--orange-bright);flex:none}.usp-badge{display:flex;align-items:center;gap:10px;background:rgba(63,166,106,.12);border:1px solid rgba(63,166,106,.4);color:#bfe6cf;border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.usp-badge svg{width:20px;height:20px;color:#7fd6a0;flex:none}
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -523,6 +524,7 @@ img{max-width:100%}
           <div class="fg"><label data-i18n="qLblPhone"></label><input class="inp" name="phone" type="tel" required data-ph="qPhPhone"></div>
         </div>
         <div class="fg"><label data-i18n="qLblEmail"></label><input class="inp" name="email" type="email" required data-ph="qPhEmail"></div>
+        <div id="tsQuote" style="margin:0 0 10px"></div>
         <button class="btn btn-gold" style="width:100%" type="submit" data-i18n="qBtn"></button>
         <div class="note" id="qNote" data-i18n="qNote"></div>
       </form>
@@ -564,7 +566,7 @@ img{max-width:100%}
       </div>
     </div>
     <div class="copy">
-      <span>© <span id="yr"></span> Budomatch DANIËL DE GRAAF · <span data-i18n="footRights"></span></span>
+      <span>© <span id="yr"></span> Budomatch DANIËL DE GRAAF · <span data-i18n="footRights"></span> · <span id="appVer" style="opacity:.7"></span></span>
       <span data-i18n="footPart"></span>
     </div>
   </div>
@@ -621,6 +623,7 @@ img{max-width:100%}
         <label data-i18n="authNip"></label><input class="inp" id="aCustNip">
       </div>
     </div>
+    <div id="tsAuth" style="margin:8px 0 0"></div>
     <button class="btn btn-gold" style="width:100%;margin-top:6px" id="authSubmit" onclick="submitAuth()"></button>
     <div class="swap"><a id="authSwap" onclick="toggleAuthMode()"></a></div>
     </div>
@@ -722,7 +725,7 @@ const T={
   authRoleCustomer:"I am a customer",authRolePro:"I am a tradesman",
   authTypePriv:"Private",authTypeBiz:"Business",
   authCompany:"Company name",authSpec:"Specialisation",authCity:"City",authPhone:"Phone (optional)",authNip:"VAT number (optional)",authAddr:"Address (for invoice, optional)",
-  authKvk:"Chamber of Commerce (KvK) number",kvkLooking:"Looking up…",kvkNotConf:"KvK check not set up yet — you can continue.",errKvkNotFound:"KvK number not found.",errKvkDup:"This company is already registered on Budomatch.",errKvkLookup:"Couldn't verify KvK right now, please try again.",regNote:"Enter your KvK number — company name & address fill in automatically.",authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
+  authKvk:"Chamber of Commerce (KvK) number",kvkLooking:"Looking up…",kvkNotConf:"KvK check not set up yet — you can continue.",errKvkNotFound:"KvK number not found.",errKvkDup:"This company is already registered on Budomatch.",errKvkLookup:"Couldn't verify KvK right now, please try again.",errCaptcha:"Verification failed, please try again.",regNote:"Enter your KvK number — company name & address fill in automatically.",authSubmitLogin:"Log in",authSubmitReg:"Create account",twofaMsg:"Enter the 6-digit code from your authenticator app, or a recovery code.",twofaBtn:"Verify",
   authToReg:"No account yet? Register",authToLogin:"Already have an account? Log in",
   authErr:"Incorrect details, or this e-mail already exists.",
   ebProjects:"Popular",h2Projects:"Projects on Budomatch",pProjects:"A selection of jobs carried out through Budomatch.",
@@ -793,7 +796,7 @@ const T={
   authRoleCustomer:"Ik ben klant",authRolePro:"Ik ben vakman",
   authTypePriv:"Particulier",authTypeBiz:"Zakelijk",
   authCompany:"Bedrijfsnaam",authSpec:"Specialisatie",authCity:"Plaats",authPhone:"Telefoon (optioneel)",authNip:"Btw-nummer (optioneel)",authAddr:"Adres (voor factuur, optioneel)",
-  authKvk:"KvK-nummer",kvkLooking:"Ophalen…",kvkNotConf:"KvK-controle nog niet ingesteld — je kunt doorgaan.",errKvkNotFound:"KvK-nummer niet gevonden.",errKvkDup:"Dit bedrijf is al geregistreerd op Budomatch.",errKvkLookup:"Kon KvK nu niet controleren, probeer opnieuw.",regNote:"Vul je KvK-nummer in — bedrijfsnaam & adres worden automatisch opgehaald.",authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
+  authKvk:"KvK-nummer",kvkLooking:"Ophalen…",kvkNotConf:"KvK-controle nog niet ingesteld — je kunt doorgaan.",errKvkNotFound:"KvK-nummer niet gevonden.",errKvkDup:"Dit bedrijf is al geregistreerd op Budomatch.",errKvkLookup:"Kon KvK nu niet controleren, probeer opnieuw.",errCaptcha:"Verificatie mislukt, probeer opnieuw.",regNote:"Vul je KvK-nummer in — bedrijfsnaam & adres worden automatisch opgehaald.",authSubmitLogin:"Inloggen",authSubmitReg:"Account aanmaken",twofaMsg:"Voer de 6-cijferige code uit je authenticator-app in, of een herstelcode.",twofaBtn:"Verifiëren",
   authToReg:"Nog geen account? Registreren",authToLogin:"Al een account? Inloggen",
   authErr:"Onjuiste gegevens, of dit e-mailadres bestaat al.",
   ebProjects:"Populair",h2Projects:"Projecten op Budomatch",pProjects:"Een greep uit klussen die via Budomatch worden uitgevoerd.",
@@ -905,14 +908,16 @@ function renderThumbs(){const el=document.getElementById('qThumbs');if(!el)retur
   const dz=document.getElementById('qDrop');if(dz)dz.style.display=QPHOTOS.length>=3?'none':'flex';
 }
 function rmPhoto(i){QPHOTOS.splice(i,1);renderThumbs();}
-function quoteSubmit(e){e.preventDefault();const f=e.target;
+async function quoteSubmit(e){e.preventDefault();const f=e.target;
   const sel=document.getElementById('qCat');
   const service=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
-  const payload={service,zip:f.zip.value,street:f.street.value,houseNumber:f.houseNumber.value,houseAdd:f.houseAdd.value,description:f.description.value,name:f.name.value,phone:f.phone.value,email:f.email.value,photos:QPHOTOS,lang:LANG};
+  const payload={service,zip:f.zip.value,street:f.street.value,houseNumber:f.houseNumber.value,houseAdd:f.houseAdd.value,description:f.description.value,name:f.name.value,phone:f.phone.value,email:f.email.value,photos:QPHOTOS,lang:LANG,turnstileToken:tsToken(TS_QUOTE_ID)};
   const url=(__me&&__me.role==='customer')?'/api/requests':'/api/quote';
-  fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+  try{ const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json().catch(()=>({}));
+    if(d&&d.error==='captcha'){ alert(T[LANG].errCaptcha); tsReset(TS_QUOTE_ID); return false; }
+  }catch(e2){}
   document.getElementById('qNote').classList.add('show');
-  QPHOTOS=[];renderThumbs();
+  QPHOTOS=[];renderThumbs(); tsReset(TS_QUOTE_ID);
   f.querySelector('button').textContent=LANG==='nl'?'Verzonden ✓':'Sent ✓';return false;}
 function proSubmit(e){e.preventDefault();const f=e.target;
   const sel=document.getElementById('proCat');
@@ -997,6 +1002,19 @@ async function refreshAuthUI(){
 }
 async function doLogout(){try{await fetch('/api/logout',{method:'POST'});}catch{}__me=null;refreshAuthUI();}
 
+let TS_QUOTE_ID=null, TS_AUTH_ID=null, TS_KEY='';
+async function loadConfig(){
+  try{ const d=await (await fetch('/api/config')).json();
+    const v=document.getElementById('appVer'); if(v)v.textContent='v'+(d.version||'');
+    TS_KEY=d.turnstile||''; if(TS_KEY) tsInit();
+  }catch(e){}
+}
+function tsInit(){ if(!window.turnstile){ setTimeout(tsInit,400); return; }
+  const q=document.getElementById('tsQuote'); if(q&&TS_QUOTE_ID===null){ try{ TS_QUOTE_ID=turnstile.render(q,{sitekey:TS_KEY,theme:'dark'}); }catch(e){} }
+}
+function renderAuthTs(){ if(!TS_KEY||!window.turnstile) return; const a=document.getElementById('tsAuth'); if(a&&TS_AUTH_ID===null){ try{ TS_AUTH_ID=turnstile.render(a,{sitekey:TS_KEY,theme:'dark'}); }catch(e){} } }
+function tsToken(id){ return (window.turnstile&&id!==null)?turnstile.getResponse(id):''; }
+function tsReset(id){ if(window.turnstile&&id!==null){ try{turnstile.reset(id);}catch(e){} } }
 async function kvkPrefill(){
   const el=document.getElementById('aKvk'), st=document.getElementById('aKvkStatus'); if(!el||!st)return;
   const num=el.value.replace(/\D/g,''); if(num.length!==8){ st.textContent=''; return; }
@@ -1015,6 +1033,7 @@ function openAuth(mode,prefill){
   authModal.classList.add('open');
   applyAuthTexts();
   setRole(authRole);
+  if(authMode==='register') renderAuthTs();
   if(prefill){
     if(prefill.company)document.getElementById('aCompany').value=prefill.company;
     if(prefill.city)document.getElementById('aCity').value=prefill.city;
@@ -1049,6 +1068,7 @@ function applyAuthTexts(){
   document.getElementById('fName').style.display=reg?'block':'none';
   document.getElementById('proFields').style.display=(reg&&authRole==='pro')?'block':'none';
   document.getElementById('custFields').style.display=(reg&&authRole==='customer')?'block':'none';
+  const ta=document.getElementById('tsAuth'); if(ta)ta.style.display=reg?'block':'none';
   const s=document.getElementById('aSpec');
   if(s)s.innerHTML=CATS.map(c=>`<option>${LANG==='nl'?c[1]:c[0]}</option>`).join('');
   const rn=document.getElementById('regNote'); if(rn)rn.textContent=d.regNote;
@@ -1063,11 +1083,13 @@ async function submitAuth(){
     body={role:authRole,name:document.getElementById('aName').value.trim(),email,password};
     if(authRole==='pro'){const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};body.company=gv('aCompany');body.spec=gv('aSpec');body.city=gv('aCity');body.phone=gv('aPhone');body.nip=gv('aNip');body.address=gv('aAddr');body.kvk=gv('aKvk');}
     else{body.customerType=custType;if(custType==='zakelijk'){body.company=document.getElementById('aCustCompany').value.trim();body.nip=document.getElementById('aCustNip').value.trim();}}
+    body.turnstileToken=tsToken(TS_AUTH_ID);
   }else{url='/api/login';body={email,password};}
   try{
     const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(d && d.twofaRequired){ show2fa(d.challenge); return; }
+    if(d && d.error==='captcha'){ err.textContent=T[LANG].errCaptcha; err.classList.add('show'); tsReset(TS_AUTH_ID); return; }
     if(d && (d.error==='kvk_duplicate'||d.error==='kvk_not_found'||d.error==='kvk_lookup')){ err.textContent=T[LANG][d.error==='kvk_duplicate'?'errKvkDup':(d.error==='kvk_not_found'?'errKvkNotFound':'errKvkLookup')]; err.classList.add('show'); return; }
     if(!r.ok||!d.user){err.classList.add('show');return;}
     __me=d.user;closeAuth();location.href='/dashboard.html';
@@ -1097,6 +1119,7 @@ async function submit2fa(){
 if(location.search.indexOf('login=1')>=0)setTimeout(()=>openAuth('login'),300);
 
 document.getElementById('yr').textContent=new Date().getFullYear();
+loadConfig();
 setLang(LANG);
 refreshAuthUI();
 </script>
