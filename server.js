@@ -83,6 +83,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Nette URL's zonder .html
+const PUBDIR = path.join(__dirname, 'public');
+app.get(['/dashboard', '/dashboard/'], (req, res) => res.sendFile(path.join(PUBDIR, 'dashboard.html')));
+app.get(['/bedrijf', '/bedrijf/'], (req, res) => res.sendFile(path.join(PUBDIR, 'bedrijf.html')));
+app.get(['/login', '/login/'], (req, res) => res.redirect('/?login=1'));
 
 // ----- 41 specialisaties -----
 const CATS_NL = "Aanbouw, Uitbouw, Opbouw, Airco, Architect, Asbest verwijderen, Badkamerspecialist, Bestraten, Cv-ketel, Dakbedekking, Dakkapel, Dakraam, Elektricien, Garagedeur, Gevelreiniging, Glas, Hekwerken, Inbraakbeveiliging, Isolatie, Keukenspecialist, Kozijnen, Laadpalen, Loodgieter, Ongediertebestrijding, Rolluiken, Schilderwerk, Schuifpui, Serre, Stucwerk, Tegels zetten, Thuisbatterij, Trap, Tuinaanleg, Tuinonderhoud, Ventilatie, Verbouwing, Vloeren, Vloerverwarming, Vochtbestrijding, Warmtepomp, Wellness, Zonnepanelen, Zonwering";
