@@ -291,6 +291,10 @@ img{max-width:100%}
 .pride{position:relative;overflow:hidden}
 .pride::before{content:"";position:absolute;inset:0;z-index:0;background-image:linear-gradient(180deg,var(--bg) 0%,rgba(19,17,11,.80) 42%,rgba(19,17,11,.93) 100%),url('https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&w=1500&q=60');background-size:cover;background-position:center}
 .pride .wrap{position:relative;z-index:1}.price-badge{display:flex;align-items:center;gap:10px;background:rgba(232,119,46,.10);border:1px solid rgba(232,119,46,.30);color:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.price-badge svg{width:20px;height:20px;color:var(--orange-bright);flex:none}.usp-badge{display:flex;align-items:center;gap:10px;background:rgba(63,166,106,.12);border:1px solid rgba(63,166,106,.4);color:#bfe6cf;border-radius:12px;padding:12px 14px;font-size:.92rem;margin-bottom:20px}.usp-badge svg{width:20px;height:20px;color:#7fd6a0;flex:none}
+.vve-note{margin-top:22px;background:rgba(227,193,88,.08);border:1px solid var(--gold,#C9A227);border-radius:14px;padding:16px 18px}
+.vve-note-h{font-family:'Marcellus',serif;color:var(--gold-bright,#E3C158);font-size:1.1rem;margin-bottom:4px}
+.vve-note p{color:var(--muted);font-size:.9rem;margin:0 0 8px}
+.vve-note a{color:var(--gold-bright,#E3C158);font-weight:600;text-decoration:none}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
@@ -447,6 +451,11 @@ img{max-width:100%}
         <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="proB3"></span></li>
         <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span data-i18n="proB4"></span></li>
       </ul>
+      <div class="vve-note">
+        <div class="vve-note-h" data-i18n="proVveTitle"></div>
+        <p data-i18n="proVveBody"></p>
+        <a href="https://vvedeal.nl" target="_blank" rel="noopener" data-i18n="proVveLink"></a>
+      </div>
     </div>
     <div class="panel rv">
       <h3 style="font-family:'Marcellus';font-size:1.5rem;margin-bottom:6px" data-i18n="proTitle"></h3>
@@ -705,7 +714,7 @@ const T={
   proB1:"Jobs matched to your specialisation and region",
   proB2:"You only pay for leads that genuinely interest you",
   proB3:"Build your reputation with reviews from happy customers",
-  proB4:"Company profile and certificates visible across the Netherlands",
+  proB4:"Company profile and certificates visible across the Netherlands",proVveTitle:"Also larger VvE tenders via VvEdeal",proVveBody:"Beyond individual jobs, bid on maintenance tenders from homeowner associations (VvE). These use a separate fee model — different from the € 18.15 per-lead price — and appear in your portal.",proVveLink:"More about VvEdeal →",
   proTitle:"Create a tradesman profile",proSub:"Free registration — your first leads this week.",
   proPrice:"First 5 leads free — then € 18,15 per lead. Orientation leads: only 50%.",
   proUSP:"Work you can’t take on? Share it with a colleague for free and turn it into a partnership. Only on Budomatch.",
@@ -776,7 +785,7 @@ const T={
   proB1:"Klussen afgestemd op je specialisatie en regio",
   proB2:"Je betaalt alleen voor leads die je echt interesseren",
   proB3:"Bouw je reputatie op met reviews van tevreden klanten",
-  proB4:"Bedrijfsprofiel en certificaten zichtbaar in heel Nederland",
+  proB4:"Bedrijfsprofiel en certificaten zichtbaar in heel Nederland",proVveTitle:"Ook grotere VvE-opdrachten via VvEdeal",proVveBody:"Naast losse klussen kun je meedingen naar onderhoudsaanbestedingen van Verenigingen van Eigenaren. Deze werken met een eigen fee-model — afwijkend van het per-lead tarief van € 18,15 — en verschijnen in je portaal.",proVveLink:"Meer over VvEdeal →",
   proTitle:"Maak een vakman-profiel aan",proSub:"Gratis registratie — je eerste leads nog deze week.",
   proPrice:"Eerste 5 leads gratis — daarna € 18,15 per lead. Oriëntatie-leads: maar 50%.",
   proUSP:"Werk dat blijft liggen? Deel het gratis met een collega en kom zo tot een samenwerking. Alleen op Budomatch.",

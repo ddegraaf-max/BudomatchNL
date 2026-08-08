@@ -1236,6 +1236,7 @@ function sampleVveTenders() {
 }
 app.get('/api/vve', requireRole('pro'), async (req, res) => {
   try {
+    const feeNote = process.env.VVEDEAL_FEE_NOTE || '';
     if (process.env.VVEDEAL_API_URL) {
       const u = new URL(process.env.VVEDEAL_API_URL);
       const cats = (req.user.workCategories || []).join(',');
@@ -1243,13 +1244,13 @@ app.get('/api/vve', requireRole('pro'), async (req, res) => {
       if (cats) u.searchParams.set('categories', cats);
       const headers = {}; if (process.env.VVEDEAL_API_KEY) headers.apikey = process.env.VVEDEAL_API_KEY;
       const r = await fetch(u.href, { headers });
-      if (!r.ok) return res.json({ configured: true, error: 'fetch', tenders: [] });
+      if (!r.ok) return res.json({ configured: true, error: 'fetch', tenders: [], feeNote });
       const d = await r.json();
       const tenders = (Array.isArray(d) ? d : (d.tenders || [])).slice(0, 50);
-      return res.json({ configured: true, tenders });
+      return res.json({ configured: true, tenders, feeNote });
     }
-    return res.json({ configured: false, tenders: sampleVveTenders() });
-  } catch (e) { console.error('vve:', e.message); res.json({ configured: false, tenders: sampleVveTenders(), error: 'server' }); }
+    return res.json({ configured: false, tenders: sampleVveTenders(), feeNote });
+  } catch (e) { console.error('vve:', e.message); res.json({ configured: false, tenders: sampleVveTenders(), error: 'server', feeNote: process.env.VVEDEAL_FEE_NOTE || '' }); }
 });
 
 // Klus oppakken (gratis) → opent vakman⇆vakman gesprek
