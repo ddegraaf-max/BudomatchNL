@@ -274,6 +274,9 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .house-prev a{margin-top:6px}
 .golden-usp{display:flex;align-items:center;gap:9px;background:rgba(227,193,88,.1);border:1px solid var(--gold);border-radius:10px;padding:9px 13px;margin:0 0 14px;color:var(--gold-soft);font-size:.9rem}
 .golden-usp svg{flex:none}
+.vve-calc{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.9rem}
+.vve-calc input{width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#1b180f;color:var(--cream);margin-left:6px}
+.vve-calc b{color:#7fd6a0;font-size:1.05rem}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -324,7 +327,7 @@ const T = {
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
     tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
-    tabVve:'VvE tenders', vveTitle:'VvE tenders via VvEdeal', vveIntro:'Larger, recurring maintenance jobs tendered by homeowner associations (VvE) — a second lead channel.', vvePreview:'Preview — connect VvEdeal to show live tenders here.', vveEmpty:'No open VvE tenders right now.', vveReact:'View & respond on VvEdeal', vveUnits:'units', vveDeadline:'Closes', vveBudget:'Budget', vveFee:'Note: VvE tenders use a separate fee model, different from the € 18.15 per-lead price. Exact terms are shown with each tender on VvEdeal.',
+    tabVve:'VvE tenders', vveTitle:'VvE tenders via VvEdeal', vveIntro:'Larger, recurring maintenance jobs tendered by homeowner associations (VvE) — a second lead channel.', vvePreview:'Preview — connect VvEdeal to show live tenders here.', vveEmpty:'No open VvE tenders right now.', vveReact:'View & respond on VvEdeal', vveUnits:'units', vveDeadline:'Closes', vveBudget:'Budget', vveFee:'Pay on award — no per-lead costs. Success fee: 1.5% up to € 100,000, 1.0% up to € 500,000, 0.6% above that, capped at € 7,500.', vveCalcLabel:'Project amount', vveCalcOut:'Estimated success fee',
     ovRecent:'Most recent requests', kTier:'level', flAvail:'Available', flUnlocked:'Unlocked', flSearch:'Search requests…',
     save:'Save', saved:'Saved.', prBio:'Company description', prWebsite:'Website', prLogo:'Change logo', prPhotos:'Project photos (max 6)',
     arTitle:'Choose your work area', arZip:'Base postcode', arRadius:'Radius', arCats:'Which jobs do you do?',
@@ -375,7 +378,7 @@ const T = {
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
     tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
-    tabVve:'VvE-opdrachten', vveTitle:'VvE-opdrachten via VvEdeal', vveIntro:'Grotere, terugkerende onderhoudsopdrachten die VvE’s aanbesteden — een tweede leadkanaal.', vvePreview:'Voorbeeld — koppel VvEdeal om hier live aanbestedingen te tonen.', vveEmpty:'Nu geen open VvE-opdrachten.', vveReact:'Bekijk & reageer op VvEdeal', vveUnits:'woningen', vveDeadline:'Sluit', vveBudget:'Budget', vveFee:'Let op: VvE-opdrachten hebben een eigen fee-model, afwijkend van het per-lead tarief van € 18,15. De exacte voorwaarden staan bij de aanbesteding op VvEdeal.',
+    tabVve:'VvE-opdrachten', vveTitle:'VvE-opdrachten via VvEdeal', vveIntro:'Grotere, terugkerende onderhoudsopdrachten die VvE’s aanbesteden — een tweede leadkanaal.', vvePreview:'Voorbeeld — koppel VvEdeal om hier live aanbestedingen te tonen.', vveEmpty:'Nu geen open VvE-opdrachten.', vveReact:'Bekijk & reageer op VvEdeal', vveUnits:'woningen', vveDeadline:'Sluit', vveBudget:'Budget', vveFee:'Betalen bij gunning — geen per-lead kosten. Succesfee: 1,5% tot € 100.000, 1,0% tot € 500.000, 0,6% daarboven, met een maximum van € 7.500.', vveCalcLabel:'Projectbedrag', vveCalcOut:'Geschatte succesfee',
     ovRecent:'Meest recente aanvragen', kTier:'niveau', flAvail:'Beschikbaar', flUnlocked:'Ontgrendeld', flSearch:'Zoek aanvragen…',
     save:'Opslaan', saved:'Opgeslagen.', prBio:'Bedrijfsomschrijving', prWebsite:'Website', prLogo:'Logo wijzigen', prPhotos:'Projectfoto\'s (max 6)',
     arTitle:'Kies je werkgebied', arZip:'Postcode (basis)', arRadius:'Straal', arCats:'Welke klussen doe je?',
@@ -469,10 +472,13 @@ function vveShellHtml(){
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">${t('vveIntro')}</p>
     <div id="vveList"><p class="empty">\u2026</p></div></div>`;
 }
+function vveFeeCalc(a){ a=Math.max(0,Number(a)||0); let f=Math.min(a,100000)*0.015; if(a>100000)f+=(Math.min(a,500000)-100000)*0.010; if(a>500000)f+=(a-500000)*0.006; return Math.min(f,7500); }
+function vveCalc(){ const i=document.getElementById('vveCalcIn'), o=document.getElementById('vveCalcOut'); if(!i||!o)return; const v=parseFloat(i.value); o.textContent=(v>0)?('\u20ac '+Math.round(vveFeeCalc(v)).toLocaleString('nl-NL')):'\u2014'; }
 async function loadVve(){
   const el=document.getElementById('vveList'); if(!el)return;
   let r; try{ r=await api('/api/vve'); }catch(e){ el.innerHTML=`<p class="empty">${t('vveEmpty')}</p>`; return; }
-  const fee = `<div class="golden-usp">\u26A0 <span>${htmlesc(r.feeNote||t('vveFee'))}</span></div>`;
+  const fee = `<div class="golden-usp">\u26A0 <span>${htmlesc(r.feeNote||t('vveFee'))}</span></div>
+    <div class="vve-calc"><label>${t('vveCalcLabel')} \u20ac <input id="vveCalcIn" type="number" min="0" step="1000" placeholder="150000" oninput="vveCalc()"></label><span>${t('vveCalcOut')}: <b id="vveCalcOut">\u2014</b></span></div>`;
   const head = fee + (r.configured===false ? `<div class="golden-usp" style="border-color:var(--line);color:var(--muted);background:rgba(255,255,255,.03)">${t('vvePreview')}</div>` : '');
   const list=r.tenders||[];
   if(!list.length){ el.innerHTML=head+`<p class="empty">${t('vveEmpty')}</p>`; return; }
