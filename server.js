@@ -1241,6 +1241,8 @@ app.post('/api/vve-profile', requireRole('pro'), async (req, res) => {
     const b = req.body || {};
     const vp = {
       insurance: !!b.insurance,
+      insuranceStart: String(b.insuranceStart || '').slice(0, 10),
+      insuranceEnd: String(b.insuranceEnd || '').slice(0, 10),
       insuredAmount: String(b.insuredAmount || '').slice(0, 40),
       vca: !!b.vca,
       vcaNumber: String(b.vcaNumber || '').slice(0, 40),

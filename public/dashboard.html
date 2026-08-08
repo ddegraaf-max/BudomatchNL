@@ -329,6 +329,7 @@ const T = {
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
     tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
+    vveInsStart:'Insurance valid from', vveInsEnd:'valid until', vveVcaHint:'Only needed for Silver/Gold (VvEdeal requirement) — not for Bronze.', vveKvkOk:'Your KvK is verified ✓ — add a liability insurance to reach Bronze.', vveNeedKvk:'Verify your KvK first (Company profile) to qualify.', vveInsExpired:'⚠ Your insurance end date has passed — update it to stay qualified.',
     vveQualTitle:'My VvE qualification', vveQualIntro:'Fill in the extra requirements to qualify for larger VvE tenders. The more you demonstrate, the higher your level (and project cap).', vveQualNow:'You qualify up to level', vveQualNone:'Not qualified yet — verify your KvK and add at least liability insurance.', vveIns:'Liability insurance in place', vveInsAmt:'Demonstrable insured amount', vveVca:'VCA certified', vveVcaNr:'VCA number', vveRefs:'References (min. 3 for Silver)', vveCert:'Certifications', vveFounded:'Founded in (year)', vveQualNote:'Final assessment is done by the VvE/VvEdeal at the tender.', vveUnlimited:'unlimited',
     tabVve:'VvE tenders', vveTitle:'VvE tenders via VvEdeal', vveIntro:'Larger, recurring maintenance jobs tendered by homeowner associations (VvE) — a second lead channel.', vvePreview:'Preview — connect VvEdeal to show live tenders here.', vveEmpty:'No open VvE tenders right now.', vveReact:'View & respond on VvEdeal', vveDemo:'Example tender — connect VvEdeal for live tenders', vveUnits:'units', vveDeadline:'Closes', vveBudget:'Budget', vveFee:'Pay on award — no per-lead costs. Success fee: 1.5% up to € 100,000, 1.0% up to € 500,000, 0.6% above that, capped at € 7,500.', vveCalcLabel:'Project amount', vveCalcOut:'Estimated success fee',
     ovRecent:'Most recent requests', kTier:'level', flAvail:'Available', flUnlocked:'Unlocked', flSearch:'Search requests…',
@@ -381,6 +382,7 @@ const T = {
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
     tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
+    vveInsStart:'Verzekering geldig vanaf', vveInsEnd:'geldig tot', vveVcaHint:'Alleen nodig voor Zilver/Goud (VvEdeal-eis) — niet voor Brons.', vveKvkOk:'Je KvK is geverifieerd ✓ — voeg een aansprakelijkheidsverzekering toe om Brons te bereiken.', vveNeedKvk:'Verifieer eerst je KvK (Bedrijfsprofiel) om te kwalificeren.', vveInsExpired:'⚠ De einddatum van je verzekering is verstreken — werk deze bij om gekwalificeerd te blijven.',
     vveQualTitle:'Mijn VvE-kwalificatie', vveQualIntro:'Vul de aanvullende eisen in om in aanmerking te komen voor grotere VvE-opdrachten. Hoe meer je aantoont, hoe hoger je niveau (en projectplafond).', vveQualNow:'Je komt in aanmerking t/m niveau', vveQualNone:'Nog niet gekwalificeerd — verifieer je KvK en voeg minimaal een aansprakelijkheidsverzekering toe.', vveIns:'Aansprakelijkheidsverzekering aanwezig', vveInsAmt:'Aantoonbaar verzekerd bedrag', vveVca:'VCA-gecertificeerd', vveVcaNr:'VCA-nummer', vveRefs:'Referenties (min. 3 voor Zilver)', vveCert:'Certificeringen', vveFounded:'Opgericht in (jaar)', vveQualNote:'Definitieve toetsing gebeurt door de VvE/VvEdeal bij de aanbesteding.', vveUnlimited:'onbeperkt',
     tabVve:'VvE-opdrachten', vveTitle:'VvE-opdrachten via VvEdeal', vveIntro:'Grotere, terugkerende onderhoudsopdrachten die VvE’s aanbesteden — een tweede leadkanaal.', vvePreview:'Voorbeeld — koppel VvEdeal om hier live aanbestedingen te tonen.', vveEmpty:'Nu geen open VvE-opdrachten.', vveReact:'Bekijk & reageer op VvEdeal', vveDemo:'Voorbeeld-aanbesteding — koppel VvEdeal voor echte opdrachten', vveUnits:'woningen', vveDeadline:'Sluit', vveBudget:'Budget', vveFee:'Betalen bij gunning — geen per-lead kosten. Succesfee: 1,5% tot € 100.000, 1,0% tot € 500.000, 0,6% daarboven, met een maximum van € 7.500.', vveCalcLabel:'Projectbedrag', vveCalcOut:'Geschatte succesfee',
     ovRecent:'Meest recente aanvragen', kTier:'niveau', flAvail:'Beschikbaar', flUnlocked:'Ontgrendeld', flSearch:'Zoek aanvragen…',
@@ -471,25 +473,39 @@ function proJobsCardHtml(){
   </div>`;
 }
 let PJPHOTOS=[];
+function vveInsValid(vp){ if(!vp||!vp.insurance) return false; if(!vp.insuranceEnd) return true; const e=new Date(vp.insuranceEnd); return isNaN(e)?true:(e>=new Date(new Date().toDateString())); }
 function vveTierName(vp){
   if(!vp) return null;
   const yrs=vp.foundedYear?(new Date().getFullYear()-parseInt(vp.foundedYear,10)):0;
   const refs=(vp.references||[]).filter(Boolean).length;
-  const brons=(ME&&ME.kvkVerified)&&vp.insurance;
+  const brons=(ME&&ME.kvkVerified)&&vveInsValid(vp);
   const zilver=brons&&vp.vca&&vp.insuredAmount&&refs>=3;
   const goud=zilver&&vp.certifications&&yrs>=5;
   return goud?'Goud':(zilver?'Zilver':(brons?'Brons':null));
 }
 function vveQualHtml(){
   const vp=(ME&&ME.vveProfile)||{}; const refs=vp.references||['','',''];
+  const kv=!!(ME&&ME.kvkVerified);
   const tier=vveTierName(ME&&ME.vveProfile);
   const cap={Brons:'\u20ac 25.000',Zilver:'\u20ac 150.000',Goud:t('vveUnlimited')};
+  let status, ok=false;
+  if(tier){ status=`\u2713 ${t('vveQualNow')} <b style="margin:0 4px">${tier}</b> (t/m ${cap[tier]})`; ok=true; }
+  else if(!kv){ status=t('vveNeedKvk'); }
+  else { status=t('vveKvkOk'); }
+  const expired = vp.insurance && !vveInsValid(vp);
   return `<div class="card" style="margin-bottom:16px"><h2>${t('vveQualTitle')}</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">${t('vveQualIntro')}</p>
-    <div class="golden-usp" style="${tier?'':'border-color:var(--line);color:var(--muted);background:rgba(255,255,255,.03)'}">${tier?`\u2713 ${t('vveQualNow')} <b style="margin:0 4px">${tier}</b> (t/m ${cap[tier]})`:t('vveQualNone')}</div>
+    <div class="golden-usp" style="${ok?'':'border-color:var(--line);color:var(--muted);background:rgba(255,255,255,.03)'}">${status}</div>
     <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="vpIns" ${vp.insurance?'checked':''}> ${t('vveIns')}</label>
-    <label>${t('vveInsAmt')}</label><input class="inp" id="vpInsAmt" value="${htmlesc(vp.insuredAmount||'')}" placeholder="bijv. \u20ac 1.250.000">
-    <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="vpVca" ${vp.vca?'checked':''}> ${t('vveVca')}</label>
+    ${kv?'':''}
+    <div class="cfg-row2" style="margin-top:6px">
+      <div><label>${t('vveInsStart')}</label><input class="inp" id="vpInsStart" type="date" value="${htmlesc(vp.insuranceStart||'')}"></div>
+      <div><label>${t('vveInsEnd')}</label><input class="inp" id="vpInsEnd" type="date" value="${htmlesc(vp.insuranceEnd||'')}"></div>
+      <div><label>${t('vveInsAmt')}</label><input class="inp" id="vpInsAmt" value="${htmlesc(vp.insuredAmount||'')}" placeholder="\u20ac 1.250.000"></div>
+    </div>
+    ${expired?`<p class="hint" style="color:#e2a0aa;margin-top:4px">${t('vveInsExpired')}</p>`:''}
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="vpVca" ${vp.vca?'checked':''}> ${t('vveVca')}</label>
+    <p class="hint" style="margin:2px 0 0">${t('vveVcaHint')}</p>
     <label>${t('vveVcaNr')}</label><input class="inp" id="vpVcaNr" value="${htmlesc(vp.vcaNumber||'')}">
     <label>${t('vveRefs')}</label>
     <input class="inp" id="vpRef0" style="margin-bottom:6px" value="${htmlesc(refs[0]||'')}" placeholder="Referentie 1 (project + contact/link)">
@@ -504,7 +520,7 @@ function vveQualHtml(){
 async function saveVveProfile(){
   const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
   const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
-  const body={insurance:c('vpIns'),insuredAmount:g('vpInsAmt'),vca:c('vpVca'),vcaNumber:g('vpVcaNr'),references:[g('vpRef0'),g('vpRef1'),g('vpRef2')],certifications:g('vpCert'),foundedYear:g('vpYear')};
+  const body={insurance:c('vpIns'),insuranceStart:g('vpInsStart'),insuranceEnd:g('vpInsEnd'),insuredAmount:g('vpInsAmt'),vca:c('vpVca'),vcaNumber:g('vpVcaNr'),references:[g('vpRef0'),g('vpRef1'),g('vpRef2')],certifications:g('vpCert'),foundedYear:g('vpYear')};
   try{ const r=await api('/api/vve-profile',{method:'POST',body:JSON.stringify(body)}); if(r.user){ ME=r.user; showProTab('vve'); } }catch(e){}
 }
 function vveShellHtml(){
