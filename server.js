@@ -106,7 +106,7 @@ const _loginRate = {};
 async function getUser(req) {
   const t = A.parseCookies(req).bm_token;
   const p = A.verify(t);
-  if (!p) return null;
+  if (!p || p.t) return null; // alleen sessietokens (geen reset/2fa-challenge)
   const u = await store.findUserById(p.uid);
   return u || null;
 }
@@ -249,6 +249,41 @@ app.post('/api/feedback/:id/status', requireRole(), async (req, res) => {
     const f = await store.updateFeedback(req.params.id, { status });
     if (!f) return res.status(404).json({ error: 'not_found' });
     res.json({ ok: true, status });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
+
+// ---------------- wachtwoord vergeten ----------------
+const _forgotRate = {};
+app.post('/api/forgot', async (req, res) => {
+  try {
+    const email = String((req.body || {}).email || '').trim().toLowerCase();
+    const ip = clientIp(req); const now = Date.now();
+    const w = _forgotRate[ip] || { n: 0, t: now }; if (now - w.t > 3600000) { w.n = 0; w.t = now; } w.n++; _forgotRate[ip] = w;
+    if (w.n > 10) return res.json({ ok: true });
+    if (email) {
+      const u = await store.findUserByEmail(email);
+      if (u) {
+        const token = A.sign({ t: 'reset', uid: u.id }, 0.02);
+        const base = process.env.APP_URL || `${isHttps(req) ? 'https' : 'http'}://${req.headers.host}`;
+        const link = `${base}/?reset=${encodeURIComponent(token)}`;
+        await sendMail('Wachtwoord opnieuw instellen — Budomatch',
+          `<p>Hoi ${esc(u.name || '')},</p><p>Je hebt een nieuw wachtwoord aangevraagd voor Budomatch. Klik op de onderstaande link (30 minuten geldig):</p><p><a href="${link}">Nieuw wachtwoord instellen</a></p><p style="color:#888">Niet aangevraagd? Dan kun je deze e-mail negeren.</p>`,
+          null, u.email).catch(() => {});
+      }
+    }
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.json({ ok: true }); }
+});
+app.post('/api/reset', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const p = A.verify(String(b.token || ''));
+    if (!p || p.t !== 'reset') return res.status(400).json({ error: 'token' });
+    const u = await store.findUserById(p.uid);
+    if (!u) return res.status(400).json({ error: 'token' });
+    if (!b.password || String(b.password).length < 6) return res.status(400).json({ error: 'weak' });
+    await store.updateUser(u.id, { passHash: A.hashPassword(String(b.password)) });
+    res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
 });
 
