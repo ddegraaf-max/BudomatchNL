@@ -134,6 +134,7 @@ async function publicUser(u) {
     rest.workCategories = u.workCategories || [];
     rest.kvk = u.kvk || ''; rest.kvkVerified = !!(u.kvk && u.verifiedKvk && u.kvk === u.verifiedKvk); rest.kvkName = u.kvkName || '';
     rest.kvkAddress = u.kvkAddress || null;
+    rest.vveProfile = u.vveProfile || null;
   }
   if (u.role === 'customer') {
     rest.customerType = u.customerType || 'particulier';
@@ -1234,6 +1235,23 @@ function sampleVveTenders() {
     { id: 'demo2', demo: true, title: 'Vervangen 12 dakkapellen', vve: 'VvE De Hoven', city: 'Amersfoort', postcode: '3811', category: 'Dakkapel', scope: 'Vervangen bestaande dakkapellen incl. vergunning en steiger.', units: 24, budget: '€ 45.000 – € 70.000', deadline: new Date(now + 21 * day).toISOString(), url: 'https://vvedeal.nl' },
   ];
 }
+// VvE-kwalificatieprofiel (aanvullende eisen voor VvE-opdrachten)
+app.post('/api/vve-profile', requireRole('pro'), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const vp = {
+      insurance: !!b.insurance,
+      insuredAmount: String(b.insuredAmount || '').slice(0, 40),
+      vca: !!b.vca,
+      vcaNumber: String(b.vcaNumber || '').slice(0, 40),
+      references: Array.isArray(b.references) ? b.references.slice(0, 3).map(x => String(x || '').slice(0, 200)) : [],
+      certifications: String(b.certifications || '').slice(0, 300),
+      foundedYear: String(b.foundedYear || '').replace(/\D/g, '').slice(0, 4),
+    };
+    const u = await store.updateUser(req.user.id, { vveProfile: vp });
+    res.json({ user: await publicUser(u) });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server' }); }
+});
 app.get('/api/vve', requireRole('pro'), async (req, res) => {
   try {
     const feeNote = process.env.VVEDEAL_FEE_NOTE || '';

@@ -277,6 +277,8 @@ label{font-size:.84rem;color:var(--muted);font-weight:600;display:block;margin-b
 .vve-calc{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.9rem}
 .vve-calc input{width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#1b180f;color:var(--cream);margin-left:6px}
 .vve-calc b{color:#7fd6a0;font-size:1.05rem}
+.tab-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;font-size:.7rem;background:var(--gold);color:#20180a;border-radius:9px;padding:0 5px;margin-left:6px;font-weight:700}
+.tab-badge:empty{display:none}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -327,6 +329,7 @@ const T = {
     tagJob:'Job', tagOrient:'Orientation', chatCall:'Call', msgPhoto:'Photo', apTitle:'Propose appointment', apNote:'Note (optional)', apSend:'Propose', apLabel:'Appointment', apAccept:'Confirm', apDecline:'Decline', sysApptAccepted:'✓ Appointment confirmed', sysApptDeclined:'Appointment declined',
     rvBtn:'Rate', rvComment:'Comment (optional)', rvSend:'Submit review', kRating:'rating', sysReview:'✓ Review given',
     tabNew:'New', tabLeads:'Requests', tabMsg:'Messages', tabColleague2:'Colleague jobs', tabProfile:'Company profile', tabArea:'Work area', tabHelp:'Help', tabAI:'AI assistant', tabAccount:'Account',
+    vveQualTitle:'My VvE qualification', vveQualIntro:'Fill in the extra requirements to qualify for larger VvE tenders. The more you demonstrate, the higher your level (and project cap).', vveQualNow:'You qualify up to level', vveQualNone:'Not qualified yet — verify your KvK and add at least liability insurance.', vveIns:'Liability insurance in place', vveInsAmt:'Demonstrable insured amount', vveVca:'VCA certified', vveVcaNr:'VCA number', vveRefs:'References (min. 3 for Silver)', vveCert:'Certifications', vveFounded:'Founded in (year)', vveQualNote:'Final assessment is done by the VvE/VvEdeal at the tender.', vveUnlimited:'unlimited',
     tabVve:'VvE tenders', vveTitle:'VvE tenders via VvEdeal', vveIntro:'Larger, recurring maintenance jobs tendered by homeowner associations (VvE) — a second lead channel.', vvePreview:'Preview — connect VvEdeal to show live tenders here.', vveEmpty:'No open VvE tenders right now.', vveReact:'View & respond on VvEdeal', vveDemo:'Example tender — connect VvEdeal for live tenders', vveUnits:'units', vveDeadline:'Closes', vveBudget:'Budget', vveFee:'Pay on award — no per-lead costs. Success fee: 1.5% up to € 100,000, 1.0% up to € 500,000, 0.6% above that, capped at € 7,500.', vveCalcLabel:'Project amount', vveCalcOut:'Estimated success fee',
     ovRecent:'Most recent requests', kTier:'level', flAvail:'Available', flUnlocked:'Unlocked', flSearch:'Search requests…',
     save:'Save', saved:'Saved.', prBio:'Company description', prWebsite:'Website', prLogo:'Change logo', prPhotos:'Project photos (max 6)',
@@ -378,6 +381,7 @@ const T = {
     tagJob:'Opdracht', tagOrient:'Oriëntatie', chatCall:'Bellen', msgPhoto:'Foto', apTitle:'Afspraak voorstellen', apNote:'Notitie (optioneel)', apSend:'Voorstellen', apLabel:'Afspraak', apAccept:'Bevestigen', apDecline:'Afwijzen', sysApptAccepted:'✓ Afspraak bevestigd', sysApptDeclined:'Afspraak afgewezen',
     rvBtn:'Beoordelen', rvComment:'Opmerking (optioneel)', rvSend:'Beoordeling versturen', kRating:'beoordeling', sysReview:'✓ Beoordeling gegeven',
     tabNew:'Nieuw', tabLeads:'Offerteaanvragen', tabMsg:'Berichten', tabColleague2:'Collega-klussen', tabProfile:'Bedrijfsprofiel', tabArea:'Werkgebied', tabHelp:'Helpdesk', tabAI:'AI-assistent', tabAccount:'Account',
+    vveQualTitle:'Mijn VvE-kwalificatie', vveQualIntro:'Vul de aanvullende eisen in om in aanmerking te komen voor grotere VvE-opdrachten. Hoe meer je aantoont, hoe hoger je niveau (en projectplafond).', vveQualNow:'Je komt in aanmerking t/m niveau', vveQualNone:'Nog niet gekwalificeerd — verifieer je KvK en voeg minimaal een aansprakelijkheidsverzekering toe.', vveIns:'Aansprakelijkheidsverzekering aanwezig', vveInsAmt:'Aantoonbaar verzekerd bedrag', vveVca:'VCA-gecertificeerd', vveVcaNr:'VCA-nummer', vveRefs:'Referenties (min. 3 voor Zilver)', vveCert:'Certificeringen', vveFounded:'Opgericht in (jaar)', vveQualNote:'Definitieve toetsing gebeurt door de VvE/VvEdeal bij de aanbesteding.', vveUnlimited:'onbeperkt',
     tabVve:'VvE-opdrachten', vveTitle:'VvE-opdrachten via VvEdeal', vveIntro:'Grotere, terugkerende onderhoudsopdrachten die VvE’s aanbesteden — een tweede leadkanaal.', vvePreview:'Voorbeeld — koppel VvEdeal om hier live aanbestedingen te tonen.', vveEmpty:'Nu geen open VvE-opdrachten.', vveReact:'Bekijk & reageer op VvEdeal', vveDemo:'Voorbeeld-aanbesteding — koppel VvEdeal voor echte opdrachten', vveUnits:'woningen', vveDeadline:'Sluit', vveBudget:'Budget', vveFee:'Betalen bij gunning — geen per-lead kosten. Succesfee: 1,5% tot € 100.000, 1,0% tot € 500.000, 0,6% daarboven, met een maximum van € 7.500.', vveCalcLabel:'Projectbedrag', vveCalcOut:'Geschatte succesfee',
     ovRecent:'Meest recente aanvragen', kTier:'niveau', flAvail:'Beschikbaar', flUnlocked:'Ontgrendeld', flSearch:'Zoek aanvragen…',
     save:'Opslaan', saved:'Opgeslagen.', prBio:'Bedrijfsomschrijving', prWebsite:'Website', prLogo:'Logo wijzigen', prPhotos:'Projectfoto\'s (max 6)',
@@ -467,8 +471,44 @@ function proJobsCardHtml(){
   </div>`;
 }
 let PJPHOTOS=[];
+function vveTierName(vp){
+  if(!vp) return null;
+  const yrs=vp.foundedYear?(new Date().getFullYear()-parseInt(vp.foundedYear,10)):0;
+  const refs=(vp.references||[]).filter(Boolean).length;
+  const brons=(ME&&ME.kvkVerified)&&vp.insurance;
+  const zilver=brons&&vp.vca&&vp.insuredAmount&&refs>=3;
+  const goud=zilver&&vp.certifications&&yrs>=5;
+  return goud?'Goud':(zilver?'Zilver':(brons?'Brons':null));
+}
+function vveQualHtml(){
+  const vp=(ME&&ME.vveProfile)||{}; const refs=vp.references||['','',''];
+  const tier=vveTierName(ME&&ME.vveProfile);
+  const cap={Brons:'\u20ac 25.000',Zilver:'\u20ac 150.000',Goud:t('vveUnlimited')};
+  return `<div class="card" style="margin-bottom:16px"><h2>${t('vveQualTitle')}</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px">${t('vveQualIntro')}</p>
+    <div class="golden-usp" style="${tier?'':'border-color:var(--line);color:var(--muted);background:rgba(255,255,255,.03)'}">${tier?`\u2713 ${t('vveQualNow')} <b style="margin:0 4px">${tier}</b> (t/m ${cap[tier]})`:t('vveQualNone')}</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="vpIns" ${vp.insurance?'checked':''}> ${t('vveIns')}</label>
+    <label>${t('vveInsAmt')}</label><input class="inp" id="vpInsAmt" value="${htmlesc(vp.insuredAmount||'')}" placeholder="bijv. \u20ac 1.250.000">
+    <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="vpVca" ${vp.vca?'checked':''}> ${t('vveVca')}</label>
+    <label>${t('vveVcaNr')}</label><input class="inp" id="vpVcaNr" value="${htmlesc(vp.vcaNumber||'')}">
+    <label>${t('vveRefs')}</label>
+    <input class="inp" id="vpRef0" style="margin-bottom:6px" value="${htmlesc(refs[0]||'')}" placeholder="Referentie 1 (project + contact/link)">
+    <input class="inp" id="vpRef1" style="margin-bottom:6px" value="${htmlesc(refs[1]||'')}" placeholder="Referentie 2">
+    <input class="inp" id="vpRef2" value="${htmlesc(refs[2]||'')}" placeholder="Referentie 3">
+    <label>${t('vveCert')}</label><input class="inp" id="vpCert" value="${htmlesc(vp.certifications||'')}" placeholder="bijv. ISO 9001, KOMO, VCA**">
+    <label>${t('vveFounded')}</label><input class="inp" id="vpYear" inputmode="numeric" maxlength="4" value="${htmlesc(vp.foundedYear||'')}" placeholder="bijv. 2015">
+    <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="saveVveProfile()">${t('save')}</button>
+    <p class="hint" style="margin-top:8px">${t('vveQualNote')}</p>
+  </div>`;
+}
+async function saveVveProfile(){
+  const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
+  const c=id=>{const e=document.getElementById(id);return e?e.checked:false;};
+  const body={insurance:c('vpIns'),insuredAmount:g('vpInsAmt'),vca:c('vpVca'),vcaNumber:g('vpVcaNr'),references:[g('vpRef0'),g('vpRef1'),g('vpRef2')],certifications:g('vpCert'),foundedYear:g('vpYear')};
+  try{ const r=await api('/api/vve-profile',{method:'POST',body:JSON.stringify(body)}); if(r.user){ ME=r.user; showProTab('vve'); } }catch(e){}
+}
 function vveShellHtml(){
-  return `<div class="card"><h2>${t('vveTitle')}</h2>
+  return vveQualHtml() + `<div class="card"><h2>${t('vveTitle')}</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">${t('vveIntro')}</p>
     <div id="vveList"><p class="empty">\u2026</p></div></div>`;
 }
@@ -1354,16 +1394,23 @@ let PRO_TAB='nieuw', LEADS=[], LEADS_META={}, LEAD_FILTER='beschikbaar', PROFILE
 function proBannerHtml(){
   return `<div class="kvk-banner" id="proBanner"><span>\u26A0 ${t('kvkInactive')}</span><button class="btn btn-gold btn-sm" style="margin-left:auto" onclick="showProTab('profiel')">${t('kvkActivate')}</button></div>`;
 }
+async function updateTabCounts(){
+  const set=(id,n)=>{const e=document.getElementById(id);if(e)e.textContent=(n&&n>0)?n:'';};
+  try{ const r=await api('/api/leads'); set('tbLeads',(r.leads||[]).filter(l=>!l.claimed).length); }catch(e){}
+  try{ const r=await api('/api/threads'); set('tbMsg',(r.threads||[]).filter(th=>th.unread>0).length); }catch(e){}
+  try{ const r=await api('/api/projobs'); set('tbCol',(r.jobs||[]).length); }catch(e){}
+  try{ const r=await api('/api/vve'); set('tbVve',(r.tenders||[]).length); }catch(e){}
+}
 async function renderPro(){
   $('#main').innerHTML = `
     <div class="head"><h1>${t('pWelcome')}, ${ME.company||ME.name}</h1></div>
     ${ME.kvkVerified?'':proBannerHtml()}
     <div class="ptabs">
       <button class="ptab" data-k="nieuw" onclick="showProTab('nieuw')">${t('tabNew')}</button>
-      <button class="ptab" data-k="leads" onclick="showProTab('leads')">${t('tabLeads')}</button>
-      <button class="ptab" data-k="berichten" onclick="showProTab('berichten')">${t('tabMsg')}</button>
-      <button class="ptab" data-k="collega" onclick="showProTab('collega')">${t('tabColleague2')}</button>
-      <button class="ptab" data-k="vve" onclick="showProTab('vve')">${t('tabVve')}</button>
+      <button class="ptab" data-k="leads" onclick="showProTab('leads')">${t('tabLeads')}<span class="tab-badge" id="tbLeads"></span></button>
+      <button class="ptab" data-k="berichten" onclick="showProTab('berichten')">${t('tabMsg')}<span class="tab-badge" id="tbMsg"></span></button>
+      <button class="ptab" data-k="collega" onclick="showProTab('collega')">${t('tabColleague2')}<span class="tab-badge" id="tbCol"></span></button>
+      <button class="ptab" data-k="vve" onclick="showProTab('vve')">${t('tabVve')}<span class="tab-badge" id="tbVve"></span></button>
       <button class="ptab" data-k="profiel" onclick="showProTab('profiel')">${t('tabProfile')}</button>
       <button class="ptab" data-k="werkgebied" onclick="showProTab('werkgebied')">${t('tabArea')}</button>
       <button class="ptab" data-k="help" onclick="showProTab('help')">${t('tabHelp')}</button>
@@ -1371,7 +1418,7 @@ async function renderPro(){
       <button class="ptab" data-k="account" onclick="showProTab('account')">${t('tabAccount')}</button>
     </div>
     <div id="proTab"></div>`;
-  showProTab(PRO_TAB); handleReturn();
+  showProTab(PRO_TAB); handleReturn(); updateTabCounts();
 }
 function showProTab(k){
   PRO_TAB=k; stopChatPoll();
