@@ -5,11 +5,20 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Budomatch — Vind een betrouwbare vakman in Nederland</title>
-<meta name="description" content="Budomatch verbindt je met betrouwbare vakmensen in Nederland. Beschrijf je klus, ontvang gratis offertes en kies een vakman bij jou in de buurt — met factuur en garantie.">
+<meta name="description" content="Vind een betrouwbare vakman in Nederland via Budomatch. Beschrijf je klus, ontvang gratis offertes en kies de beste vakman in jouw buurt.">
+<link rel="canonical" href="https://budomatch.nl/">
 <meta property="og:title" content="Budomatch — Vind een betrouwbare vakman in Nederland">
 <meta property="og:description" content="Beschrijf je klus, ontvang gratis offertes en kies een vakman bij jou in de buurt.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="nl_NL">
+<meta property="og:url" content="https://budomatch.nl/">
+<meta property="og:image" content="https://images.unsplash.com/photo-1672627170267-fca17bb54156?auto=format&amp;fit=crop&amp;w=1200&amp;h=630&amp;q=80">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Vakman aan het werk in een woning">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"Budomatch","url":"https://budomatch.nl/","description":"Online platform dat klanten verbindt met betrouwbare vakmensen in Nederland.","areaServed":{"@type":"Country","name":"Nederland"},"serviceType":"Vakman vinden en offertes vergelijken"}
+</script>
 <meta name="theme-color" content="#13110B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%2313110B'/%3E%3Cpath d='M24 7 L41 24 L34 24 L24 14.5 L14 24 L7 24 Z' fill='%23E3C158'/%3E%3Cpath d='M24 24 l6.5 5.5 -6.5 5.5 -6.5 -5.5 Z' fill='%23E3C158'/%3E%3Crect x='12.5' y='37.5' width='23' height='3.8' rx='1.9' fill='%23E3C158'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -362,7 +371,7 @@ img{max-width:100%}
     </div>
    </div>
    <div class="hero-art rv">
-     <img src="https://images.unsplash.com/photo-1672627170267-fca17bb54156?auto=format&fit=crop&w=900&q=70" alt="" loading="lazy" onerror="this.style.display='none'">
+    <img src="https://images.unsplash.com/photo-1672627170267-fca17bb54156?auto=format&fit=crop&w=900&q=70" alt="Vakman aan het werk tijdens een woningverbouwing" loading="lazy" onerror="this.style.display='none'">
    </div>
   </div>
 </section>
@@ -416,10 +425,10 @@ img{max-width:100%}
       <p data-i18n="pProjects"></p>
     </div>
     <div class="proj-grid rv">
-      <div class="proj"><img src="https://images.unsplash.com/photo-1672627170267-fca17bb54156?auto=format&fit=crop&w=500&q=70" alt="" loading="lazy"><div class="cap" data-i18n="proj1"></div></div>
-      <div class="proj"><img src="https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&w=500&q=70" alt="" loading="lazy"><div class="cap" data-i18n="proj2"></div></div>
-      <div class="proj"><img src="https://images.unsplash.com/photo-1676802540678-2dceb1820113?auto=format&fit=crop&w=500&q=70" alt="" loading="lazy"><div class="cap" data-i18n="proj3"></div></div>
-      <div class="proj"><img src="https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=500&q=70" alt="" loading="lazy"><div class="cap" data-i18n="proj4"></div></div>
+      <div class="proj"><img src="https://images.unsplash.com/photo-1672627170267-fca17bb54156?auto=format&fit=crop&w=500&q=70" alt="Vakman voert renovatiewerk uit" loading="lazy"><div class="cap" data-i18n="proj1"></div></div>
+      <div class="proj"><img src="https://images.unsplash.com/photo-1587582423116-ec07293f0395?auto=format&fit=crop&w=500&q=70" alt="Licht en interieur in een gerenoveerde woning" loading="lazy"><div class="cap" data-i18n="proj2"></div></div>
+      <div class="proj"><img src="https://images.unsplash.com/photo-1676802540678-2dceb1820113?auto=format&fit=crop&w=500&q=70" alt="Afwerking van een modern interieur" loading="lazy"><div class="cap" data-i18n="proj3"></div></div>
+      <div class="proj"><img src="https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=500&q=70" alt="Vakwerk aan een woning in Nederland" loading="lazy"><div class="cap" data-i18n="proj4"></div></div>
     </div>
   </div>
 </section>
@@ -928,7 +937,7 @@ function addPhotos(files){
   const fi=document.getElementById('qFiles');if(fi)fi.value='';
 }
 function renderThumbs(){const el=document.getElementById('qThumbs');if(!el)return;
-  el.innerHTML=QPHOTOS.map((d,i)=>'<div class="th"><img src="'+d+'" alt=""><button type="button" aria-label="verwijder" onclick="rmPhoto('+i+')">\u00d7</button></div>').join('');
+  el.innerHTML=QPHOTOS.map((d,i)=>'<div class="th"><img src="'+d+'" alt="Toegevoegde foto '+(i+1)+'"><button type="button" aria-label="verwijder" onclick="rmPhoto('+i+')">\u00d7</button></div>').join('');
   const dz=document.getElementById('qDrop');if(dz)dz.style.display=QPHOTOS.length>=3?'none':'flex';
 }
 function rmPhoto(i){QPHOTOS.splice(i,1);renderThumbs();}

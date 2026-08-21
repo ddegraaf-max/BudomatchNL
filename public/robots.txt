@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin.html
+
+Sitemap: https://budomatch.nl/sitemap.xml
