@@ -50,6 +50,13 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 
 const app = express();
 
+// www.budomatch.nl → budomatch.nl (301), zodat er één canonieke host is.
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.startsWith('www.')) return res.redirect(301, 'https://' + host.slice(4) + req.originalUrl);
+  next();
+});
+
 // Stripe-webhook MOET de ruwe body krijgen → vóór express.json() registreren.
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !STRIPE_WEBHOOK_SECRET) return res.status(400).end();
