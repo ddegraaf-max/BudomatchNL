@@ -6,6 +6,8 @@ Is een opdracht af, zet dan bovenaan **Afgerond op <datum> (commit <hash>)** en 
 
 ## Open
 
+- `2026-11-17-leadnetwerk.md`: Leadnetwerk: losse leadsites (één codebase) + waterval Creditline → vakmensen + meten per bron (17-11, prioriteit 1)
+
 - `2026-11-15-mailadressen-budomatchnl.md`: Mailadressen: info@budomatch.pl van de NL-site af (15-11)
 
 - `2026-11-17-search-console-budomatchnl.md`: Search Console: /api/ uit Google houden (robots + X-Robots-Tag) (17-11)
