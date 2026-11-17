@@ -11,4 +11,10 @@ Is een opdracht af, zet dan bovenaan **Afgerond op <datum> (commit <hash>)** en 
 - `2026-11-17-search-console-budomatchnl.md`: Search Console: /api/ uit Google houden (robots + X-Robots-Tag) (17-11)
 - `2026-11-17-adres-en-demo-budomatchnl.md`: Onvolledig adres Białka + demo-accounts van productie (17-11)
 
+- `2026-11-17-eigen-leads-doorzetten.md`: Intake-API voor leads van Daniëls merksites (17-11, prioriteit 1)
+
+- `2026-11-17-seo-dienst-stad-kosten.md`: SEO-pagina's dienst × stad + kostenpagina's (17-11, prioriteit 2)
+
+- `2026-11-17-homedeal-functies.md`: Homedeal-functies die we missen (17-11, prioriteit 3)
+
 ## Afgerond
