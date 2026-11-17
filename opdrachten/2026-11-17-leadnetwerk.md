@@ -23,3 +23,12 @@
 2. Admin-dashboard per bron: aantal leads, % door Creditline opgepakt, % ontgrendeld door vakmensen, omzet per bron, per week.
 
 Commit en push. Meld in je samenvatting wat Daniël zelf moet doen (domeinen kopen/kiezen, prijzen aanleveren, domeinen koppelen).
+
+## Domeinen (geregistreerd 17-11-2026 bij Mijndomein, DNS in Cloudflare, al als custom domain op deze Railway-service)
+- **uitbouwprijscheck.nl** — leadsite aanbouw/uitbouw (hoofdsite)
+- **kozijnenprijscheck.nl** — leadsite kozijnen (hoofdsite)
+- **schuifpuiprijscheck.nl** — leadsite schuifpui (hoofdsite)
+- **uitbouwprijs.nl** en **aanbouwprijs.nl** — eigen leadsite uitbouw resp. aanbouw met eigen teksten (geen kopie van uitbouwprijscheck.nl)
+- **uitbouwberekenen.nl** → 301 naar uitbouwprijscheck.nl
+- **schuifpuiberekenen.nl** en **schuifpuivergelijken.nl** → 301 naar schuifpuiprijscheck.nl
+Steeds ook `www.`-variant (staat al op Railway); `www` → 301 naar de kale domeinnaam. Tot de leadsites gebouwd zijn tonen deze domeinen de Budomatch-homepage: zorg dat ze dan in elk geval `noindex` krijgen of naar budomatch.nl redirecten, zodat Google geen dubbele inhoud ziet.
