@@ -9,5 +9,6 @@ Is een opdracht af, zet dan bovenaan **Afgerond op <datum> (commit <hash>)** en 
 - `2026-11-15-mailadressen-budomatchnl.md`: Mailadressen: info@budomatch.pl van de NL-site af (15-11)
 
 - `2026-11-17-search-console-budomatchnl.md`: Search Console: /api/ uit Google houden (robots + X-Robots-Tag) (17-11)
+- `2026-11-17-adres-en-demo-budomatchnl.md`: Onvolledig adres Białka + demo-accounts van productie (17-11)
 
 ## Afgerond
