@@ -12,6 +12,6 @@ Budomatch heeft al: Beschikbaar/Ontgrendeld, niveaus Brons/Zilver/Goud, AI-react
 6. **Voortgang naar Goud** als checklist in het portaal (logo, omschrijving, 3 projectfoto's, minimaal 3 reviews, gemiddelde 8+), zoals Homedeal "Top Pro" doet.
 7. **Tegoed vooraf** (bijv. € 250 / € 500 met 10/15% extra tegoed) naast betalen per lead, met overzicht van verbruik en facturen.
 
-Op de vakmanpagina het verkoopargument expliciet maken: "Geen abonnement — Homedeal Select kost € 1.000 per maand".
+Op de vakmanpagina het verkoopargument "Geen abonnement, je betaalt alleen per lead" duidelijker maken. Noem geen concurrent of prijzen van een concurrent zonder dat Daniël dat goedkeurt.
 
 Commit en push.
